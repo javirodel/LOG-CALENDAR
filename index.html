@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Log Calendar</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Tracker local</p>
+          <h1 id="calendarTitle">LOG CALENDAR</h1>
+          <p class="subtitle" id="calendarSubtitle">LOG is LOG of Growth</p>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="exportBtn" type="button" title="Exportar copia de seguridad" aria-label="Exportar copia de seguridad">
+            <span>Exportar</span>
+          </button>
+          <label class="icon-button file-button" title="Importar copia de seguridad">
+            <input id="importInput" type="file" accept="application/json">
+            <span>Importar</span>
+          </label>
+          <button class="icon-button settings-button" id="settingsBtn" type="button" title="Ajustes" aria-label="Abrir ajustes">⚙</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <div class="left-column">
+          <section class="calendar-pane" aria-label="Calendario interactivo">
+            <div class="calendar-toolbar">
+              <div>
+                <h2>Mapa de horas</h2>
+                <p id="visibleRangeLabel">Selecciona un día para editar estudio, actividades y eventos.</p>
+              </div>
+              <div class="calendar-legends">
+                <div class="legend" aria-label="Leyenda de intensidad">
+                  <span>0 h</span>
+                  <span class="swatch level-1"></span>
+                  <span class="swatch level-2"></span>
+                  <span class="swatch level-3"></span>
+                  <span class="swatch level-4"></span>
+                  <span>10+ h</span>
+                </div>
+                <div class="marker-legend" id="eventLegend" aria-label="Leyenda de marcadores">
+                  <!-- JS renders this -->
+                </div>
+              </div>
+            </div>
+
+            <div class="month-nav-strip" aria-label="Navegación de meses">
+              <button class="icon-button month-nav-button" id="prevMonthsBtn" type="button" aria-label="Ver dos meses anteriores">‹</button>
+              <strong id="visibleMonthPairTitle">Enero 2026 · Febrero 2026</strong>
+              <button class="icon-button month-nav-button" id="nextMonthsBtn" type="button" aria-label="Ver dos meses siguientes">›</button>
+            </div>
+
+            <div class="months" id="months"></div>
+          </section>
+
+          <section class="stats-section" aria-label="Resumen y estadísticas">
+            <div class="stats-header">
+              <div>
+                <h2>Estadísticas principales</h2>
+              </div>
+              <div class="stat-pill-wrap">
+                <div class="stat-pill">
+                  <span id="grandTotal">0 h</span>
+                  <small>total global</small>
+                </div>
+                <div class="stat-pill secondary">
+                  <span id="weightedLoad">0</span>
+                  <small>carga ponderada</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-grid" id="metricsGrid">
+              <article>
+                <span id="avgPerDay">0 h</span>
+                <p>media diaria</p>
+              </article>
+              <article>
+                <span id="avgActiveDay">0 h</span>
+                <p>media en días activos</p>
+              </article>
+              <article>
+                <span id="bestDay">-</span>
+                <p>mejor día académico</p>
+              </article>
+              <article>
+                <span id="streak">0</span>
+                <p>racha de días seguidos con estudio</p>
+              </article>
+              <article>
+                <span id="studyFocus">0%</span>
+                <p>foco en estudio</p>
+              </article>
+              <article>
+                <span id="hobbyFocus">0%</span>
+                <p>foco en hobbies</p>
+              </article>
+              <article>
+                <span id="topSubject">-</span>
+                <p>asignatura dominante</p>
+              </article>
+              <article>
+                <span id="topTrack">-</span>
+                <p>hobby dominante</p>
+              </article>
+              <article>
+                <span id="avgRating">—</span>
+                <p>valoración media</p>
+              </article>
+              <article class="metric-more">
+                <button id="moreStatsBtn" type="button">
+                  <span>Ver más</span>
+                  <p>análisis completo</p>
+                </button>
+              </article>
+            </div>
+
+            <div class="charts">
+              <div class="chart-panel">
+                <h3>Horas por asignatura</h3>
+                <div class="bar-chart" id="subjectChart"></div>
+              </div>
+              <div class="chart-panel">
+                <h3>Distribución de valoraciones</h3>
+                <div class="ratings-chart" id="ratingsChart"></div>
+              </div>
+              <div class="chart-panel balance-panel">
+                <h3>Distribución global</h3>
+                <div class="balance-chart" id="balanceChart"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="day-panel" aria-label="Editor del día">
+          <div class="selected-day">
+            <p class="eyebrow" id="selectedWeekday">Hoy</p>
+            <h2 id="selectedDate">1 enero 2026</h2>
+            <div class="day-total">
+              <span id="selectedTotal">0</span>
+              <small>horas totales registradas</small>
+            </div>
+            <div class="day-split" id="daySplit">
+              <span id="selectedStudy">Estudio: 0 h</span>
+            </div>
+          </div>
+
+          <div class="notice-list" id="noticeList"></div>
+
+          <div class="event-form">
+            <label class="notes-label">Evento importante</label>
+            <button class="ghost-button event-open-button" id="openEventModalBtn" type="button">Añadir evento</button>
+          </div>
+
+          <div class="subjects-header">
+            <label class="notes-label">Asignaturas</label>
+          </div>
+          <form class="subject-form" id="subjectForm"></form>
+
+          <div class="focus-tracks" id="focusTracks" aria-label="Bloques extra de tiempo"></div>
+
+          <label class="notes-label" for="dayNotes">Notas del día</label>
+          <textarea id="dayNotes" rows="4" placeholder="Exámenes, temas avanzados, sensaciones, rendimiento..."></textarea>
+
+          <div class="rating-section">
+            <label class="notes-label">Valoración del día</label>
+            <div class="rating-widget">
+              <div class="stars" id="starsContainer" role="radiogroup" aria-label="Valoración del día del 1 al 5">
+                <button type="button" class="star" data-value="1" aria-label="1 estrella — Muy mal día">★</button>
+                <button type="button" class="star" data-value="2" aria-label="2 estrellas — Poco productivo">★</button>
+                <button type="button" class="star" data-value="3" aria-label="3 estrellas — Día normal">★</button>
+                <button type="button" class="star" data-value="4" aria-label="4 estrellas — Productivo">★</button>
+                <button type="button" class="star" data-value="5" aria-label="5 estrellas — Excelente">★</button>
+              </div>
+              <span class="rating-hint" id="ratingHint">Sin valorar</span>
+            </div>
+          </div>
+
+          <div class="panel-actions">
+            <span class="auto-save-indicator" id="autoSaveIndicator" aria-live="polite">✓ Guardado</span>
+            <button id="clearDayBtn" class="ghost-button" type="button">Vaciar día</button>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="settings-modal" id="settingsModal" hidden>
+      <div class="settings-backdrop" data-close-settings></div>
+      <section class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Configuración</p>
+            <h2 id="settingsTitle">Ajustes del calendario</h2>
+          </div>
+          <button class="icon-button" id="settingsCloseBtn" type="button" aria-label="Cerrar ajustes">×</button>
+        </div>
+
+        <div class="settings-grid">
+          <article class="settings-section">
+            <h3>Perfil</h3>
+            <form class="settings-form" id="profileForm">
+              <label>Título<input id="profileTitle" type="text" maxlength="70"></label>
+              <label>Color principal<input id="profileAccent" type="color"></label>
+              <p class="settings-help">Los niveles indican desde cuántas horas de estudio se intensifica el color de cada día.</p>
+              <div class="settings-two">
+                <label>Horas nivel 1<input id="profileLevel1" type="number" min="0.25" max="24" step="0.25"></label>
+                <label>Horas nivel 2<input id="profileLevel2" type="number" min="0.25" max="24" step="0.25"></label>
+                <label>Horas nivel 3<input id="profileLevel3" type="number" min="0.25" max="24" step="0.25"></label>
+                <label>Horas nivel 4<input id="profileLevel4" type="number" min="0.25" max="24" step="0.25"></label>
+              </div>
+              <button class="primary-button" type="submit">Guardar perfil</button>
+            </form>
+          </article>
+
+          <article class="settings-section">
+            <h3>Asignaturas</h3>
+            <div class="settings-list" id="subjectsSettingsList"></div>
+            <button class="ghost-button add-config-button" id="openSubjectModalBtn" type="button">Añadir asignatura</button>
+          </article>
+
+          <article class="settings-section">
+            <h3>Hobbies</h3>
+            <div class="settings-list" id="tracksSettingsList"></div>
+            <button class="ghost-button add-config-button" id="openTrackModalBtn" type="button">Añadir hobby</button>
+          </article>
+
+          <article class="settings-section danger-zone" style="border-color: rgba(220, 38, 38, 0.3); background: #fff5f5;">
+            <h3 style="color: #b91c1c;">Zona de peligro</h3>
+            <p class="settings-help" style="color: #7f1d1d;">Al restablecer se borrarán todas las asignaturas, notas y eventos guardados. Se pondrá todo a cero. <strong>Se recomienda exportar una copia de seguridad antes.</strong></p>
+            <div style="margin-top: 14px; text-align: left;">
+              <button class="ghost-button" id="resetDataBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.4); background: rgba(220, 38, 38, 0.05);">Restablecer todos los datos</button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="subjectEntryModal" hidden>
+      <div class="entry-backdrop" data-close-entry></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="subjectEntryTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Asignaturas</p>
+            <h2 id="subjectEntryTitle">Añadir asignatura</h2>
+          </div>
+          <button class="icon-button" id="subjectEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <form class="settings-form" id="subjectSettingsForm">
+          <input id="newSubjectName" type="text" maxlength="42" placeholder="Nombre de la asignatura" required>
+          <input id="newSubjectDescription" type="text" maxlength="90" placeholder="Descripción" required>
+          <input id="newSubjectColor" type="color" value="#0f766e" aria-label="Color de la asignatura">
+          <input id="newSubjectDifficulty" type="number" min="1" max="5" step="1" placeholder="Añadir dificultad de asignatura" aria-label="Dificultad de la asignatura">
+          <button class="primary-button" type="submit">Añadir asignatura</button>
+        </form>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="trackEntryModal" hidden>
+      <div class="entry-backdrop" data-close-entry></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="trackEntryTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Hobbies</p>
+            <h2 id="trackEntryTitle">Añadir hobby</h2>
+          </div>
+          <button class="icon-button" id="trackEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <form class="settings-form" id="trackSettingsForm">
+          <input id="newTrackName" type="text" maxlength="34" placeholder="Nombre del hobby" required>
+          <input id="newTrackDescription" type="text" maxlength="90" placeholder="Descripción" required>
+          <input id="newTrackColor" type="color" value="#d97706" aria-label="Color del hobby">
+          <button class="primary-button" type="submit">Añadir hobby</button>
+        </form>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="eventEntryModal" hidden>
+      <div class="entry-backdrop" data-close-event></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="eventEntryTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Calendario</p>
+            <h2 id="eventEntryTitle">Añadir evento</h2>
+          </div>
+          <button class="icon-button" id="eventEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <form class="settings-form event-entry-form" id="eventForm">
+          <select id="eventType" aria-label="Categoría del evento">
+            <option value="exam">Examen</option>
+            <option value="deadline">Entrega</option>
+            <option value="review">Repaso clave</option>
+            <option value="personal">Aviso</option>
+            <option value="project">Proyecto</option>
+            <option value="sport">Deporte</option>
+            <option value="community">Comunidad</option>
+            <option value="__new__">Otro</option>
+          </select>
+          <input id="eventText" type="text" maxlength="90" placeholder="Ej. Examen final" required>
+          <div class="custom-category-fields" id="customCategoryFields" hidden>
+            <input id="customCategoryName" type="text" maxlength="28" placeholder="Nombre de la categoría" aria-label="Nombre de la nueva categoría">
+            <label class="color-field" for="customCategoryColor">
+              <span>Color</span>
+              <input id="customCategoryColor" type="color" value="#0f766e" aria-label="Color de la nueva categoría">
+            </label>
+          </div>
+          <div class="event-subject-fields" id="eventSubjectFields" hidden>
+            <label for="eventSubject">Asignatura del examen</label>
+            <select id="eventSubject" aria-label="Asignatura del examen"></select>
+            <div class="event-new-subject-fields" id="eventNewSubjectFields" hidden>
+              <input id="eventNewSubjectName" type="text" maxlength="42" placeholder="Nombre de la asignatura">
+              <input id="eventNewSubjectDescription" type="text" maxlength="90" placeholder="Descripción breve">
+              <input id="eventNewSubjectColor" type="color" value="#0f766e" aria-label="Color de la asignatura">
+              <input id="eventNewSubjectDifficulty" type="number" min="1" max="5" step="1" placeholder="Dificultad 1-5">
+            </div>
+          </div>
+          <button class="primary-button" id="eventSubmitBtn" type="submit">Guardar evento</button>
+        </form>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="rangeEntryModal" hidden>
+      <div class="entry-backdrop" data-close-range></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="rangeEntryTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Calendario</p>
+            <h2 id="rangeEntryTitle">Precargar más meses</h2>
+          </div>
+          <button class="icon-button" id="rangeEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="settings-help" id="rangeEntryText">Has llegado al límite del rango precargado.</p>
+        <button class="primary-button" id="rangeEntryConfirmBtn" type="button">Precargar un año más</button>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="advancedStatsModal" hidden>
+      <div class="entry-backdrop" data-close-advanced-stats></div>
+      <section class="entry-dialog advanced-stats-dialog" role="dialog" aria-modal="true" aria-labelledby="advancedStatsTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Análisis</p>
+            <h2 id="advancedStatsTitle">Más estadísticas</h2>
+          </div>
+          <button class="icon-button" id="advancedStatsCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="advanced-stats-content" id="advancedStatsContent"></div>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
