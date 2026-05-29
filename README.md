@@ -1,6 +1,6 @@
-# Study Tracker
+# LOG CALENDAR
 
-Study Tracker es una pequeña app web local para registrar tiempo de estudio, actividades extra, notas, eventos y valoraciones diarias desde una vista de calendario.
+LOG CALENDAR es una pequeña app web local para registrar tiempo de estudio, actividades extra, notas, eventos y valoraciones diarias desde una vista de calendario.
 
 Es intencionalmente simple. No intenta reemplazar Notion, Google Calendar, un gestor de tareas ni un sistema completo de productividad. El objetivo es más acotado: llevar un registro rápido de lo que estudiaste, cuánto tiempo te tomó, qué exámenes o fechas límite se acercan y si tu balance de estudio actual tiene sentido.
 
