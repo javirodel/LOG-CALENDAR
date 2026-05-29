@@ -414,7 +414,7 @@ function normalizeTracks(source) {
   return list
     .map((track) => {
       const label = String(track.label || "").trim();
-      const key = slugifyCategory(track.key || label) || "hobby";
+      const key = track.key ? String(track.key) : (slugifyCategory(label) || "hobby");
       return {
         key,
         label,
@@ -1956,6 +1956,27 @@ function importData(event) {
       if (parsed.data && Array.isArray(parsed.tracks) && !Array.isArray(importedState.settings?.tracks)) {
         importedState.settings = importedState.settings || {};
         importedState.settings.tracks = parsed.tracks;
+      }
+
+      // Migrate static events from old exports into dynamic customEvents
+      if (parsed.events && typeof parsed.events === "object") {
+        for (const [date, eventsArray] of Object.entries(parsed.events)) {
+          if (Array.isArray(eventsArray)) {
+            importedState.days[date] = importedState.days[date] || {};
+            importedState.days[date].customEvents = importedState.days[date].customEvents || [];
+            
+            for (const ev of eventsArray) {
+              const exists = importedState.days[date].customEvents.some(e => e.text === ev.text && e.type === ev.type);
+              if (!exists) {
+                importedState.days[date].customEvents.push({
+                  type: ev.type,
+                  text: ev.text,
+                  createdAt: new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
       }
 
       state = normalizeState(importedState);
