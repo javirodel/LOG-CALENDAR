@@ -1,3 +1,4 @@
+const APP_VERSION = "1.2.0";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -45,6 +46,31 @@ const RATING_LABELS = [
 ];
 
 let state = loadState();
+
+// Seed mock data if checklistTasks is empty (for demo purposes)
+if (!state.checklistTasks || state.checklistTasks.length === 0) {
+  if (!state.settings.subjects || state.settings.subjects.length === 0) {
+    state.settings.subjects = [
+      { name: "Matemáticas", description: "Álgebra y cálculo lineal", color: "#0f766e", defaultDifficulty: 4 },
+      { name: "Programación", description: "Algoritmos y estructuras de datos", color: "#2563eb", defaultDifficulty: 3 },
+      { name: "Diseño Web", description: "HTML, CSS y UX/UI", color: "#7c3aed", defaultDifficulty: 2 }
+    ];
+    state.settings.subjectDifficulty = {
+      "Matemáticas": 4,
+      "Programación": 3,
+      "Diseño Web": 2
+    };
+  }
+  if (!state.settings.tracks || state.settings.tracks.length === 0) {
+    state.settings.tracks = [
+      { key: "deporte", label: "Deporte", color: "#0284c7" },
+      { key: "lectura", label: "Lectura", color: "#d97706" }
+    ];
+  }
+  state.checklistTasks = getMockTasks();
+  saveState();
+}
+
 syncConfigFromState();
 let selectedDate = getInitialSelectedDate();
 let visibleMonth = getInitialVisibleMonth();
@@ -53,6 +79,11 @@ let statsRenderTimer = null;
 let pendingRangeExtension = "next";
 let latestStats = null;
 let editingEventTarget = null;
+let editingSubjectTarget = null;
+let editingTrackTarget = null;
+let editingTaskTarget = null;
+let selectedPreviewDateFilter = null;
+let previewVisibleMonth = new Date();
 
 const eventLegendEl = document.getElementById("eventLegend");
 const monthsEl = document.getElementById("months");
@@ -147,6 +178,80 @@ const ratingHintEl = document.getElementById("ratingHint");
 const autoSaveEl = document.getElementById("autoSaveIndicator");
 const resetDataBtn = document.getElementById("resetDataBtn");
 
+// Checklist DOM selectors
+const tabCalendar = document.getElementById("tabCalendar");
+const tabChecklist = document.getElementById("tabChecklist");
+const paneCalendar = document.getElementById("paneCalendar");
+const paneChecklistSelectedDay = document.getElementById("paneChecklistSelectedDay");
+const paneCalendarDayDetails = document.getElementById("paneCalendarDayDetails");
+const paneChecklistMain = document.getElementById("paneChecklistMain");
+const checklistSelectedWeekdayEl = document.getElementById("checklistSelectedWeekday");
+const checklistSelectedDateEl = document.getElementById("checklistSelectedDate");
+const checklistAddFormEl = document.getElementById("checklistAddForm");
+const checklistTaskTextEl = document.getElementById("checklistTaskText");
+const checklistTaskLinkEl = document.getElementById("checklistTaskLink");
+const checklistTaskDueDateEl = document.getElementById("checklistTaskDueDate");
+const checklistTaskDifficultyEl = document.getElementById("checklistTaskDifficulty");
+const checklistDayTasksListEl = document.getElementById("checklistDayTasksList");
+const workspaceEl = document.querySelector(".workspace");
+const addNewTaskBtn = document.getElementById("addNewTaskBtn");
+const taskEntryModalEl = document.getElementById("taskEntryModal");
+const taskEntryCloseBtn = document.getElementById("taskEntryCloseBtn");
+const taskEntryTitleEl = document.getElementById("taskEntryTitle");
+const taskFormEl = document.getElementById("taskForm");
+const taskTextEl = document.getElementById("taskText");
+const taskLinkEl = document.getElementById("taskLink");
+const taskDueDateEl = document.getElementById("taskDueDate");
+const taskDifficultyEl = document.getElementById("taskDifficulty");
+const taskSubmitBtn = document.getElementById("taskSubmitBtn");
+const checklistListEl = document.getElementById("checklistList");
+const taskSearchInputEl = document.getElementById("taskSearchInput");
+const filterSubjectEl = document.getElementById("filterSubject");
+const filterStatusEl = document.getElementById("filterStatus");
+const filterSortEl = document.getElementById("filterSort");
+const totalTasksCountEl = document.getElementById("totalTasksCount");
+const pendingTasksCountEl = document.getElementById("pendingTasksCount");
+const completedTasksCountEl = document.getElementById("completedTasksCount");
+const overdueTasksCountEl = document.getElementById("overdueTasksCount");
+const completedPercentageEl = document.getElementById("completedPercentage");
+const taskStatsChartEl = document.getElementById("taskStatsChart");
+const dayTasksListEl = document.getElementById("dayTasksList");
+const addDayTaskBtn = document.getElementById("addDayTaskBtn");
+
+// Nuevos selectores del mini-calendario y filtros superpuestos
+const checklistFiltersDropdown = document.getElementById("checklistFiltersDropdown");
+const calendarPreviewGrid = document.getElementById("calendarPreviewGrid");
+const dayFilterIndicator = document.getElementById("dayFilterIndicator");
+const clearDayFilterBtn = document.getElementById("clearDayFilterBtn");
+const prevPreviewMonthBtn = document.getElementById("prevPreviewMonthBtn");
+const nextPreviewMonthBtn = document.getElementById("nextPreviewMonthBtn");
+
+// Selectores para la descripción y el modal de detalles
+const settingsTitleEl = document.getElementById("settingsTitle");
+const checklistTaskDescriptionEl = document.getElementById("checklistTaskDescription");
+const taskDescriptionEl = document.getElementById("taskDescription");
+const settingsVersionIndicatorEl = document.getElementById("settingsVersionIndicator");
+
+const taskDetailsModalEl = document.getElementById("taskDetailsModal");
+const taskDetailsCloseBtn = document.getElementById("taskDetailsCloseBtn");
+const taskDetailsTitleEl = document.getElementById("taskDetailsTitle");
+const taskDetailsDescEl = document.getElementById("taskDetailsDesc");
+const taskDetailsLinkEl = document.getElementById("taskDetailsLink");
+const taskDetailsDifficultyEl = document.getElementById("taskDetailsDifficulty");
+const taskDetailsDueDateEl = document.getElementById("taskDetailsDueDate");
+const taskDetailsStatusTextEl = document.getElementById("taskDetailsStatusText");
+const taskDetailsCheckboxEl = document.getElementById("taskDetailsCheckbox");
+const taskDetailsDeleteBtn = document.getElementById("taskDetailsDeleteBtn");
+const taskDetailsEditBtn = document.getElementById("taskDetailsEditBtn");
+const taskDetailsOkBtn = document.getElementById("taskDetailsOkBtn");
+
+let currentViewingTaskId = null;
+
+// Mostrar versión en la esquina inferior derecha de los ajustes
+if (settingsVersionIndicatorEl) {
+  settingsVersionIndicatorEl.textContent = `LOG of growth • Versión ${APP_VERSION}`;
+}
+
 renderEventTypeOptions();
 renderEventSubjectOptions();
 updateEventEntryFields();
@@ -158,6 +263,72 @@ renderSelectedDay();
 renderStats();
 renderSettings();
 renderEventLegend();
+updateDynamicLabels();
+
+// Eventos del modal de detalles
+if (taskDetailsCloseBtn) taskDetailsCloseBtn.addEventListener("click", closeTaskDetailsModal);
+if (taskDetailsOkBtn) taskDetailsOkBtn.addEventListener("click", closeTaskDetailsModal);
+if (taskDetailsModalEl) {
+  taskDetailsModalEl.addEventListener("click", (event) => {
+    if (event.target.hasAttribute("data-close-task-details")) closeTaskDetailsModal();
+  });
+}
+if (taskDetailsCheckboxEl) {
+  taskDetailsCheckboxEl.addEventListener("change", () => {
+    if (currentViewingTaskId) {
+      toggleTaskCompletion(currentViewingTaskId);
+      const updatedTask = state.checklistTasks.find(t => t.id === currentViewingTaskId);
+      if (updatedTask) {
+        taskDetailsCheckboxEl.checked = updatedTask.completed;
+        taskDetailsStatusTextEl.textContent = updatedTask.completed ? "Completada" : "Pendiente";
+        taskDetailsStatusTextEl.style.color = updatedTask.completed ? "#16a34a" : "var(--muted)";
+      }
+    }
+  });
+}
+if (taskDetailsDeleteBtn) {
+  taskDetailsDeleteBtn.addEventListener("click", () => {
+    if (currentViewingTaskId) {
+      const taskId = currentViewingTaskId;
+      deleteTask(taskId);
+      if (!state.checklistTasks.some(t => t.id === taskId)) {
+        closeTaskDetailsModal();
+      }
+    }
+  });
+}
+if (taskDetailsEditBtn) {
+  taskDetailsEditBtn.addEventListener("click", () => {
+    if (currentViewingTaskId) {
+      const task = state.checklistTasks.find(t => t.id === currentViewingTaskId);
+      if (task) {
+        closeTaskDetailsModal();
+        openTaskEntry(task);
+      }
+    }
+  });
+}
+
+if (typeof renderChecklistFilters === "function") {
+  renderChecklistFilters();
+}
+if (typeof refreshChecklistAll === "function") {
+  refreshChecklistAll();
+}
+
+const subjectsHeaderLabelEl = document.getElementById("subjectsHeaderLabel");
+const settingsSubjectsTitleEl = document.getElementById("settingsSubjectsTitle");
+const settingsTracksTitleEl = document.getElementById("settingsTracksTitle");
+
+if (subjectsHeaderLabelEl) {
+  subjectsHeaderLabelEl.addEventListener("dblclick", renameSubjectsPrompt);
+}
+if (settingsSubjectsTitleEl) {
+  settingsSubjectsTitleEl.addEventListener("dblclick", renameSubjectsPrompt);
+}
+if (settingsTracksTitleEl) {
+  settingsTracksTitleEl.addEventListener("dblclick", renameTracksPrompt);
+}
 
 clearDayBtn.addEventListener("click", clearSelectedDay);
 exportBtn.addEventListener("click", exportData);
@@ -196,13 +367,93 @@ rangeEntryModalEl.addEventListener("click", (event) => {
   if (event.target.hasAttribute("data-close-range")) closeRangeEntry();
 });
 eventFormEl.addEventListener("submit", addCustomEvent);
-eventTypeEl.addEventListener("change", updateEventEntryFields);
+eventTypeEl.addEventListener("change", () => {
+  if (eventTypeEl.value === "exam" && eventSubjectEl.value === "") {
+    if (subjects.length) {
+      eventSubjectEl.value = subjects[0].name;
+    } else {
+      eventSubjectEl.value = "__new_subject__";
+    }
+  }
+  updateEventEntryFields();
+});
 eventSubjectEl.addEventListener("change", updateEventEntryFields);
 profileFormEl.addEventListener("submit", saveProfileSettings);
 subjectSettingsFormEl.addEventListener("submit", addSubjectFromSettings);
 trackSettingsFormEl.addEventListener("submit", addTrackFromSettings);
 subjectsSettingsListEl.addEventListener("click", handleSubjectSettingsClick);
 tracksSettingsListEl.addEventListener("click", handleTrackSettingsClick);
+
+// Checklist View and Form Listeners
+if (tabCalendar && tabChecklist) {
+  tabCalendar.addEventListener("click", () => switchView("calendar"));
+  tabChecklist.addEventListener("click", () => switchView("checklist"));
+}
+if (addNewTaskBtn) addNewTaskBtn.addEventListener("click", () => openTaskEntry());
+if (addDayTaskBtn) addDayTaskBtn.addEventListener("click", () => openTaskEntry(null, selectedDate));
+if (taskEntryCloseBtn) taskEntryCloseBtn.addEventListener("click", closeTaskEntry);
+if (taskEntryModalEl) {
+  taskEntryModalEl.addEventListener("click", (event) => {
+    if (event.target.hasAttribute("data-close-task")) closeTaskEntry();
+  });
+}
+if (taskFormEl) taskFormEl.addEventListener("submit", saveTask);
+if (taskSearchInputEl) taskSearchInputEl.addEventListener("input", renderChecklist);
+if (filterSubjectEl) filterSubjectEl.addEventListener("change", renderChecklist);
+if (filterStatusEl) filterStatusEl.addEventListener("change", renderChecklist);
+if (filterSortEl) filterSortEl.addEventListener("change", renderChecklist);
+if (checklistListEl) checklistListEl.addEventListener("click", handleChecklistClick);
+if (dayTasksListEl) dayTasksListEl.addEventListener("click", handleDayTasksClick);
+if (checklistAddFormEl) checklistAddFormEl.addEventListener("submit", saveChecklistInPageTask);
+if (checklistDayTasksListEl) checklistDayTasksListEl.addEventListener("click", handleDayTasksClick);
+
+// Control de apertura del panel de filtros superpuesto y clicks fuera
+if (taskSearchInputEl && checklistFiltersDropdown) {
+  taskSearchInputEl.addEventListener("focus", () => {
+    checklistFiltersDropdown.style.display = "flex";
+  });
+  const closeFiltersBtn = document.getElementById("closeFiltersBtn");
+  if (closeFiltersBtn) {
+    closeFiltersBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      checklistFiltersDropdown.style.display = "none";
+      renderChecklist();
+    });
+  }
+  if (typeof document.addEventListener === "function") {
+    document.addEventListener("click", (event) => {
+      const isClickInside = taskSearchInputEl.contains(event.target) || checklistFiltersDropdown.contains(event.target);
+      if (!isClickInside) {
+        checklistFiltersDropdown.style.display = "none";
+      }
+    });
+  }
+}
+
+// Botón para limpiar filtro de día
+if (clearDayFilterBtn) {
+  clearDayFilterBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    selectedPreviewDateFilter = null;
+    renderChecklistCalendarPreview();
+    renderChecklist();
+  });
+}
+
+// Botones de navegación del mini-calendario
+if (prevPreviewMonthBtn) {
+  prevPreviewMonthBtn.addEventListener("click", () => {
+    previewVisibleMonth = addMonths(previewVisibleMonth, -1);
+    renderChecklistCalendarPreview();
+  });
+}
+if (nextPreviewMonthBtn) {
+  nextPreviewMonthBtn.addEventListener("click", () => {
+    previewVisibleMonth = addMonths(previewVisibleMonth, 1);
+    renderChecklistCalendarPreview();
+  });
+}
+
 
 subjectFormEl.addEventListener("input", (event) => {
   const target = event.target;
@@ -258,7 +509,7 @@ starsContainerEl.addEventListener("mouseleave", () => {
 
 function onDayDataUpdated() {
   selectedTotalEl.textContent = formatNumber(getDayTotal(selectedDate));
-  selectedStudyEl.textContent = `Estudio: ${formatNumber(getStudyTotal(selectedDate))} h`;
+  selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatNumber(getStudyTotal(selectedDate))} h`;
   renderDaySplit();
   saveState();
   flashAutoSave();
@@ -283,6 +534,147 @@ function flashAutoSave() {
   flashAutoSave._t = setTimeout(() => autoSaveEl.classList.remove("visible"), 2000);
 }
 
+function renameSubjectsPrompt() {
+  const oldPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+  const oldSingular = state.settings.subjectsLabelSingular || "Asignatura";
+  const newPlural = prompt(`Introduce el nombre en PLURAL para reemplazar "${oldPlural}" (ej. Proyectos, Tareas):`, oldPlural);
+  if (!newPlural || !newPlural.trim()) return;
+  const newSingular = prompt(`Introduce el nombre en SINGULAR para reemplazar "${oldSingular}" (ej. Proyecto, Tarea):`, oldSingular);
+  if (!newSingular || !newSingular.trim()) return;
+
+  state.settings.subjectsLabelPlural = newPlural.trim();
+  state.settings.subjectsLabelSingular = newSingular.trim();
+  
+  saveState();
+  syncConfigFromState();
+  updateDynamicLabels();
+  renderSettings();
+  renderSelectedDay();
+  renderStats();
+  showToast("Nombres actualizados.");
+}
+
+function renameTracksPrompt() {
+  const oldPlural = state.settings.hobbiesLabelPlural || "Hobbies";
+  const oldSingular = state.settings.hobbiesLabelSingular || "Hobby";
+  const newPlural = prompt(`Introduce el nombre de Hobbies en PLURAL para reemplazar "${oldPlural}" (ej. Pasatiempos, Actividades):`, oldPlural);
+  if (!newPlural || !newPlural.trim()) return;
+  const newSingular = prompt(`Introduce el nombre de Hobbies en SINGULAR para reemplazar "${oldSingular}" (ej. Pasatiempo, Actividad):`, oldSingular);
+  if (!newSingular || !newSingular.trim()) return;
+
+  state.settings.hobbiesLabelPlural = newPlural.trim();
+  state.settings.hobbiesLabelSingular = newSingular.trim();
+
+  saveState();
+  syncConfigFromState();
+  updateDynamicLabels();
+  renderSettings();
+  renderSelectedDay();
+  renderStats();
+  showToast("Nombres actualizados.");
+}
+
+function updateDynamicLabels() {
+  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+  const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
+  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
+  const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
+
+  // Main Page elements
+  const studyFocusLabelEl = document.getElementById("studyFocusLabel");
+  if (studyFocusLabelEl) studyFocusLabelEl.textContent = `foco en ${subPlural.toLowerCase()}`;
+  
+  const hobbyFocusLabelEl = document.getElementById("hobbyFocusLabel");
+  if (hobbyFocusLabelEl) hobbyFocusLabelEl.textContent = `foco en ${hobPlural.toLowerCase()}`;
+
+  const topSubjectLabelEl = document.getElementById("topSubjectLabel");
+  if (topSubjectLabelEl) topSubjectLabelEl.textContent = `${subSingular.toLowerCase()} dominante`;
+
+  const topTrackLabelEl = document.getElementById("topTrackLabel");
+  if (topTrackLabelEl) topTrackLabelEl.textContent = `${hobSingular.toLowerCase()} dominante`;
+
+  const subjectChartTitleEl = document.getElementById("subjectChartTitle");
+  if (subjectChartTitleEl) subjectChartTitleEl.textContent = `Horas por ${subSingular.toLowerCase()}`;
+
+  const subjectsHeaderLabelEl = document.getElementById("subjectsHeaderLabel");
+  if (subjectsHeaderLabelEl) {
+    subjectsHeaderLabelEl.textContent = subPlural;
+    subjectsHeaderLabelEl.title = `Doble click para renombrar las ${subPlural.toLowerCase()}`;
+  }
+
+  const streakLabelEl = document.getElementById("streakLabel");
+  if (streakLabelEl) {
+    streakLabelEl.textContent = `racha de días seguidos con ${subPlural.toLowerCase()}`;
+  }
+
+  // Settings elements
+  const settingsSubjectsTitleEl = document.getElementById("settingsSubjectsTitle");
+  if (settingsSubjectsTitleEl) {
+    settingsSubjectsTitleEl.textContent = subPlural;
+    settingsSubjectsTitleEl.title = `Doble click para renombrar las ${subPlural.toLowerCase()}`;
+  }
+
+  const settingsTracksTitleEl = document.getElementById("settingsTracksTitle");
+  if (settingsTracksTitleEl) {
+    settingsTracksTitleEl.textContent = hobPlural;
+    settingsTracksTitleEl.title = `Doble click para renombrar los ${hobPlural.toLowerCase()}`;
+  }
+
+  const openSubjectModalBtnEl = document.getElementById("openSubjectModalBtn");
+  if (openSubjectModalBtnEl) openSubjectModalBtnEl.textContent = `Añadir ${subSingular.toLowerCase()}`;
+
+  const openTrackModalBtnEl = document.getElementById("openTrackModalBtn");
+  if (openTrackModalBtnEl) openTrackModalBtnEl.textContent = `Añadir ${hobSingular.toLowerCase()}`;
+
+  // Subject Entry Modal
+  const subjectEntryEyebrowEl = document.getElementById("subjectEntryEyebrow");
+  if (subjectEntryEyebrowEl) subjectEntryEyebrowEl.textContent = subPlural;
+
+  const subjectEntryTitleEl = document.getElementById("subjectEntryTitle");
+  if (subjectEntryTitleEl) {
+    const isEditing = subjectEntryTitleEl.textContent.startsWith("Editar");
+    subjectEntryTitleEl.textContent = isEditing ? `Editar ${subSingular.toLowerCase()}` : `Añadir ${subSingular.toLowerCase()}`;
+  }
+
+  const newSubjectNameEl = document.getElementById("newSubjectName");
+  if (newSubjectNameEl) newSubjectNameEl.placeholder = `Nombre de la ${subSingular.toLowerCase()}`;
+
+  const newSubjectDifficultyEl = document.getElementById("newSubjectDifficulty");
+  if (newSubjectDifficultyEl) {
+    newSubjectDifficultyEl.placeholder = `Añadir dificultad de la ${subSingular.toLowerCase()}`;
+    newSubjectDifficultyEl.setAttribute("aria-label", `Dificultad de la ${subSingular.toLowerCase()}`);
+  }
+
+  const subjectSettingsFormSubmitBtn = document.querySelector('#subjectSettingsForm button[type="submit"]');
+  if (subjectSettingsFormSubmitBtn) subjectSettingsFormSubmitBtn.textContent = `Añadir ${subSingular.toLowerCase()}`;
+
+  // Track Entry Modal
+  const trackEntryEyebrowEl = document.getElementById("trackEntryEyebrow");
+  if (trackEntryEyebrowEl) trackEntryEyebrowEl.textContent = hobPlural;
+
+  const trackEntryTitleEl = document.getElementById("trackEntryTitle");
+  if (trackEntryTitleEl) {
+    const isEditing = trackEntryTitleEl.textContent.startsWith("Editar");
+    trackEntryTitleEl.textContent = isEditing ? `Editar ${hobSingular.toLowerCase()}` : `Añadir ${hobSingular.toLowerCase()}`;
+  }
+
+  const newTrackNameEl = document.getElementById("newTrackName");
+  if (newTrackNameEl) newTrackNameEl.placeholder = `Nombre del ${hobSingular.toLowerCase()}`;
+
+  const trackSettingsFormSubmitBtn = document.querySelector('#trackSettingsForm button[type="submit"]');
+  if (trackSettingsFormSubmitBtn) trackSettingsFormSubmitBtn.textContent = `Añadir ${hobSingular.toLowerCase()}`;
+
+  // Event Form elements
+  const eventSubjectLabelEl = document.getElementById("eventSubjectLabel");
+  if (eventSubjectLabelEl) eventSubjectLabelEl.textContent = `${subSingular} del evento`;
+
+  const eventSubjectEl = document.getElementById("eventSubject");
+  if (eventSubjectEl) eventSubjectEl.setAttribute("aria-label", `${subSingular} del evento`);
+
+  const eventNewSubjectNameEl = document.getElementById("eventNewSubjectName");
+  if (eventNewSubjectNameEl) eventNewSubjectNameEl.placeholder = `Nombre de la ${subSingular.toLowerCase()}`;
+}
+
 function loadState() {
   const fallback = createFallbackState();
   try {
@@ -298,6 +690,10 @@ function loadState() {
 function createFallbackState() {
   return {
     settings: {
+      subjectsLabelPlural: "Asignaturas",
+      subjectsLabelSingular: "Asignatura",
+      hobbiesLabelPlural: "Hobbies",
+      hobbiesLabelSingular: "Hobby",
       subjectDifficulty: getDefaultDifficultyMap(),
       profile: { ...DEFAULT_PROFILE },
       calendarRange: { start: INITIAL_START_DATE, end: INITIAL_END_DATE },
@@ -306,7 +702,8 @@ function createFallbackState() {
     },
     days: {},
     dismissedEvents: {},
-    customEventCategories: {}
+    customEventCategories: {},
+    checklistTasks: []
   };
 }
 
@@ -322,6 +719,10 @@ function normalizeState(candidate) {
     normalized.settings = {
       ...normalized.settings,
       ...candidate.settings,
+      subjectsLabelPlural: typeof candidate.settings.subjectsLabelPlural === "string" && candidate.settings.subjectsLabelPlural.trim() ? candidate.settings.subjectsLabelPlural.trim() : "Asignaturas",
+      subjectsLabelSingular: typeof candidate.settings.subjectsLabelSingular === "string" && candidate.settings.subjectsLabelSingular.trim() ? candidate.settings.subjectsLabelSingular.trim() : "Asignatura",
+      hobbiesLabelPlural: typeof candidate.settings.hobbiesLabelPlural === "string" && candidate.settings.hobbiesLabelPlural.trim() ? candidate.settings.hobbiesLabelPlural.trim() : "Hobbies",
+      hobbiesLabelSingular: typeof candidate.settings.hobbiesLabelSingular === "string" && candidate.settings.hobbiesLabelSingular.trim() ? candidate.settings.hobbiesLabelSingular.trim() : "Hobby",
       subjectDifficulty: {
         ...normalized.settings.subjectDifficulty,
         ...(candidate.settings.subjectDifficulty || {})
@@ -341,7 +742,31 @@ function normalizeState(candidate) {
     normalized.customEventCategories = candidate.customEventCategories;
   }
 
+  if (Array.isArray(candidate.checklistTasks)) {
+    normalized.checklistTasks = candidate.checklistTasks.map(normalizeTask).filter(Boolean);
+  } else if (candidate.settings && Array.isArray(candidate.settings.checklistTasks)) {
+    normalized.checklistTasks = candidate.settings.checklistTasks.map(normalizeTask).filter(Boolean);
+  } else {
+    normalized.checklistTasks = [];
+  }
+
   return normalized;
+}
+
+function normalizeTask(task) {
+  if (!task || typeof task !== "object") return null;
+  return {
+    id: task.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    text: String(task.text || "").trim(),
+    description: String(task.description || "").trim(),
+    completed: Boolean(task.completed),
+    linkType: typeof task.linkType === "string" ? task.linkType : "",
+    linkKey: typeof task.linkKey === "string" ? task.linkKey : "",
+    dueDate: typeof task.dueDate === "string" ? task.dueDate : "",
+    difficulty: clampDifficulty(task.difficulty ?? 3),
+    createdAt: typeof task.createdAt === "string" ? task.createdAt : new Date().toISOString(),
+    completedAt: typeof task.completedAt === "string" ? task.completedAt : ""
+  };
 }
 
 function getDefaultDifficultyMap() {
@@ -359,6 +784,11 @@ function syncConfigFromState() {
   state.settings.tracks = EXTRA_TRACKS;
   state.settings.profile = normalizeProfile(state.settings.profile);
   state.settings.calendarRange = normalizeCalendarRange(state.settings.calendarRange);
+
+  if (!state.settings.subjectsLabelPlural) state.settings.subjectsLabelPlural = "Asignaturas";
+  if (!state.settings.subjectsLabelSingular) state.settings.subjectsLabelSingular = "Asignatura";
+  if (!state.settings.hobbiesLabelPlural) state.settings.hobbiesLabelPlural = "Hobbies";
+  if (!state.settings.hobbiesLabelSingular) state.settings.hobbiesLabelSingular = "Hobby";
 
   for (const subject of subjects) {
     if (typeof state.settings.subjectDifficulty[subject.name] !== "number") {
@@ -481,7 +911,14 @@ function renderEventTypeOptions(selectedValue = eventTypeEl.value) {
 }
 
 function renderEventSubjectOptions(selectedValue = eventSubjectEl.value) {
+  const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
   eventSubjectEl.innerHTML = "";
+
+  const noneOption = document.createElement("option");
+  noneOption.value = "";
+  noneOption.textContent = `Ninguno (sin ${subSingular.toLowerCase()})`;
+  eventSubjectEl.appendChild(noneOption);
+
   for (const subject of subjects) {
     const option = document.createElement("option");
     option.value = subject.name;
@@ -491,16 +928,32 @@ function renderEventSubjectOptions(selectedValue = eventSubjectEl.value) {
 
   const createOption = document.createElement("option");
   createOption.value = "__new_subject__";
-  createOption.textContent = "Crear nueva asignatura";
+  createOption.textContent = `Crear nueva ${subSingular.toLowerCase()}`;
   eventSubjectEl.appendChild(createOption);
 
-  if (selectedValue && Array.from(eventSubjectEl.options).some((option) => option.value === selectedValue)) {
+  if (selectedValue !== undefined && Array.from(eventSubjectEl.options).some((option) => option.value === selectedValue)) {
     eventSubjectEl.value = selectedValue;
-  } else if (subjects.length) {
-    eventSubjectEl.value = subjects[0].name;
   } else {
-    eventSubjectEl.value = "__new_subject__";
+    const isExam = eventTypeEl.value === "exam";
+    if (isExam && subjects.length) {
+      eventSubjectEl.value = subjects[0].name;
+    } else {
+      eventSubjectEl.value = "";
+    }
   }
+}
+
+function toggleEventSubjectFields() {
+  const isExam = eventTypeEl.value === "exam";
+  const isCreatingSubject = eventSubjectEl.value === "__new_subject__";
+  
+  eventSubjectFieldsEl.hidden = false;
+  eventSubjectEl.required = isExam;
+  
+  eventNewSubjectFieldsEl.hidden = !isCreatingSubject;
+  eventNewSubjectNameEl.required = isCreatingSubject;
+  eventNewSubjectDescriptionEl.required = isCreatingSubject;
+  eventNewSubjectDifficultyEl.required = false;
 }
 
 function updateEventEntryFields() {
@@ -512,17 +965,6 @@ function toggleCustomCategoryFields() {
   const isCreatingCategory = eventTypeEl.value === NEW_CATEGORY_VALUE;
   customCategoryFieldsEl.hidden = !isCreatingCategory;
   customCategoryNameEl.required = isCreatingCategory;
-}
-
-function toggleEventSubjectFields() {
-  const isExam = eventTypeEl.value === "exam";
-  const isCreatingSubject = eventSubjectEl.value === "__new_subject__";
-  eventSubjectFieldsEl.hidden = !isExam;
-  eventSubjectEl.required = isExam;
-  eventNewSubjectFieldsEl.hidden = !isExam || !isCreatingSubject;
-  eventNewSubjectNameEl.required = isExam && isCreatingSubject;
-  eventNewSubjectDescriptionEl.required = isExam && isCreatingSubject;
-  eventNewSubjectDifficultyEl.required = false;
 }
 
 function getCustomEventCategories() {
@@ -782,11 +1224,13 @@ function getDayCellMarkup(key) {
     .map((track) => `<span class="track-chip" style="--chip-color:${track.color}">${escapeHtml(track.shortLabel)} ${formatNumber(day.extra[track.key])}h</span>`)
     .join("");
   const noteDot = day.notes.trim() ? `<span class="note-dot" title="Tiene nota"></span>` : "";
+  const hasPendingTasks = state.checklistTasks?.some(t => t.dueDate === key && !t.completed);
+  const taskDot = hasPendingTasks ? `<span class="task-dot" title="Tareas pendientes para este día"></span>` : "";
 
   return `
     <span class="day-topline">
       <span class="day-number">${date.getDate()}</span>
-      ${noteDot}
+      ${noteDot}${taskDot}
     </span>
     <span class="day-body">
       <span class="day-hours">${formatNumber(total)} h</span>
@@ -806,7 +1250,7 @@ function renderSelectedDay() {
   selectedWeekdayEl.textContent = formatWeekday(selectedDate);
   selectedDateEl.textContent = formatDateLong(selectedDate);
   selectedTotalEl.textContent = formatNumber(getDayTotal(selectedDate));
-  selectedStudyEl.textContent = `Estudio: ${formatNumber(getStudyTotal(selectedDate))} h`;
+  selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatNumber(getStudyTotal(selectedDate))} h`;
   renderDaySplit();
   dayNotesEl.value = day.notes || "";
   renderTrackInputs();
@@ -818,6 +1262,10 @@ function renderSelectedDay() {
   }
 
   renderNotices();
+  renderDayTasks();
+  if (typeof renderChecklistSelectedDay === "function") {
+    renderChecklistSelectedDay();
+  }
 }
 
 function renderDaySplit() {
@@ -855,17 +1303,6 @@ function renderNotices() {
     ...day.customEvents.map((event, index) => ({ ...event, source: "custom", index }))
   ];
 
-  for (const track of EXTRA_TRACKS) {
-    if (day.extra[track.key] > 0) {
-      list.push({ type: "track", text: `${formatNumber(day.extra[track.key])} h en ${track.label}`, source: "auto", color: track.color, label: track.label });
-    }
-  }
-
-  const date = parseKey(selectedDate);
-  if ([0, 6].includes(date.getDay())) {
-    list.push({ type: "weekend", text: "Fin de semana.", source: "auto" });
-  }
-
   if (!list.length) {
     const clean = document.createElement("div");
     clean.className = "notice";
@@ -884,7 +1321,7 @@ function renderNotices() {
       item.style.color = category.color;
     }
     const text = document.createElement("span");
-    const subjectSuffix = ev.type === "exam" && ev.subjectName ? ` · ${ev.subjectName}` : "";
+    const subjectSuffix = ev.subjectName ? ` · ${ev.subjectName}` : "";
     text.textContent = `${category.label}: ${ev.text}${subjectSuffix}`;
     item.appendChild(text);
     if (ev.source === "static" || ev.source === "custom") {
@@ -964,7 +1401,7 @@ function addCustomEvent(event) {
   const payload = {
     type,
     text,
-    ...(type === "exam" ? { subjectName } : {}),
+    ...(subjectName ? { subjectName } : {}),
     createdAt: new Date().toISOString()
   };
 
@@ -1014,7 +1451,13 @@ function resolveEventTypeForSubmit() {
 }
 
 function resolveEventSubjectForSubmit(type) {
-  if (type !== "exam") return "";
+  if (type !== "exam" && eventSubjectEl.value === "") return "";
+
+  if (eventSubjectEl.value === "") {
+    showToast(`Para un examen, debes elegir una ${state.settings.subjectsLabelSingular.toLowerCase()}.`);
+    eventSubjectEl.focus();
+    return "";
+  }
 
   if (eventSubjectEl.value !== "__new_subject__") {
     return eventSubjectEl.value;
@@ -1023,7 +1466,7 @@ function resolveEventSubjectForSubmit(type) {
   const name = eventNewSubjectNameEl.value.trim();
   const description = eventNewSubjectDescriptionEl.value.trim();
   if (!name || !description) {
-    showToast("Para un examen, crea o elige una asignatura.");
+    showToast(`Para crear una ${state.settings.subjectsLabelSingular.toLowerCase()}, escribe su nombre y descripción.`);
     eventNewSubjectNameEl.focus();
     return "";
   }
@@ -1045,6 +1488,7 @@ function resolveEventSubjectForSubmit(type) {
   renderEventSubjectOptions(name);
   renderSubjectInputs();
   renderSettings();
+  updateDynamicLabels();
   return name;
 }
 
@@ -1355,7 +1799,7 @@ function renderBalanceChart(totalStudy, totalsByTrack, totalHours) {
   balanceChartEl.innerHTML = "";
 
   const parts = [
-    { label: "Estudio", value: totalStudy, color: state.settings.profile.accentColor },
+    { label: state.settings.subjectsLabelPlural || "Estudio", value: totalStudy, color: state.settings.profile.accentColor },
     ...EXTRA_TRACKS.map((track) => ({ label: track.label, value: totalsByTrack[track.key] || 0, color: track.color }))
   ];
 
@@ -1374,9 +1818,14 @@ function renderBalanceChart(totalStudy, totalsByTrack, totalHours) {
 }
 
 function openAdvancedStats() {
-  if (!latestStats) renderStats();
-  renderAdvancedStats();
-  advancedStatsModalEl.hidden = false;
+  try {
+    if (!latestStats) renderStats();
+    renderAdvancedStats();
+    advancedStatsModalEl.hidden = false;
+  } catch (err) {
+    console.error("Error al abrir estadísticas avanzadas:", err);
+    showToast("Error al abrir las estadísticas avanzadas.");
+  }
 }
 
 function closeAdvancedStats() {
@@ -1386,6 +1835,11 @@ function closeAdvancedStats() {
 function renderAdvancedStats() {
   const stats = latestStats;
   if (!stats) return;
+
+  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+  const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
+  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
+  const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
 
   const subjectRanking = subjects
     .map((subject) => ({
@@ -1431,57 +1885,57 @@ function renderAdvancedStats() {
       ${renderAdvancedCard("Ritmo", [
         `Has registrado ${formatNumber(stats.totalHours)} h en ${stats.activeDays} días activos.`,
         `Media real: ${formatNumber(stats.totalHours / stats.elapsedDays)} h/día. Media cuando haces algo: ${stats.activeDays ? formatNumber(stats.totalHours / stats.activeDays) : "0"} h.`,
-        `Días sin actividad registrada: ${stats.inactiveDays}; racha académica actual: ${stats.currentStreak} días.`
+        `Días sin actividad registrada: ${stats.inactiveDays}; racha de ${subPlural.toLowerCase()} actual: ${stats.currentStreak} días.`
       ])}
-      ${renderAdvancedCard("Estudio y hobbies", [
-        `Estudio: ${formatNumber(stats.totalStudy)} h (${formatNumber(studyShare)}%).`,
-        `Hobbies: ${formatNumber(stats.totalTracks)} h (${formatNumber(trackShare)}%).`,
+      ${renderAdvancedCard(`${subPlural} y ${hobPlural}`, [
+        `${subPlural}: ${formatNumber(stats.totalStudy)} h (${formatNumber(studyShare)}%).`,
+        `${hobPlural}: ${formatNumber(stats.totalTracks)} h (${formatNumber(trackShare)}%).`,
         `Actividad en ${formatNumber(activeRatio)}% de los días transcurridos.`
       ])}
-      ${renderAdvancedCard("Asignaturas", subjectRanking.length ? [
+      ${renderAdvancedCard(subPlural, subjectRanking.length ? [
         `Dominante: ${subjectRanking[0]?.total > 0 ? `${escapeHtml(subjectRanking[0].name)} con ${formatNumber(subjectRanking[0].total)} h` : "todavía sin horas"}.`,
-        `Concentración principal: ${formatNumber(topSubjectShare)}% del estudio; ${studiedSubjects}/${subjectRanking.length} asignaturas tocadas.`,
+        `Concentración principal: ${formatNumber(topSubjectShare)}% del total; ${studiedSubjects}/${subjectRanking.length} ${subPlural.toLowerCase()} tocadas.`,
         `Carga ponderada acumulada: ${formatNumber(stats.weightedLoad)}.`
-      ] : ["No hay asignaturas configuradas."])}
-      ${renderAdvancedCard("Hobbies", trackRanking.length ? [
-        `Hobby dominante: ${trackRanking[0]?.total > 0 ? `${escapeHtml(trackRanking[0].label)} con ${formatNumber(trackRanking[0].total)} h` : "todavía sin horas"}.`,
+      ] : [`No hay ${subPlural.toLowerCase()} configuradas.`])}
+      ${renderAdvancedCard(hobPlural, trackRanking.length ? [
+        `${hobSingular} dominante: ${trackRanking[0]?.total > 0 ? `${escapeHtml(trackRanking[0].label)} con ${formatNumber(trackRanking[0].total)} h` : "todavía sin horas"}.`,
         `Mayor constancia: ${getMostConsistentTrackText(trackRanking)}.`,
-        `${trackRanking.length} hobbies configurados.`
-      ] : ["No hay hobbies configurados."])}
+        `${trackRanking.length} ${hobPlural.toLowerCase()} configurados.`
+      ] : [`No hay ${hobPlural.toLowerCase()} configurados.`])}
       ${renderAdvancedCard("Semana", [
         `Día con más horas: ${bestWeekday ? `${bestWeekday.label} (${formatNumber(bestWeekday.total)} h)` : "-"}.`,
         `Día más constante: ${mostActiveWeekday ? `${mostActiveWeekday.label} (${mostActiveWeekday.activeDays} días activos)` : "-"}.`,
         `Valoraciones registradas: ${usefulRatedDays}.`
       ])}
       ${renderAdvancedCard("Riesgos", [
-        highestRisk ? `Mayor riesgo: ${escapeHtml(highestRisk.name)} (${formatNumber(highestRisk.score)}/100), ${highestRisk.examText}.` : "No hay asignaturas para evaluar.",
-        bestCovered ? `Mejor cubierta: ${escapeHtml(bestCovered.name)} (${formatNumber(bestCovered.coverage)}% del objetivo estimado).` : `Asignaturas sin tocar: ${neglectedSubjects}.`,
-        `${highRiskCount} asignaturas en riesgo alto; ${neglectedSubjects} asignaturas sin tocar.`
+        highestRisk ? `Mayor riesgo: ${escapeHtml(highestRisk.name)} (${formatNumber(highestRisk.score)}/100), ${highestRisk.examText}.` : `No hay ${subPlural.toLowerCase()} para evaluar.`,
+        bestCovered ? `Mejor cubierta: ${escapeHtml(bestCovered.name)} (${formatNumber(bestCovered.coverage)}% del objetivo estimado).` : `${subPlural} sin tocar: ${neglectedSubjects}.`,
+        `${highRiskCount} ${subPlural.toLowerCase()} en riesgo alto; ${neglectedSubjects} ${subPlural.toLowerCase()} sin tocar.`
       ])}
     </div>
     <div class="advanced-lists">
-      ${renderRankingList("Ranking de asignaturas", subjectRanking.map((item) => ({
+      ${renderRankingList(`Ranking de ${subPlural.toLowerCase()}`, subjectRanking.map((item) => ({
         label: item.name,
         meta: `Dif. ${item.difficulty}`,
         value: `${formatNumber(item.total)} h`
       })))}
-      ${renderRankingList("Ranking de hobbies", trackRanking.map((item) => ({
+      ${renderRankingList(`Ranking de ${hobPlural.toLowerCase()}`, trackRanking.map((item) => ({
         label: item.label,
         meta: `${item.activeDays} días`,
         value: `${formatNumber(item.total)} h`
       })))}
       ${renderRankingList("Días de la semana", weekdayStudyRanking.map((item) => ({
         label: item.label,
-        meta: `${item.studyActiveDays} con estudio`,
+        meta: `${item.studyActiveDays} con ${subPlural.toLowerCase()}`,
         value: `${formatNumber(item.total)} h`
       })))}
-      ${renderRankingList("Asignaturas por carga ponderada", weightedSubjectRanking
+      ${renderRankingList(`${subPlural} por carga ponderada`, weightedSubjectRanking
         .map((item) => ({
           label: item.name,
           meta: `Dif. ${item.difficulty}`,
           value: `${formatNumber(item.weighted)} carga`
         })))}
-      ${renderRankingList("Riesgo académico", riskRanking.map((item) => ({
+      ${renderRankingList(`Riesgo de ${subPlural.toLowerCase()}`, riskRanking.map((item) => ({
         label: item.name,
         meta: `Dif. ${item.difficulty} · ${item.examText} · ${formatNumber(item.total)} h`,
         value: `${formatNumber(item.score)}/100`
@@ -1531,20 +1985,44 @@ function buildSubjectRiskRanking(subjectRanking) {
   const todayKey = getTodayDateKey();
   return subjectRanking
     .map((subject) => {
-      const exam = getNextSubjectExam(subject.name, todayKey);
-      const targetHours = Math.max(4, subject.difficulty * 4);
+      const upcomingEvents = getUpcomingLinkedEvents(subject.name, todayKey);
+      const closestEvent = upcomingEvents[0] || null;
+
+      let urgency = 10;
+      if (closestEvent) {
+        let baseUrgency = 10;
+        const days = closestEvent.daysUntil;
+        if (days <= 1) baseUrgency = 100;
+        else if (days <= 3) baseUrgency = 90;
+        else if (days <= 7) baseUrgency = 75;
+        else if (days <= 14) baseUrgency = 50;
+        else if (days <= 30) baseUrgency = 25;
+        
+        let typeWeight = 0.5;
+        if (closestEvent.type === "exam") typeWeight = 1.0;
+        else if (closestEvent.type === "deadline") typeWeight = 0.9;
+        else if (closestEvent.type === "project") typeWeight = 0.8;
+        else if (closestEvent.type === "review") typeWeight = 0.7;
+
+        urgency = baseUrgency * typeWeight;
+      }
+
+      const difficultyScore = subject.difficulty * 20;
+
+      const targetHours = Math.max(4, subject.difficulty * 5);
       const coverage = Math.min(140, (subject.total / targetHours) * 100);
       const missingRatio = Math.max(0, 1 - subject.total / targetHours);
-      const urgency = getExamUrgency(exam?.daysUntil);
-      const score = Math.min(100, Math.max(0, subject.difficulty * 10 + missingRatio * 45 + urgency * 35));
+      const dedicationScore = missingRatio * 100;
+
+      const score = Math.min(100, Math.max(0, urgency * 0.40 + difficultyScore * 0.25 + dedicationScore * 0.35));
 
       return {
         ...subject,
         score,
         targetHours,
         coverage,
-        exam,
-        examText: formatRiskExamText(exam)
+        exam: closestEvent,
+        examText: formatRiskEventText(closestEvent)
       };
     })
     .sort((a, b) => {
@@ -1554,7 +2032,7 @@ function buildSubjectRiskRanking(subjectRanking) {
     });
 }
 
-function getNextSubjectExam(subjectName, fromKey) {
+function getUpcomingLinkedEvents(subjectName, fromKey = getTodayDateKey()) {
   const matches = [];
   const allEventDates = new Set([...Object.keys(events), ...Object.keys(state.days || {})]);
   for (const key of allEventDates) {
@@ -1564,61 +2042,33 @@ function getNextSubjectExam(subjectName, fromKey) {
       ...(state.days[key]?.customEvents || [])
     ];
     for (const event of dayEvents) {
-      if (event.type === "exam" && eventMatchesSubjectEvent(event, subjectName)) {
+      let isMatch = false;
+      if (event.subjectName) {
+        isMatch = normalizeSearchText(event.subjectName) === normalizeSearchText(subjectName);
+      } else {
+        isMatch = eventMatchesSubject(event.text, subjectName);
+      }
+
+      if (isMatch) {
+        const daysUntil = Math.max(0, Math.round((parseKey(key) - parseKey(fromKey)) / 86400000));
         matches.push({
           key,
+          type: event.type,
           text: event.text,
-          daysUntil: Math.max(0, Math.round((parseKey(key) - parseKey(fromKey)) / 86400000))
+          daysUntil
         });
       }
     }
   }
-
-  return matches.sort((a, b) => a.key.localeCompare(b.key))[0] || null;
+  return matches.sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
-function eventMatchesSubjectEvent(event, subjectName) {
-  if (event.subjectName) {
-    return normalizeSearchText(event.subjectName) === normalizeSearchText(subjectName);
-  }
-  return eventMatchesSubject(event.text, subjectName);
-}
-
-function eventMatchesSubject(text, subjectName) {
-  const normalizedText = normalizeSearchText(text);
-  return getSubjectSearchTerms(subjectName).some((term) => normalizedText.includes(term));
-}
-
-function getSubjectSearchTerms(subjectName) {
-  const normalizedName = normalizeSearchText(subjectName);
-  const aliases = {
-    "sistemas de bases de datos": ["sbd", "bases de datos", "sistemas de bases de datos"],
-    "sistemas operativos ii": ["ssooii", "sistemas operativos 2", "sistemas operativos ii"],
-    "inf teorica": ["it", "informatica teorica", "inf teorica"],
-    "eda ii": ["eda ii", "estructura de datos", "algoritmos 2"],
-    "calculo": ["calculo"],
-    "inso i": ["inso", "ingenieria del software"]
-  };
-  if (aliases[normalizedName]) return aliases[normalizedName];
-
-  const fallbackTerms = normalizedName.split(" ").filter((word) => word.length > 3);
-  return [normalizedName, ...fallbackTerms].filter(Boolean);
-}
-
-function getExamUrgency(daysUntil) {
-  if (typeof daysUntil !== "number") return 0.2;
-  if (daysUntil <= 2) return 1;
-  if (daysUntil <= 7) return 0.85;
-  if (daysUntil <= 14) return 0.65;
-  if (daysUntil <= 30) return 0.45;
-  return 0.25;
-}
-
-function formatRiskExamText(exam) {
-  if (!exam) return "sin examen próximo";
-  if (exam.daysUntil === 0) return "examen hoy";
-  if (exam.daysUntil === 1) return "examen mañana";
-  return `examen en ${exam.daysUntil} días`;
+function formatRiskEventText(event) {
+  if (!event) return "sin eventos próximos";
+  const typeText = event.type === "exam" ? "examen" : (event.type === "deadline" ? "entrega" : "evento");
+  if (event.daysUntil === 0) return `${typeText} hoy`;
+  if (event.daysUntil === 1) return `${typeText} mañana`;
+  return `${typeText} en ${event.daysUntil} días`;
 }
 
 function normalizeSearchText(value) {
@@ -1626,6 +2076,11 @@ function normalizeSearchText(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
+
+function eventMatchesSubject(text, subjectName) {
+  if (!text || !subjectName) return false;
+  return normalizeSearchText(text).includes(normalizeSearchText(subjectName));
 }
 
 function getWeekdayStats(keys) {
@@ -1648,6 +2103,11 @@ function getWeekdayStats(keys) {
 }
 
 function buildImprovementTips(stats, subjectRanking, trackRanking, studyShare) {
+  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+  const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
+  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
+  const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
+
   const tips = [];
   const lowSubjects = subjectRanking.filter((item) => item.total === 0).slice(0, 2);
   const topSubject = subjectRanking[0];
@@ -1658,29 +2118,29 @@ function buildImprovementTips(stats, subjectRanking, trackRanking, studyShare) {
     .slice(0, 2);
 
   if (lowSubjects.length) {
-    tips.push(`Asignaturas sin horas: ${lowSubjects.map((item) => escapeHtml(item.name)).join(", ")}. Conviene meterles aunque sea un bloque corto para que no desaparezcan del radar.`);
+    tips.push(`${subPlural} sin horas: ${lowSubjects.map((item) => escapeHtml(item.name)).join(", ")}. Conviene meterles aunque sea un bloque corto para que no desaparezcan del radar.`);
   }
 
   if (heavyDifficultyWithoutTime.length) {
-    tips.push(`Hay asignaturas difíciles con poco peso (${heavyDifficultyWithoutTime.map((item) => escapeHtml(item.name)).join(", ")}). Priorízalas antes de que se acumulen.`);
+    tips.push(`Hay ${subPlural.toLowerCase()} difíciles con poco peso (${heavyDifficultyWithoutTime.map((item) => escapeHtml(item.name)).join(", ")}). Priorízalas antes de que se acumulen.`);
   }
 
   if (topSubject && stats.totalStudy > 0 && topSubject.total / stats.totalStudy > 0.45) {
-    tips.push(`${escapeHtml(topSubject.name)} concentra demasiado estudio. Si no es por un examen cercano, reparte algo más para evitar abandonar el resto.`);
+    tips.push(`${escapeHtml(topSubject.name)} concentra demasiado estudio. Si no es por un examen o entrega cercana, reparte algo más para evitar abandonar el resto.`);
   }
 
   if (subjectRanking.length && touchedSubjects / subjectRanking.length < 0.6) {
-    tips.push(`Solo has tocado ${touchedSubjects}/${subjectRanking.length} asignaturas. Un reparto mínimo semanal puede darte mejor control del calendario.`);
+    tips.push(`Solo has tocado ${touchedSubjects}/${subjectRanking.length} ${subPlural.toLowerCase()}. Un reparto mínimo semanal puede darte mejor control del calendario.`);
   }
 
   if (studyShare < 60 && stats.totalHours > 0) {
-    tips.push(`El peso de estudio está por debajo del 60%. Si estás en periodo fuerte, sube el foco académico o separa mejor hobbies de días de estudio.`);
+    tips.push(`El peso de ${subPlural.toLowerCase()} está por debajo del 60%. Si estás en periodo fuerte, sube el foco académico o separa mejor hobbies de días de estudio.`);
   } else if (studyShare > 90 && stats.totalTracks > 0) {
-    tips.push(`El calendario está muy cargado hacia estudio. Mantener algo de hobbies puede ayudar a sostener ritmo sin quemarte.`);
+    tips.push(`El calendario está muy cargado hacia ${subPlural.toLowerCase()}. Mantener algo de ${hobPlural.toLowerCase()} puede ayudar a sostener ritmo sin quemarte.`);
   }
 
   if (topTrack && topTrack.total > 0) {
-    tips.push(`Tu hobby más presente es ${escapeHtml(topTrack.label)}. Úsalo como indicador de equilibrio: muchas horas ahí pueden ser descanso útil o una fuga, según la semana.`);
+    tips.push(`Tu ${hobSingular.toLowerCase()} más presente es ${escapeHtml(topTrack.label)}. Úsalo como indicador de equilibrio: muchas horas ahí pueden ser descanso útil o una fuga, según la semana.`);
   }
 
   if (stats.inactiveDays > stats.activeDays && stats.totalHours > 0) {
@@ -1688,7 +2148,7 @@ function buildImprovementTips(stats, subjectRanking, trackRanking, studyShare) {
   }
 
   if (stats.ratedDays < Math.max(3, stats.activeDays / 4)) {
-    tips.push(`Hay pocas valoraciones del día. Puntuar más días ayuda a cruzar horas con sensación real de rendimiento.`);
+    tips.push("Hay pocas valoraciones del día. Puntuar más días ayuda a cruzar horas con sensación real de rendimiento.");
   }
 
   if (!tips.length) {
@@ -1713,24 +2173,38 @@ function closeSettings() {
 }
 
 function openSubjectEntry() {
+  editingSubjectTarget = null;
   subjectSettingsFormEl.reset();
   newSubjectColorEl.value = "#0f766e";
+  
+  const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
+  subjectEntryTitleEl.textContent = `Añadir ${subSingular.toLowerCase()}`;
+  subjectSettingsFormEl.querySelector('button[type="submit"]').textContent = `Añadir ${subSingular.toLowerCase()}`;
+  
   subjectEntryModalEl.hidden = false;
   newSubjectNameEl.focus();
 }
 
 function closeSubjectEntry() {
+  editingSubjectTarget = null;
   subjectEntryModalEl.hidden = true;
 }
 
 function openTrackEntry() {
+  editingTrackTarget = null;
   trackSettingsFormEl.reset();
   newTrackColorEl.value = "#d97706";
+  
+  const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
+  trackEntryTitleEl.textContent = `Añadir ${hobSingular.toLowerCase()}`;
+  trackSettingsFormEl.querySelector('button[type="submit"]').textContent = `Añadir ${hobSingular.toLowerCase()}`;
+  
   trackEntryModalEl.hidden = false;
   newTrackNameEl.focus();
 }
 
 function closeTrackEntry() {
+  editingTrackTarget = null;
   trackEntryModalEl.hidden = true;
 }
 
@@ -1771,6 +2245,16 @@ function renderSettings() {
   const profile = state.settings.profile;
   profileTitleEl.value = profile.title;
   profileAccentEl.value = profile.accentColor;
+  
+  const subjectsPluralInput = document.getElementById("profileSubjectsPlural");
+  const subjectsSingularInput = document.getElementById("profileSubjectsSingular");
+  const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
+  const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
+  if (subjectsPluralInput) subjectsPluralInput.value = state.settings.subjectsLabelPlural || "Asignaturas";
+  if (subjectsSingularInput) subjectsSingularInput.value = state.settings.subjectsLabelSingular || "Asignatura";
+  if (hobbiesPluralInput) hobbiesPluralInput.value = state.settings.hobbiesLabelPlural || "Hobbies";
+  if (hobbiesSingularInput) hobbiesSingularInput.value = state.settings.hobbiesLabelSingular || "Hobby";
+
   [profileLevel1El, profileLevel2El, profileLevel3El, profileLevel4El].forEach((input, index) => {
     input.value = profile.intensityLevels[index];
   });
@@ -1790,8 +2274,11 @@ function renderSubjectsSettings() {
     item.className = "settings-item";
     item.innerHTML = `
       <span class="settings-color" style="background:${subject.color}"></span>
-      <span><strong>${escapeHtml(subject.name)}</strong><small>${escapeHtml(subject.description || "Sin descripción")} · Dif. ${getSubjectDifficulty(subject.name)}</small></span>
-      <button type="button" class="notice-delete" data-delete-subject="${escapeHtml(subject.name)}">Eliminar</button>
+      <span style="flex: 1 1 auto; margin-right: 10px;"><strong>${escapeHtml(subject.name)}</strong><small>${escapeHtml(subject.description || "Sin descripción")} · Dif. ${getSubjectDifficulty(subject.name)}</small></span>
+      <div class="notice-actions">
+        <button type="button" class="notice-action" data-edit-subject="${escapeHtml(subject.name)}" title="Editar" style="color: var(--accent); border-color: rgba(var(--accent-rgb), 0.25);">✎</button>
+        <button type="button" class="notice-action" data-delete-subject="${escapeHtml(subject.name)}" title="Eliminar" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">🗑</button>
+      </div>
     `;
     subjectsSettingsListEl.appendChild(item);
   }
@@ -1809,8 +2296,11 @@ function renderTracksSettings() {
     item.className = "settings-item";
     item.innerHTML = `
       <span class="settings-color" style="background:${track.color}"></span>
-      <span><strong>${escapeHtml(track.label)}</strong><small>${escapeHtml(track.description || "Sin descripción")}</small></span>
-      <button type="button" class="notice-delete" data-delete-track="${track.key}">Eliminar</button>
+      <span style="flex: 1 1 auto; margin-right: 10px;"><strong>${escapeHtml(track.label)}</strong><small>${escapeHtml(track.description || "Sin descripción")}</small></span>
+      <div class="notice-actions">
+        <button type="button" class="notice-action" data-edit-track="${track.key}" title="Editar" style="color: var(--accent); border-color: rgba(var(--accent-rgb), 0.25);">✎</button>
+        <button type="button" class="notice-action" data-delete-track="${track.key}" title="Eliminar" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">🗑</button>
+      </div>
     `;
     tracksSettingsListEl.appendChild(item);
   }
@@ -1818,6 +2308,17 @@ function renderTracksSettings() {
 
 function saveProfileSettings(event) {
   event.preventDefault();
+  
+  const subjectsPluralInput = document.getElementById("profileSubjectsPlural");
+  const subjectsSingularInput = document.getElementById("profileSubjectsSingular");
+  const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
+  const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
+
+  state.settings.subjectsLabelPlural = (subjectsPluralInput?.value || "Asignaturas").trim();
+  state.settings.subjectsLabelSingular = (subjectsSingularInput?.value || "Asignatura").trim();
+  state.settings.hobbiesLabelPlural = (hobbiesPluralInput?.value || "Hobbies").trim();
+  state.settings.hobbiesLabelSingular = (hobbiesSingularInput?.value || "Hobby").trim();
+
   state.settings.profile = normalizeProfile({
     title: profileTitleEl.value,
     accentColor: profileAccentEl.value,
@@ -1825,6 +2326,7 @@ function saveProfileSettings(event) {
   });
   syncConfigFromState();
   applyProfile();
+  updateDynamicLabels();
   persist();
   renderCalendar();
   showToast("Perfil guardado.");
@@ -1835,8 +2337,61 @@ function addSubjectFromSettings(event) {
   const name = newSubjectNameEl.value.trim();
   const description = newSubjectDescriptionEl.value.trim();
   if (!name || !description) return;
+
+  const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
+
+  if (editingSubjectTarget) {
+    if (name.toLowerCase() !== editingSubjectTarget.toLowerCase() && subjects.some((subject) => subject.name.toLowerCase() === name.toLowerCase())) {
+      showToast(`Esa ${subSingular.toLowerCase()} ya existe.`);
+      return;
+    }
+
+    const idx = state.settings.subjects.findIndex(s => s.name === editingSubjectTarget);
+    if (idx >= 0) {
+      state.settings.subjects[idx] = {
+        name,
+        description,
+        color: normalizeColor(newSubjectColorEl.value),
+        defaultDifficulty: clampDifficulty(newSubjectDifficultyEl.value)
+      };
+    }
+
+    if (name !== editingSubjectTarget) {
+      state.settings.subjectDifficulty[name] = clampDifficulty(newSubjectDifficultyEl.value);
+      delete state.settings.subjectDifficulty[editingSubjectTarget];
+
+      for (const day of Object.values(state.days)) {
+        if (day.subjects && day.subjects[editingSubjectTarget] !== undefined) {
+          day.subjects[name] = day.subjects[editingSubjectTarget];
+          delete day.subjects[editingSubjectTarget];
+        }
+        if (day.customEvents) {
+          for (const ev of day.customEvents) {
+            if (ev.subjectName === editingSubjectTarget) {
+              ev.subjectName = name;
+            }
+          }
+        }
+      }
+      if (state.checklistTasks) {
+        for (const task of state.checklistTasks) {
+          if (task.linkType === "subject" && task.linkKey === editingSubjectTarget) {
+            task.linkKey = name;
+          }
+        }
+      }
+    } else {
+      state.settings.subjectDifficulty[name] = clampDifficulty(newSubjectDifficultyEl.value);
+    }
+
+    editingSubjectTarget = null;
+    closeSubjectEntry();
+    refreshAfterConfigChange(`${subSingular} actualizada.`);
+    return;
+  }
+
   if (subjects.some((subject) => subject.name.toLowerCase() === name.toLowerCase())) {
-    showToast("Esa asignatura ya existe.");
+    showToast(`Esa ${subSingular.toLowerCase()} ya existe.`);
     return;
   }
 
@@ -1851,7 +2406,7 @@ function addSubjectFromSettings(event) {
   newSubjectColorEl.value = "#0f766e";
   newSubjectDifficultyEl.value = "";
   closeSubjectEntry();
-  refreshAfterConfigChange("Asignatura añadida.");
+  refreshAfterConfigChange(`${subSingular} añadida.`);
 }
 
 function addTrackFromSettings(event) {
@@ -1859,6 +2414,26 @@ function addTrackFromSettings(event) {
   const label = newTrackNameEl.value.trim();
   const description = newTrackDescriptionEl.value.trim();
   if (!label) return;
+
+  const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
+
+  if (editingTrackTarget) {
+    const idx = state.settings.tracks.findIndex(t => t.key === editingTrackTarget);
+    if (idx >= 0) {
+      state.settings.tracks[idx] = {
+        ...state.settings.tracks[idx],
+        label,
+        description,
+        shortLabel: getShortLabel(label),
+        color: normalizeColor(newTrackColorEl.value)
+      };
+    }
+    editingTrackTarget = null;
+    closeTrackEntry();
+    refreshAfterConfigChange(`${hobSingular} actualizado.`);
+    return;
+  }
+
   const key = createUniqueKey(slugifyCategory(label) || "hobby", EXTRA_TRACKS.map((track) => track.key));
   state.settings.tracks.push({
     key,
@@ -1870,13 +2445,36 @@ function addTrackFromSettings(event) {
   trackSettingsFormEl.reset();
   newTrackColorEl.value = "#d97706";
   closeTrackEntry();
-  refreshAfterConfigChange("Hobby añadido.");
+  refreshAfterConfigChange(`${hobSingular} añadido.`);
 }
 
 function handleSubjectSettingsClick(event) {
-  const button = event.target.closest("[data-delete-subject]");
-  if (!button) return;
-  const name = button.dataset.deleteSubject;
+  const editBtn = event.target.closest("[data-edit-subject]");
+  if (editBtn) {
+    const oldName = editBtn.dataset.editSubject;
+    const subject = subjects.find(s => s.name === oldName);
+    if (!subject) return;
+
+    editingSubjectTarget = oldName;
+    newSubjectNameEl.value = subject.name;
+    newSubjectDescriptionEl.value = subject.description || "";
+    newSubjectColorEl.value = subject.color || "#0f766e";
+    newSubjectDifficultyEl.value = getSubjectDifficulty(subject.name);
+
+    const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
+    subjectEntryTitleEl.textContent = `Editar ${subSingular.toLowerCase()}`;
+    subjectSettingsFormEl.querySelector('button[type="submit"]').textContent = "Guardar cambios";
+
+    subjectEntryModalEl.hidden = false;
+    newSubjectNameEl.focus();
+    return;
+  }
+
+  const deleteBtn = event.target.closest("[data-delete-subject]");
+  if (!deleteBtn) return;
+  const name = deleteBtn.dataset.deleteSubject;
+  
+  const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
   const ok = confirm(`¿Estás seguro de que quieres eliminar toda la info de "${name}"? El paso no será reversible.`);
   if (!ok) return;
   state.settings.subjects = state.settings.subjects.filter((subject) => subject.name !== name);
@@ -1884,21 +2482,59 @@ function handleSubjectSettingsClick(event) {
   for (const day of Object.values(state.days)) {
     if (day.subjects) delete day.subjects[name];
   }
-  refreshAfterConfigChange("Asignatura eliminada.");
+  if (state.checklistTasks) {
+    state.checklistTasks = state.checklistTasks.map(task => {
+      if (task.linkType === "subject" && task.linkKey === name) {
+        return { ...task, linkType: "", linkKey: "" };
+      }
+      return task;
+    });
+  }
+  refreshAfterConfigChange(`${subSingular} eliminada.`);
 }
 
 function handleTrackSettingsClick(event) {
-  const button = event.target.closest("[data-delete-track]");
-  if (!button) return;
-  const key = button.dataset.deleteTrack;
+  const editBtn = event.target.closest("[data-edit-track]");
+  if (editBtn) {
+    const key = editBtn.dataset.editTrack;
+    const track = EXTRA_TRACKS.find(t => t.key === key);
+    if (!track) return;
+
+    editingTrackTarget = key;
+    newTrackNameEl.value = track.label;
+    newTrackDescriptionEl.value = track.description || "";
+    newTrackColorEl.value = track.color || "#d97706";
+
+    const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
+    trackEntryTitleEl.textContent = `Editar ${hobSingular.toLowerCase()}`;
+    trackSettingsFormEl.querySelector('button[type="submit"]').textContent = "Guardar cambios";
+
+    trackEntryModalEl.hidden = false;
+    newTrackNameEl.focus();
+    return;
+  }
+
+  const deleteBtn = event.target.closest("[data-delete-track]");
+  if (!deleteBtn) return;
+  const key = deleteBtn.dataset.deleteTrack;
   const track = EXTRA_TRACKS.find((item) => item.key === key);
+  
+  const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
   const ok = confirm(`¿Estás seguro de que quieres eliminar toda la info de "${track?.label || key}"? El paso no será reversible.`);
   if (!ok) return;
   state.settings.tracks = state.settings.tracks.filter((item) => item.key !== key);
   for (const day of Object.values(state.days)) {
     if (day.extra) delete day.extra[key];
   }
-  refreshAfterConfigChange("Hobby eliminado.");
+  if (state.checklistTasks) {
+    state.checklistTasks = state.checklistTasks.map(task => {
+      if (task.linkType === "track" && task.linkKey === key) {
+        return { ...task, linkType: "", linkKey: "" };
+      }
+      return task;
+    });
+  }
+  refreshAfterConfigChange(`${hobSingular} eliminado.`);
 }
 
 function refreshAfterConfigChange(message) {
@@ -1912,6 +2548,13 @@ function refreshAfterConfigChange(message) {
   renderCalendar();
   renderStats();
   renderSettings();
+  updateDynamicLabels();
+  if (typeof renderChecklistFilters === "function") {
+    renderChecklistFilters();
+  }
+  if (typeof refreshChecklistAll === "function") {
+    refreshChecklistAll();
+  }
   flashAutoSave();
   showToast(message);
 }
@@ -1923,6 +2566,7 @@ function exportData() {
     range: { start: getCalendarStart(), end: getCalendarEnd() },
     subjects: subjects.map((subject) => ({ ...subject, difficulty: getSubjectDifficulty(subject.name) })),
     tracks: EXTRA_TRACKS,
+    checklistTasks: state.checklistTasks || [],
     data: state
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1958,6 +2602,11 @@ function importData(event) {
         importedState.settings.tracks = parsed.tracks;
       }
 
+      // Copiar checklistTasks del nivel superior si no está en importedState
+      if (Array.isArray(parsed.checklistTasks) && !Array.isArray(importedState.checklistTasks)) {
+        importedState.checklistTasks = parsed.checklistTasks;
+      }
+
       // Migrate static events from old exports into dynamic customEvents
       if (parsed.events && typeof parsed.events === "object") {
         for (const [date, eventsArray] of Object.entries(parsed.events)) {
@@ -1990,6 +2639,10 @@ function importData(event) {
       renderTrackInputs();
       renderSettings();
       renderSelectedDay();
+      if (typeof refreshChecklistAll === "function") {
+        refreshChecklistAll();
+      }
+      updateDynamicLabels();
       showToast("Datos importados.");
     } catch {
       showToast("No se pudo importar el archivo.");
@@ -2297,5 +2950,1008 @@ function renderEventLegend() {
     const span = document.createElement("span");
     span.innerHTML = `<b class="event-line" style="border-left-color: ${color}; background: ${bg};"></b> ${escapeHtml(category.label.toLowerCase())}`;
     eventLegendEl.appendChild(span);
+  }
+}
+
+// --- Controladores y Renderizadores de Checklist (Tareas) ---
+
+function switchView(viewName) {
+  if (viewName === "calendar") {
+    tabCalendar.classList.add("active");
+    tabCalendar.setAttribute("aria-selected", "true");
+    tabChecklist.classList.remove("active");
+    tabChecklist.setAttribute("aria-selected", "false");
+    
+    if (paneCalendar) paneCalendar.hidden = false;
+    if (paneCalendarDayDetails) paneCalendarDayDetails.hidden = false;
+    if (paneChecklistSelectedDay) paneChecklistSelectedDay.hidden = true;
+    if (paneChecklistMain) paneChecklistMain.hidden = true;
+    
+    if (workspaceEl) {
+      workspaceEl.classList.remove("checklist-active");
+    }
+    renderCalendar();
+  } else {
+    tabChecklist.classList.add("active");
+    tabChecklist.setAttribute("aria-selected", "true");
+    tabCalendar.classList.remove("active");
+    tabCalendar.setAttribute("aria-selected", "false");
+    
+    if (paneCalendar) paneCalendar.hidden = true;
+    if (paneCalendarDayDetails) paneCalendarDayDetails.hidden = true;
+    if (paneChecklistSelectedDay) paneChecklistSelectedDay.hidden = false;
+    if (paneChecklistMain) paneChecklistMain.hidden = false;
+    
+    if (workspaceEl) {
+      workspaceEl.classList.add("checklist-active");
+    }
+    
+    // Inicializar mes visible en la vista previa del calendario
+    previewVisibleMonth = parseKey(selectedDate);
+    
+    renderChecklistFilters();
+    renderChecklistInlineLinkOptions();
+    renderChecklistSelectedDay();
+    if (typeof renderChecklistCalendarPreview === "function") {
+      renderChecklistCalendarPreview();
+    }
+    renderChecklist();
+    renderChecklistStats();
+  }
+}
+
+function renderChecklistFilters() {
+  if (!filterSubjectEl) return;
+  const currentFilterValue = filterSubjectEl.value;
+  filterSubjectEl.innerHTML = '<option value="all">Todos los items</option>';
+  
+  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+  const subGroup = document.createElement("optgroup");
+  subGroup.label = subPlural;
+  for (const subject of subjects) {
+    const opt = document.createElement("option");
+    opt.value = `subject:${subject.name}`;
+    opt.textContent = subject.name;
+    subGroup.appendChild(opt);
+  }
+  filterSubjectEl.appendChild(subGroup);
+
+  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
+  const hobGroup = document.createElement("optgroup");
+  hobGroup.label = hobPlural;
+  for (const track of EXTRA_TRACKS) {
+    const opt = document.createElement("option");
+    opt.value = `track:${track.key}`;
+    opt.textContent = track.label;
+    hobGroup.appendChild(opt);
+  }
+  filterSubjectEl.appendChild(hobGroup);
+  
+  if (Array.from(filterSubjectEl.options).some(o => o.value === currentFilterValue)) {
+    filterSubjectEl.value = currentFilterValue;
+  } else {
+    filterSubjectEl.value = "all";
+  }
+}
+
+function renderTaskLinkOptions(selectedValue = "") {
+  if (!taskLinkEl) return;
+  taskLinkEl.innerHTML = '<option value="">Ninguno (sin vincular)</option>';
+  
+  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+  const subGroup = document.createElement("optgroup");
+  subGroup.label = subPlural;
+  for (const subject of subjects) {
+    const opt = document.createElement("option");
+    opt.value = `subject:${subject.name}`;
+    opt.textContent = subject.name;
+    subGroup.appendChild(opt);
+  }
+  taskLinkEl.appendChild(subGroup);
+
+  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
+  const hobGroup = document.createElement("optgroup");
+  hobGroup.label = hobPlural;
+  for (const track of EXTRA_TRACKS) {
+    const opt = document.createElement("option");
+    opt.value = `track:${track.key}`;
+    opt.textContent = track.label;
+    hobGroup.appendChild(opt);
+  }
+  taskLinkEl.appendChild(hobGroup);
+  
+  taskLinkEl.value = selectedValue;
+}
+
+function openTaskEntry(targetTask = null, defaultDate = "") {
+  if (targetTask) {
+    editingTaskTarget = targetTask.id;
+    taskEntryTitleEl.textContent = "Editar tarea";
+    taskSubmitBtn.textContent = "Guardar cambios";
+    taskTextEl.value = targetTask.text;
+    if (taskDescriptionEl) {
+      taskDescriptionEl.value = targetTask.description || "";
+    }
+    renderTaskLinkOptions(targetTask.linkType ? `${targetTask.linkType}:${targetTask.linkKey}` : "");
+    taskDueDateEl.value = targetTask.dueDate || "";
+    taskDifficultyEl.value = targetTask.difficulty || 3;
+  } else {
+    editingTaskTarget = null;
+    taskEntryTitleEl.textContent = "Añadir tarea";
+    taskSubmitBtn.textContent = "Añadir tarea";
+    taskTextEl.value = "";
+    if (taskDescriptionEl) {
+      taskDescriptionEl.value = "";
+    }
+    renderTaskLinkOptions("");
+    taskDueDateEl.value = defaultDate || "";
+    taskDifficultyEl.value = 3;
+  }
+  taskEntryModalEl.hidden = false;
+  taskTextEl.focus();
+}
+
+function closeTaskEntry() {
+  editingTaskTarget = null;
+  taskEntryModalEl.hidden = true;
+  taskFormEl.reset();
+  if (taskDescriptionEl) {
+    taskDescriptionEl.value = "";
+  }
+}
+
+function saveTask(event) {
+  event.preventDefault();
+  const text = taskTextEl.value.trim();
+  if (!text) {
+    showToast("Escribe la tarea antes de guardarla.");
+    return;
+  }
+  const description = taskDescriptionEl ? taskDescriptionEl.value.trim() : "";
+  
+  let linkType = "";
+  let linkKey = "";
+  if (taskLinkEl.value) {
+    const parts = taskLinkEl.value.split(":");
+    linkType = parts[0];
+    linkKey = parts.slice(1).join(":");
+  }
+  
+  const dueDate = taskDueDateEl.value || "";
+  const difficulty = clampDifficulty(taskDifficultyEl.value);
+  
+  if (!state.checklistTasks) state.checklistTasks = [];
+  
+  if (editingTaskTarget) {
+    const taskIdx = state.checklistTasks.findIndex(t => t.id === editingTaskTarget);
+    if (taskIdx >= 0) {
+      state.checklistTasks[taskIdx] = {
+        ...state.checklistTasks[taskIdx],
+        text,
+        description,
+        linkType,
+        linkKey,
+        dueDate,
+        difficulty
+      };
+    }
+    showToast("Tarea actualizada.");
+  } else {
+    const newTask = {
+      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      text,
+      description,
+      completed: false,
+      linkType,
+      linkKey,
+      dueDate,
+      difficulty,
+      createdAt: new Date().toISOString(),
+      completedAt: ""
+    };
+    state.checklistTasks.push(newTask);
+    showToast("Tarea añadida.");
+  }
+  
+  closeTaskEntry();
+  saveState();
+  refreshChecklistAll();
+  
+  if (dueDate) {
+    refreshDayCell(dueDate);
+  }
+}
+
+function refreshChecklistAll() {
+  renderChecklistFilters();
+  renderChecklistInlineLinkOptions();
+  renderChecklistSelectedDay();
+  if (typeof renderChecklistCalendarPreview === "function") {
+    renderChecklistCalendarPreview();
+  }
+  renderChecklist();
+  renderChecklistStats();
+  renderDayTasks();
+  renderCalendar();
+}
+
+function handleChecklistClick(event) {
+  const checkbox = event.target.closest(".task-checkbox-input");
+  if (checkbox) {
+    const taskId = checkbox.dataset.taskId;
+    toggleTaskCompletion(taskId);
+    return;
+  }
+  
+  const editBtn = event.target.closest("[data-edit-task-id]");
+  if (editBtn) {
+    const taskId = editBtn.dataset.editTaskId;
+    const task = state.checklistTasks.find(t => t.id === taskId);
+    if (task) {
+      openTaskEntry(task);
+    }
+    return;
+  }
+  
+  const deleteBtn = event.target.closest("[data-delete-task-id]");
+  if (deleteBtn) {
+    const taskId = deleteBtn.dataset.deleteTaskId;
+    deleteTask(taskId);
+    return;
+  }
+
+  const card = event.target.closest(".task-card");
+  if (card) {
+    if (event.target.closest(".task-checkbox-wrapper") || event.target.closest(".notice-actions")) {
+      return;
+    }
+    const taskId = card.dataset.taskId;
+    const task = state.checklistTasks.find(t => t.id === taskId);
+    if (task) {
+      openTaskDetailsModal(task);
+    }
+  }
+}
+
+function toggleTaskCompletion(taskId) {
+  const task = state.checklistTasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.completed = !task.completed;
+  task.completedAt = task.completed ? new Date().toISOString() : "";
+  saveState();
+  refreshChecklistAll();
+  if (task.dueDate) {
+    refreshDayCell(task.dueDate);
+  }
+}
+
+function deleteTask(taskId) {
+  const task = state.checklistTasks.find(t => t.id === taskId);
+  if (!task) return;
+  const ok = confirm(`¿Estás seguro de que deseas eliminar la tarea "${task.text}"?`);
+  if (!ok) return;
+  state.checklistTasks = state.checklistTasks.filter(t => t.id !== taskId);
+  saveState();
+  refreshChecklistAll();
+  if (task.dueDate) {
+    refreshDayCell(task.dueDate);
+  }
+  showToast("Tarea eliminada.");
+}
+
+function renderChecklist() {
+  if (!checklistListEl) return;
+  checklistListEl.innerHTML = "";
+  
+  const query = (taskSearchInputEl.value || "").trim().toLowerCase();
+  const filterProj = filterSubjectEl.value || "all";
+  const filterStat = filterStatusEl.value || "all";
+  const sortBy = filterSortEl.value || "dueDate";
+  
+  let list = state.checklistTasks || [];
+  
+  if (selectedPreviewDateFilter) {
+    list = list.filter(t => t.dueDate === selectedPreviewDateFilter);
+    if (dayFilterIndicator) {
+      dayFilterIndicator.style.display = "inline-flex";
+    }
+  } else {
+    if (dayFilterIndicator) {
+      dayFilterIndicator.style.display = "none";
+    }
+  }
+  
+  if (query) {
+    list = list.filter(t => t.text.toLowerCase().includes(query));
+  }
+  
+  if (filterProj !== "all") {
+    const parts = filterProj.split(":");
+    const linkType = parts[0];
+    const linkKey = parts.slice(1).join(":");
+    list = list.filter(t => t.linkType === linkType && t.linkKey === linkKey);
+  }
+  
+  if (filterStat === "pending") {
+    list = list.filter(t => !t.completed);
+  } else if (filterStat === "completed") {
+    list = list.filter(t => t.completed);
+  }
+  
+  list = list.slice().sort((a, b) => {
+    if (sortBy === "dueDate") {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate.localeCompare(b.dueDate);
+    } else if (sortBy === "difficulty") {
+      return (b.difficulty || 3) - (a.difficulty || 3);
+    } else {
+      return b.createdAt.localeCompare(a.createdAt);
+    }
+  });
+  
+  if (list.length === 0) {
+    checklistListEl.innerHTML = `<div class="empty-state">No hay tareas que coincidan con los filtros.</div>`;
+    return;
+  }
+  
+  const todayKey = getTodayDateKey();
+  
+  for (const task of list) {
+    const item = document.createElement("div");
+    item.className = `task-card ${task.completed ? "completed" : ""}`;
+    item.dataset.taskId = task.id;
+    
+    let taskColor = "var(--line)";
+    let linkLabel = "";
+    if (task.linkType === "subject") {
+      const subject = subjects.find(s => s.name === task.linkKey);
+      taskColor = subject ? subject.color : "var(--accent)";
+      linkLabel = task.linkKey;
+    } else if (task.linkType === "track") {
+      const track = EXTRA_TRACKS.find(t => t.key === task.linkKey);
+      taskColor = track ? track.color : "#d97706";
+      linkLabel = track ? track.label : task.linkKey;
+    }
+    
+    item.style.borderLeftColor = taskColor;
+    
+    let dateHtml = "";
+    if (task.dueDate) {
+      const isOverdue = !task.completed && task.dueDate < todayKey;
+      const dateLabel = formatShortDate(task.dueDate);
+      dateHtml = `<span class="task-date-tag ${isOverdue ? "overdue" : ""}">📅 ${dateLabel}${isOverdue ? " (atrasada)" : ""}</span>`;
+    }
+    
+    const tagHtml = linkLabel ? `<span class="task-tag" style="background:${hexToSoftBackground(taskColor)}; color:${taskColor};">${escapeHtml(linkLabel)}</span>` : "";
+    const starsHtml = `<span class="task-difficulty-stars">${"★".repeat(task.difficulty)}${"☆".repeat(5 - task.difficulty)}</span>`;
+    
+    item.innerHTML = `
+      <label class="task-checkbox-wrapper">
+        <input type="checkbox" class="task-checkbox-input" data-task-id="${task.id}" ${task.completed ? "checked" : ""}>
+        <span class="task-checkbox-custom"></span>
+      </label>
+      <div class="task-content-col">
+        <span class="task-text">${escapeHtml(task.text)}</span>
+        <div class="task-meta-row">
+          ${tagHtml}
+          ${dateHtml}
+          ${starsHtml}
+        </div>
+      </div>
+      <div class="notice-actions">
+        <button type="button" class="notice-action" data-edit-task-id="${task.id}" title="Editar" style="color: var(--accent); border-color: rgba(var(--accent-rgb), 0.25);">✎</button>
+        <button type="button" class="notice-action" data-delete-task-id="${task.id}" title="Eliminar" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">🗑</button>
+      </div>
+    `;
+    checklistListEl.appendChild(item);
+  }
+}
+
+function renderChecklistStats() {
+  if (!totalTasksCountEl) return;
+  const list = state.checklistTasks || [];
+  const total = list.length;
+  const completed = list.filter(t => t.completed).length;
+  const pending = total - completed;
+  
+  const todayKey = getTodayDateKey();
+  const overdue = list.filter(t => !t.completed && t.dueDate && t.dueDate < todayKey).length;
+  
+  totalTasksCountEl.textContent = total;
+  completedTasksCountEl.textContent = completed;
+  pendingTasksCountEl.textContent = pending;
+  overdueTasksCountEl.textContent = overdue;
+  
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  completedPercentageEl.textContent = `${pct}%`;
+  
+  // Calcular las nuevas métricas interesantes y no de relleno
+  // 1. Dificultad media de tareas pendientes
+  const pendingTasks = list.filter(t => !t.completed);
+  const avgDiffVal = pendingTasks.length > 0
+    ? (pendingTasks.reduce((sum, t) => sum + (t.difficulty || 3), 0) / pendingTasks.length).toFixed(1)
+    : "—";
+  const avgPendingDifficultyEl = document.getElementById("avgPendingDifficulty");
+  if (avgPendingDifficultyEl) {
+    avgPendingDifficultyEl.textContent = avgDiffVal !== "—" ? `${avgDiffVal} ★` : "—";
+  }
+  
+  // 2. Próximos 7 días
+  const todayVal = new Date(todayKey);
+  const nextWeekVal = new Date(todayVal.getTime() + 7 * 86400000);
+  const nextWeekKey = toDateKey(nextWeekVal);
+  const dueSoonTasks = list.filter(t => !t.completed && t.dueDate && t.dueDate >= todayKey && t.dueDate <= nextWeekKey).length;
+  const dueSoonTasksCountEl = document.getElementById("dueSoonTasksCount");
+  if (dueSoonTasksCountEl) {
+    dueSoonTasksCountEl.textContent = dueSoonTasks;
+  }
+  
+  // 3. Racha de completado (días consecutivos completando tareas)
+  const completedDates = list
+    .filter(t => t.completed && t.completedAt)
+    .map(t => t.completedAt.split('T')[0]);
+  const uniqueDates = Array.from(new Set(completedDates)).sort();
+  let streak = 0;
+  if (uniqueDates.length > 0) {
+    const yesterday = new Date(todayVal.getTime() - 86400000);
+    const yesterdayStr = toDateKey(yesterday);
+    if (uniqueDates.includes(todayKey) || uniqueDates.includes(yesterdayStr)) {
+      let tempDate = uniqueDates.includes(todayKey) ? new Date(todayVal) : yesterday;
+      while (true) {
+        const tempStr = toDateKey(tempDate);
+        if (uniqueDates.includes(tempStr)) {
+          streak++;
+          tempDate.setDate(tempDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+    }
+  }
+  const taskCompletionStreakEl = document.getElementById("taskCompletionStreak");
+  if (taskCompletionStreakEl) {
+    taskCompletionStreakEl.textContent = streak === 1 ? "1 día" : `${streak} días`;
+  }
+  
+  // 4. Proyecto o hobby más exigente (más tareas pendientes)
+  const pendingGroups = {};
+  for (const task of list) {
+    if (!task.completed && task.linkType) {
+      const gkey = `${task.linkType}:${task.linkKey}`;
+      pendingGroups[gkey] = (pendingGroups[gkey] || 0) + 1;
+    }
+  }
+  let maxPending = 0;
+  let mostDemandingKey = "";
+  for (const [key, val] of Object.entries(pendingGroups)) {
+    if (val > maxPending) {
+      maxPending = val;
+      mostDemandingKey = key;
+    }
+  }
+  let mostDemandingLabel = "Ninguno";
+  if (mostDemandingKey) {
+    const parts = mostDemandingKey.split(":");
+    const linkType = parts[0];
+    const linkKey = parts.slice(1).join(":");
+    if (linkType === "subject") {
+      const subject = subjects.find(s => s.name === linkKey);
+      mostDemandingLabel = subject ? subject.name : linkKey;
+    } else if (linkType === "track") {
+      const track = EXTRA_TRACKS.find(t => t.key === linkKey);
+      mostDemandingLabel = track ? track.label : linkKey;
+    }
+    mostDemandingLabel += ` (${maxPending})`;
+  }
+  const mostDemandingSubjectEl = document.getElementById("mostDemandingSubject");
+  if (mostDemandingSubjectEl) {
+    mostDemandingSubjectEl.textContent = mostDemandingLabel;
+  }
+  
+  taskStatsChartEl.innerHTML = "";
+  
+  const taskGroups = {};
+  for (const s of subjects) {
+    taskGroups[`subject:${s.name}`] = { label: s.name, color: s.color, total: 0, completed: 0 };
+  }
+  for (const t of EXTRA_TRACKS) {
+    taskGroups[`track:${t.key}`] = { label: t.label, color: t.color, total: 0, completed: 0 };
+  }
+  
+  for (const task of list) {
+    if (task.linkType) {
+      const gkey = `${task.linkType}:${task.linkKey}`;
+      if (!taskGroups[gkey]) {
+        taskGroups[gkey] = { label: task.linkKey, color: "var(--accent)", total: 0, completed: 0 };
+      }
+      taskGroups[gkey].total++;
+      if (task.completed) taskGroups[gkey].completed++;
+    }
+  }
+  
+  const activeGroups = Object.values(taskGroups).filter(g => g.total > 0);
+  if (activeGroups.length === 0) {
+    taskStatsChartEl.innerHTML = `<div class="empty-state" style="border: 0; text-align: center; color: var(--muted); padding: 12px 0;">Vincula tareas a tus asignaturas o hobbies para ver su rendimiento aquí.</div>`;
+    return;
+  }
+  
+  activeGroups.sort((a, b) => b.total - a.total);
+  
+  for (const group of activeGroups) {
+    const ratio = (group.completed / group.total) * 100;
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `
+      <span class="bar-label">
+        <span style="font-weight:700;">${escapeHtml(group.label)}</span>
+        <small>${group.completed}/${group.total}</small>
+      </span>
+      <span class="bar-track">
+        <span class="bar-fill" style="background:${group.color}; width:${ratio}%"></span>
+      </span>
+      <span class="bar-value">${Math.round(ratio)}%</span>
+    `;
+    taskStatsChartEl.appendChild(row);
+  }
+}
+
+function renderDayTasks() {
+  if (!dayTasksListEl) return;
+  dayTasksListEl.innerHTML = "";
+  
+  const list = (state.checklistTasks || []).filter(t => t.dueDate === selectedDate);
+  
+  if (list.length === 0) {
+    dayTasksListEl.innerHTML = `<div class="empty-state" style="padding: 8px 10px; font-size:0.78rem;">No hay tareas programadas para este día.</div>`;
+    return;
+  }
+  
+  for (const task of list) {
+    const item = document.createElement("div");
+    item.className = `day-task-item ${task.completed ? "completed" : ""}`;
+    item.dataset.taskId = task.id;
+    
+    let taskColor = "var(--line)";
+    if (task.linkType === "subject") {
+      const subject = subjects.find(s => s.name === task.linkKey);
+      taskColor = subject ? subject.color : "var(--accent)";
+    } else if (task.linkType === "track") {
+      const track = EXTRA_TRACKS.find(t => t.key === task.linkKey);
+      taskColor = track ? track.color : "#d97706";
+    }
+    item.style.borderLeftColor = taskColor;
+    
+    item.innerHTML = `
+      <label class="task-checkbox-wrapper" style="margin-right: 4px;">
+        <input type="checkbox" class="task-checkbox-input" data-task-id="${task.id}" ${task.completed ? "checked" : ""}>
+        <span class="task-checkbox-custom" style="width:16px; height:16px; border-radius:4px;"></span>
+      </label>
+      <span class="day-task-text" style="font-size:0.82rem;">${escapeHtml(task.text)}</span>
+      <div class="notice-actions">
+        <button type="button" class="notice-action" data-edit-task-id="${task.id}" title="Editar">✎</button>
+        <button type="button" class="notice-action" data-delete-task-id="${task.id}" title="Eliminar" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">🗑</button>
+      </div>
+    `;
+    dayTasksListEl.appendChild(item);
+  }
+}
+
+function handleDayTasksClick(event) {
+  const checkbox = event.target.closest(".task-checkbox-input");
+  if (checkbox) {
+    const taskId = checkbox.dataset.taskId;
+    toggleTaskCompletion(taskId);
+    return;
+  }
+  
+  const editBtn = event.target.closest("[data-edit-task-id]");
+  if (editBtn) {
+    const taskId = editBtn.dataset.editTaskId;
+    const task = state.checklistTasks.find(t => t.id === taskId);
+    if (task) {
+      openTaskEntry(task);
+    }
+    return;
+  }
+  
+  const deleteBtn = event.target.closest("[data-delete-task-id]");
+  if (deleteBtn) {
+    const taskId = deleteBtn.dataset.deleteTaskId;
+    deleteTask(taskId);
+    return;
+  }
+
+  const item = event.target.closest(".day-task-item");
+  if (item) {
+    if (event.target.closest(".task-checkbox-wrapper") || event.target.closest(".notice-actions")) {
+      return;
+    }
+    const taskId = item.dataset.taskId;
+    const task = state.checklistTasks.find(t => t.id === taskId);
+    if (task) {
+      openTaskDetailsModal(task);
+    }
+  }
+}
+
+function openTaskDetailsModal(task) {
+  currentViewingTaskId = task.id;
+  if (taskDetailsTitleEl) taskDetailsTitleEl.textContent = task.text;
+  if (taskDetailsDescEl) taskDetailsDescEl.textContent = task.description || "Sin descripción.";
+  
+  let linkLabel = "Ninguno (sin vincular)";
+  let taskColor = "var(--line)";
+  if (task.linkType === "subject") {
+    const subject = subjects.find(s => s.name === task.linkKey);
+    taskColor = subject ? subject.color : "var(--accent)";
+    linkLabel = task.linkKey;
+  } else if (task.linkType === "track") {
+    const track = EXTRA_TRACKS.find(t => t.key === task.linkKey);
+    taskColor = track ? track.color : "#d97706";
+    linkLabel = track ? track.label : task.linkKey;
+  }
+  if (taskDetailsLinkEl) {
+    taskDetailsLinkEl.innerHTML = linkLabel !== "Ninguno (sin vincular)"
+      ? `<span class="task-tag" style="background:${hexToSoftBackground(taskColor)}; color:${taskColor};">${escapeHtml(linkLabel)}</span>`
+      : `<span style="color: var(--muted); font-style: italic;">Sin vincular</span>`;
+  }
+  
+  if (taskDetailsDifficultyEl) {
+    taskDetailsDifficultyEl.innerHTML = "★".repeat(task.difficulty) + "☆".repeat(5 - task.difficulty);
+  }
+  
+  if (taskDetailsDueDateEl) {
+    if (task.dueDate) {
+      const todayKey = getTodayDateKey();
+      const isOverdue = !task.completed && task.dueDate < todayKey;
+      const dateLabel = formatDateLong(task.dueDate);
+      taskDetailsDueDateEl.innerHTML = isOverdue
+        ? `<span style="color: #dc2626; font-weight: bold;">📅 ${dateLabel} (atrasada)</span>`
+        : `<span>📅 ${dateLabel}</span>`;
+    } else {
+      taskDetailsDueDateEl.innerHTML = `<span style="color: var(--muted); font-style: italic;">Sin fecha</span>`;
+    }
+  }
+  
+  if (taskDetailsCheckboxEl) taskDetailsCheckboxEl.checked = task.completed;
+  if (taskDetailsStatusTextEl) {
+    taskDetailsStatusTextEl.textContent = task.completed ? "Completada" : "Pendiente";
+    taskDetailsStatusTextEl.style.color = task.completed ? "#16a34a" : "var(--muted)";
+  }
+  
+  if (taskDetailsModalEl) taskDetailsModalEl.hidden = false;
+}
+
+function closeTaskDetailsModal() {
+  currentViewingTaskId = null;
+  if (taskDetailsModalEl) taskDetailsModalEl.hidden = true;
+}
+
+// --- Nuevos Controladores y Renderizadores de Checklist Layout ---
+
+function saveChecklistInPageTask(event) {
+  event.preventDefault();
+  const text = checklistTaskTextEl.value.trim();
+  if (!text) {
+    showToast("Escribe la tarea antes de guardarla.");
+    return;
+  }
+  const description = checklistTaskDescriptionEl ? checklistTaskDescriptionEl.value.trim() : "";
+  
+  let linkType = "";
+  let linkKey = "";
+  if (checklistTaskLinkEl.value) {
+    const parts = checklistTaskLinkEl.value.split(":");
+    linkType = parts[0];
+    linkKey = parts.slice(1).join(":");
+  }
+  
+  const dueDate = checklistTaskDueDateEl.value || "";
+  const difficulty = clampDifficulty(checklistTaskDifficultyEl.value);
+  
+  if (!state.checklistTasks) state.checklistTasks = [];
+  
+  const newTask = {
+    id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    text,
+    description,
+    completed: false,
+    linkType,
+    linkKey,
+    dueDate,
+    difficulty,
+    createdAt: new Date().toISOString(),
+    completedAt: ""
+  };
+  state.checklistTasks.push(newTask);
+  showToast("Tarea añadida.");
+  
+  checklistAddFormEl.reset();
+  if (checklistTaskDescriptionEl) checklistTaskDescriptionEl.value = "";
+  checklistTaskDueDateEl.value = selectedDate;
+  checklistTaskDifficultyEl.value = 3;
+  
+  saveState();
+  refreshChecklistAll();
+  
+  if (dueDate) {
+    refreshDayCell(dueDate);
+  }
+}
+
+function renderChecklistInlineLinkOptions() {
+  if (!checklistTaskLinkEl) return;
+  checklistTaskLinkEl.innerHTML = '<option value="">Ninguno (sin vincular)</option>';
+  
+  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+  const subGroup = document.createElement("optgroup");
+  subGroup.label = subPlural;
+  for (const subject of subjects) {
+    const opt = document.createElement("option");
+    opt.value = `subject:${subject.name}`;
+    opt.textContent = subject.name;
+    subGroup.appendChild(opt);
+  }
+  checklistTaskLinkEl.appendChild(subGroup);
+
+  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
+  const hobGroup = document.createElement("optgroup");
+  hobGroup.label = hobPlural;
+  for (const track of EXTRA_TRACKS) {
+    const opt = document.createElement("option");
+    opt.value = `track:${track.key}`;
+    opt.textContent = track.label;
+    hobGroup.appendChild(opt);
+  }
+  checklistTaskLinkEl.appendChild(hobGroup);
+}
+
+function renderChecklistSelectedDay() {
+  if (!checklistSelectedWeekdayEl || !checklistSelectedDateEl) return;
+  checklistSelectedWeekdayEl.textContent = formatWeekday(selectedDate);
+  checklistSelectedDateEl.textContent = formatDateLong(selectedDate);
+  
+  if (checklistTaskDueDateEl) {
+    checklistTaskDueDateEl.value = selectedDate;
+  }
+  
+  renderChecklistDayTasks();
+}
+
+function renderChecklistDayTasks() {
+  if (!checklistDayTasksListEl) return;
+  checklistDayTasksListEl.innerHTML = "";
+  
+  const list = (state.checklistTasks || []).filter(t => t.dueDate === selectedDate);
+  
+  if (list.length === 0) {
+    checklistDayTasksListEl.innerHTML = `<div class="empty-state" style="padding: 12px 14px; font-size:0.86rem; text-align: center; color: var(--muted);">No hay tareas programadas para este día.</div>`;
+    return;
+  }
+  
+  for (const task of list) {
+    const item = document.createElement("div");
+    item.className = `day-task-item ${task.completed ? "completed" : ""}`;
+    item.style.padding = "10px 12px";
+    item.dataset.taskId = task.id;
+    
+    let taskColor = "var(--line)";
+    if (task.linkType === "subject") {
+      const subject = subjects.find(s => s.name === task.linkKey);
+      taskColor = subject ? subject.color : "var(--accent)";
+    } else if (task.linkType === "track") {
+      const track = EXTRA_TRACKS.find(t => t.key === task.linkKey);
+      taskColor = track ? track.color : "#d97706";
+    }
+    item.style.borderLeftColor = taskColor;
+    item.style.borderLeftWidth = "4px";
+    
+    item.innerHTML = `
+      <label class="task-checkbox-wrapper" style="margin-right: 4px;">
+        <input type="checkbox" class="task-checkbox-input" data-task-id="${task.id}" ${task.completed ? "checked" : ""}>
+        <span class="task-checkbox-custom" style="width:16px; height:16px; border-radius:4px;"></span>
+      </label>
+      <span class="day-task-text" style="font-size:0.86rem;">${escapeHtml(task.text)}</span>
+      <div class="notice-actions">
+        <button type="button" class="notice-action" data-edit-task-id="${task.id}" title="Editar">✎</button>
+        <button type="button" class="notice-action" data-delete-task-id="${task.id}" title="Eliminar" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">🗑</button>
+      </div>
+    `;
+    checklistDayTasksListEl.appendChild(item);
+  }
+}
+
+function getMockTasks() {
+  const todayDate = new Date();
+  const formatDateOffset = (offsetDays) => {
+    const d = new Date();
+    d.setDate(todayDate.getDate() + offsetDays);
+    return toDateKey(d);
+  };
+  
+  return [
+    {
+      id: "task-mock-1",
+      text: "Estudiar para el examen parcial de Álgebra",
+      completed: false,
+      linkType: "subject",
+      linkKey: "Matemáticas",
+      dueDate: formatDateOffset(3),
+      difficulty: 4,
+      createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+      completedAt: ""
+    },
+    {
+      id: "task-mock-2",
+      text: "Implementar maquetación responsive del dashboard",
+      completed: false,
+      linkType: "subject",
+      linkKey: "Diseño Web",
+      dueDate: formatDateOffset(0),
+      difficulty: 3,
+      createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      completedAt: ""
+    },
+    {
+      id: "task-mock-3",
+      text: "Proyecto: Depurar índices de base de datos",
+      completed: false,
+      linkType: "subject",
+      linkKey: "Programación",
+      dueDate: formatDateOffset(-2),
+      difficulty: 5,
+      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      completedAt: ""
+    },
+    {
+      id: "task-mock-4",
+      text: "Correr 5 km por la ruta del río",
+      completed: true,
+      linkType: "track",
+      linkKey: "deporte",
+      dueDate: formatDateOffset(-1),
+      difficulty: 2,
+      createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      completedAt: new Date(Date.now() - 1 * 86400000).toISOString()
+    },
+    {
+      id: "task-mock-5",
+      text: "Leer 2 capítulos de novela de ciencia ficción",
+      completed: true,
+      linkType: "track",
+      linkKey: "lectura",
+      dueDate: formatDateOffset(0),
+      difficulty: 1,
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString()
+    }
+  ];
+}
+
+function seedMockSubjectsAndTracksIfNeeded() {
+  let modified = false;
+  if (!state.settings.subjects || state.settings.subjects.length === 0) {
+    state.settings.subjects = [
+      { name: "Matemáticas", description: "Álgebra y cálculo lineal", color: "#0f766e", defaultDifficulty: 4 },
+      { name: "Programación", description: "Algoritmos y estructuras de datos", color: "#2563eb", defaultDifficulty: 3 },
+      { name: "Diseño Web", description: "HTML, CSS y UX/UI", color: "#7c3aed", defaultDifficulty: 2 }
+    ];
+    state.settings.subjectDifficulty = {
+      "Matemáticas": 4,
+      "Programación": 3,
+      "Diseño Web": 2
+    };
+    modified = true;
+  }
+  if (!state.settings.tracks || state.settings.tracks.length === 0) {
+    state.settings.tracks = [
+      { key: "deporte", label: "Deporte", color: "#0284c7" },
+      { key: "lectura", label: "Lectura", color: "#d97706" }
+    ];
+    modified = true;
+  }
+  if (modified) {
+    saveState();
+    syncConfigFromState();
+  }
+}
+
+// --- Renderizador de la Vista Previa del Calendario (Checklist) ---
+
+function renderChecklistCalendarPreview() {
+  if (!calendarPreviewGrid) return;
+  calendarPreviewGrid.innerHTML = "";
+  
+  const year = previewVisibleMonth.getFullYear();
+  const month = previewVisibleMonth.getMonth();
+  
+  // Actualizar título del mes
+  const monthTitleEl = document.querySelector(".calendar-preview-month-title");
+  if (monthTitleEl) {
+    monthTitleEl.textContent = `${getMonthLabel(previewVisibleMonth)} ${year}`;
+  }
+  
+  const first = new Date(year, month, 1);
+  const blanks = (first.getDay() + 6) % 7;
+  for (let i = 0; i < blanks; i++) {
+    const blank = document.createElement("div");
+    blank.className = "blank-cell";
+    blank.style.minHeight = "36px";
+    calendarPreviewGrid.appendChild(blank);
+  }
+  
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayKey = getTodayDateKey();
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cellDate = new Date(year, month, day);
+    const key = toDateKey(cellDate);
+    
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "day-cell preview-day-cell";
+    
+    // Asignar clase de fin de semana
+    if ([0, 6].includes(cellDate.getDay())) {
+      cell.classList.add("weekend");
+    }
+    
+    // Resaltar según filtro de vista previa y día actual
+    if (key === selectedPreviewDateFilter) {
+      cell.classList.add("selected");
+    } else if (key === TODAY_DATE) {
+      cell.classList.add("today");
+    }
+    
+    // Número del día
+    const numSpan = document.createElement("span");
+    numSpan.textContent = day;
+    numSpan.style.fontWeight = "bold";
+    cell.appendChild(numSpan);
+    
+    // Comprobar si hay tareas pendientes o completadas para este día
+    const dayTasks = (state.checklistTasks || []).filter(t => t.dueDate === key);
+    if (dayTasks.length > 0) {
+      const dotsContainer = document.createElement("div");
+      dotsContainer.style.display = "flex";
+      dotsContainer.style.gap = "2px";
+      dotsContainer.style.justifyContent = "center";
+      
+      const pendingCount = dayTasks.filter(t => !t.completed).length;
+      const completedCount = dayTasks.length - pendingCount;
+      
+      if (pendingCount > 0) {
+        const dot = document.createElement("span");
+        dot.style.width = "5px";
+        dot.style.height = "5px";
+        dot.style.borderRadius = "50%";
+        dot.style.background = "#6366f1"; // Índigo para tareas pendientes
+        dotsContainer.appendChild(dot);
+      }
+      if (completedCount > 0) {
+        const dot = document.createElement("span");
+        dot.style.width = "5px";
+        dot.style.height = "5px";
+        dot.style.borderRadius = "50%";
+        dot.style.background = "#10b981"; // Esmeralda para tareas completadas
+        dotsContainer.appendChild(dot);
+      }
+      cell.appendChild(dotsContainer);
+    }
+    
+    cell.addEventListener("click", () => {
+      if (selectedPreviewDateFilter === key) {
+        selectedPreviewDateFilter = null;
+      } else {
+        selectedPreviewDateFilter = key;
+        selectedDate = key;
+        renderSelectedDay();
+      }
+      renderChecklistCalendarPreview();
+      renderChecklist();
+    });
+    
+    calendarPreviewGrid.appendChild(cell);
   }
 }

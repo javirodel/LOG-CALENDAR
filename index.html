@@ -14,176 +14,364 @@
           <h1 id="calendarTitle">LOG CALENDAR</h1>
           <p class="subtitle" id="calendarSubtitle">LOG is LOG of Growth</p>
         </div>
-        <div class="top-actions">
-          <button class="icon-button" id="exportBtn" type="button" title="Exportar copia de seguridad" aria-label="Exportar copia de seguridad">
-            <span>Exportar</span>
-          </button>
-          <label class="icon-button file-button" title="Importar copia de seguridad">
-            <input id="importInput" type="file" accept="application/json">
-            <span>Importar</span>
-          </label>
-          <button class="icon-button settings-button" id="settingsBtn" type="button" title="Ajustes" aria-label="Abrir ajustes">⚙</button>
+        <div class="topbar-right-group" style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+          <div class="top-actions">
+            <button class="icon-button" id="exportBtn" type="button" title="Exportar copia de seguridad" aria-label="Exportar copia de seguridad">
+              <span>Exportar</span>
+            </button>
+            <label class="icon-button file-button" title="Importar copia de seguridad">
+              <input id="importInput" type="file" accept="application/json">
+              <span>Importar</span>
+            </label>
+            <button class="icon-button settings-button" id="settingsBtn" type="button" title="Ajustes" aria-label="Abrir ajustes">⚙</button>
+          </div>
+          <div class="view-switcher" role="tablist" aria-label="Navegación de vistas">
+            <button class="view-tab active" id="tabCalendar" type="button" role="tab" aria-selected="true" aria-controls="paneCalendar">📅 Calendario</button>
+            <button class="view-tab" id="tabChecklist" type="button" role="tab" aria-selected="false" aria-controls="paneChecklist">📋 Tareas</button>
+          </div>
         </div>
       </header>
 
       <main class="workspace">
         <div class="left-column">
-          <section class="calendar-pane" aria-label="Calendario interactivo">
-            <div class="calendar-toolbar">
-              <div>
-                <h2>Mapa de horas</h2>
-                <p id="visibleRangeLabel">Selecciona un día para editar estudio, actividades y eventos.</p>
-              </div>
-              <div class="calendar-legends">
-                <div class="legend" aria-label="Leyenda de intensidad">
-                  <span>0 h</span>
-                  <span class="swatch level-1"></span>
-                  <span class="swatch level-2"></span>
-                  <span class="swatch level-3"></span>
-                  <span class="swatch level-4"></span>
-                  <span>10+ h</span>
+          <!-- VISTA DE CALENDARIO -->
+          <div id="paneCalendar" class="view-pane">
+            <section class="calendar-pane" aria-label="Calendario interactivo">
+              <div class="calendar-toolbar">
+                <div>
+                  <h2>Mapa de horas</h2>
+                  <p id="visibleRangeLabel">Selecciona un día para editar estudio, actividades y eventos.</p>
                 </div>
-                <div class="marker-legend" id="eventLegend" aria-label="Leyenda de marcadores">
-                  <!-- JS renders this -->
-                </div>
-              </div>
-            </div>
-
-            <div class="month-nav-strip" aria-label="Navegación de meses">
-              <button class="icon-button month-nav-button" id="prevMonthsBtn" type="button" aria-label="Ver dos meses anteriores">‹</button>
-              <strong id="visibleMonthPairTitle">Enero 2026 · Febrero 2026</strong>
-              <button class="icon-button month-nav-button" id="nextMonthsBtn" type="button" aria-label="Ver dos meses siguientes">›</button>
-            </div>
-
-            <div class="months" id="months"></div>
-          </section>
-
-          <section class="stats-section" aria-label="Resumen y estadísticas">
-            <div class="stats-header">
-              <div>
-                <h2>Estadísticas principales</h2>
-              </div>
-              <div class="stat-pill-wrap">
-                <div class="stat-pill">
-                  <span id="grandTotal">0 h</span>
-                  <small>total global</small>
-                </div>
-                <div class="stat-pill secondary">
-                  <span id="weightedLoad">0</span>
-                  <small>carga ponderada</small>
+                <div class="calendar-legends">
+                  <div class="legend" aria-label="Leyenda de intensidad">
+                    <span>0 h</span>
+                    <span class="swatch level-1"></span>
+                    <span class="swatch level-2"></span>
+                    <span class="swatch level-3"></span>
+                    <span class="swatch level-4"></span>
+                    <span>10+ h</span>
+                  </div>
+                  <div class="marker-legend" id="eventLegend" aria-label="Leyenda de marcadores">
+                    <!-- JS renders this -->
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="metric-grid" id="metricsGrid">
-              <article>
-                <span id="avgPerDay">0 h</span>
-                <p>media diaria</p>
-              </article>
-              <article>
-                <span id="avgActiveDay">0 h</span>
-                <p>media en días activos</p>
-              </article>
-              <article>
-                <span id="bestDay">-</span>
-                <p>mejor día académico</p>
-              </article>
-              <article>
-                <span id="streak">0</span>
-                <p>racha de días seguidos con estudio</p>
-              </article>
-              <article>
-                <span id="studyFocus">0%</span>
-                <p>foco en estudio</p>
-              </article>
-              <article>
-                <span id="hobbyFocus">0%</span>
-                <p>foco en hobbies</p>
-              </article>
-              <article>
-                <span id="topSubject">-</span>
-                <p>asignatura dominante</p>
-              </article>
-              <article>
-                <span id="topTrack">-</span>
-                <p>hobby dominante</p>
-              </article>
-              <article>
-                <span id="avgRating">—</span>
-                <p>valoración media</p>
-              </article>
-              <article class="metric-more">
-                <button id="moreStatsBtn" type="button">
-                  <span>Ver más</span>
-                  <p>análisis completo</p>
-                </button>
-              </article>
-            </div>
+              <div class="month-nav-strip" aria-label="Navegación de meses">
+                <button class="icon-button month-nav-button" id="prevMonthsBtn" type="button" aria-label="Ver dos meses anteriores">‹</button>
+                <strong id="visibleMonthPairTitle">Enero 2026 · Febrero 2026</strong>
+                <button class="icon-button month-nav-button" id="nextMonthsBtn" type="button" aria-label="Ver dos meses siguientes">›</button>
+              </div>
 
-            <div class="charts">
-              <div class="chart-panel">
-                <h3>Horas por asignatura</h3>
-                <div class="bar-chart" id="subjectChart"></div>
+              <div class="months" id="months"></div>
+            </section>
+
+            <section class="stats-section" aria-label="Resumen y estadísticas">
+              <div class="stats-header">
+                <div>
+                  <h2>Estadísticas principales</h2>
+                </div>
+                <div class="stat-pill-wrap">
+                  <div class="stat-pill">
+                    <span id="grandTotal">0 h</span>
+                    <small>total global</small>
+                  </div>
+                  <div class="stat-pill secondary">
+                    <span id="weightedLoad">0</span>
+                    <small>carga ponderada</small>
+                  </div>
+                </div>
               </div>
-              <div class="chart-panel">
-                <h3>Distribución de valoraciones</h3>
-                <div class="ratings-chart" id="ratingsChart"></div>
+
+              <div class="metric-grid" id="metricsGrid">
+                <article>
+                  <span id="avgPerDay">0 h</span>
+                  <p>media diaria</p>
+                </article>
+                <article>
+                  <span id="avgActiveDay">0 h</span>
+                  <p>media en días activos</p>
+                </article>
+                <article>
+                  <span id="bestDay">-</span>
+                  <p>mejor día académico</p>
+                </article>
+                <article>
+                  <span id="streak">0</span>
+                  <p id="streakLabel">racha de días seguidos con estudio</p>
+                </article>
+                <article>
+                  <span id="studyFocus">0%</span>
+                  <p id="studyFocusLabel">foco en estudio</p>
+                </article>
+                <article>
+                  <span id="hobbyFocus">0%</span>
+                  <p id="hobbyFocusLabel">foco en hobbies</p>
+                </article>
+                <article>
+                  <span id="topSubject">-</span>
+                  <p id="topSubjectLabel">asignatura dominante</p>
+                </article>
+                <article>
+                  <span id="topTrack">-</span>
+                  <p id="topTrackLabel">hobby dominante</p>
+                </article>
+                <article>
+                  <span id="avgRating">—</span>
+                  <p>valoración media</p>
+                </article>
+                <article class="metric-more">
+                  <button id="moreStatsBtn" type="button">
+                    <span>Ver más</span>
+                    <p>análisis completo</p>
+                  </button>
+                </article>
               </div>
-              <div class="chart-panel balance-panel">
-                <h3>Distribución global</h3>
-                <div class="balance-chart" id="balanceChart"></div>
+
+              <div class="charts">
+                <div class="chart-panel">
+                  <h3 id="subjectChartTitle">Horas por asignatura</h3>
+                  <div class="bar-chart" id="subjectChart"></div>
+                </div>
+                <div class="chart-panel">
+                  <h3>Distribución de valoraciones</h3>
+                  <div class="ratings-chart" id="ratingsChart"></div>
+                </div>
+                <div class="chart-panel balance-panel">
+                  <h3>Distribución global</h3>
+                  <div class="balance-chart" id="balanceChart"></div>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </div>
+
+          <!-- VISTA DE CHECKLIST - LADO IZQUIERDO (DIA SELECCIONADO + FORMULARIO TAREAS) -->
+          <div id="paneChecklistSelectedDay" class="view-pane" hidden>
+            <section class="checklist-day-pane" aria-label="Editor de tareas del día" style="border: 1px solid rgba(221, 226, 235, 0.95); border-radius: var(--radius); background: rgba(255, 255, 255, 0.88); box-shadow: var(--shadow); backdrop-filter: blur(16px); padding: 20px;">
+              <div class="selected-day" style="margin-bottom: 12px;">
+                <p class="eyebrow" id="checklistSelectedWeekday">Hoy</p>
+                <h2 id="checklistSelectedDate" style="margin-bottom: 0;">1 junio 2026</h2>
+              </div>
+              <hr style="border: 0; border-top: 1px solid var(--line); margin: 12px 0 16px 0;">
+              
+              <div class="day-tasks-section" style="border-top: 0; margin-top: 0; padding-top: 0; margin-bottom: 20px;">
+                <label class="notes-label" style="font-size: 0.94rem; margin-top: 0; margin-bottom: 12px; color: #374151;">Tareas de este día</label>
+                <div class="day-tasks-list" id="checklistDayTasksList">
+                  <!-- JS renders tasks due on selected day -->
+                </div>
+              </div>
+
+              <div class="event-form" style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: rgba(var(--accent-rgb), 0.03); border-color: rgba(var(--accent-rgb), 0.15); margin-bottom: 0;">
+                <label class="notes-label" style="margin-top: 0; margin-bottom: 10px; font-size: 0.94rem; color: var(--accent-dark);">Añadir tarea para este día</label>
+                <form id="checklistAddForm" class="settings-form" style="gap: 10px;">
+                  <input id="checklistTaskText" type="text" maxlength="90" placeholder="¿Qué tarea tienes pendiente?" required style="min-height: 38px;">
+                  <input id="checklistTaskDescription" type="text" maxlength="150" placeholder="Descripción breve (opcional)" style="min-height: 38px;">
+                  
+                  <label for="checklistTaskLink" style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;">Vincular a proyecto</label>
+                  <select id="checklistTaskLink" aria-label="Vincular a proyecto" style="min-height: 38px; font-weight: bold;">
+                    <!-- JS renders subjects and tracks -->
+                  </select>
+                  
+                  <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 8px;">
+                    <label style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;">Dificultad (1-5)
+                      <input id="checklistTaskDifficulty" type="number" min="1" max="5" step="1" value="3" placeholder="Dif. 1-5" style="min-height: 38px; text-align: center;">
+                    </label>
+                    <label style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;">Fecha de entrega
+                      <input id="checklistTaskDueDate" type="date" style="min-height: 38px;">
+                    </label>
+                  </div>
+                  
+                  <button class="primary-button" type="submit" style="width: 100%; min-height: 38px; margin-top: 6px;">+ Añadir Tarea</button>
+                </form>
+              </div>
+            </section>
+          </div>
         </div>
 
-        <aside class="day-panel" aria-label="Editor del día">
-          <div class="selected-day">
-            <p class="eyebrow" id="selectedWeekday">Hoy</p>
-            <h2 id="selectedDate">1 enero 2026</h2>
-            <div class="day-total">
-              <span id="selectedTotal">0</span>
-              <small>horas totales registradas</small>
-            </div>
-            <div class="day-split" id="daySplit">
-              <span id="selectedStudy">Estudio: 0 h</span>
-            </div>
-          </div>
-
-          <div class="notice-list" id="noticeList"></div>
-
-          <div class="event-form">
-            <label class="notes-label">Evento importante</label>
-            <button class="ghost-button event-open-button" id="openEventModalBtn" type="button">Añadir evento</button>
-          </div>
-
-          <div class="subjects-header">
-            <label class="notes-label">Asignaturas</label>
-          </div>
-          <form class="subject-form" id="subjectForm"></form>
-
-          <div class="focus-tracks" id="focusTracks" aria-label="Bloques extra de tiempo"></div>
-
-          <label class="notes-label" for="dayNotes">Notas del día</label>
-          <textarea id="dayNotes" rows="4" placeholder="Exámenes, temas avanzados, sensaciones, rendimiento..."></textarea>
-
-          <div class="rating-section">
-            <label class="notes-label">Valoración del día</label>
-            <div class="rating-widget">
-              <div class="stars" id="starsContainer" role="radiogroup" aria-label="Valoración del día del 1 al 5">
-                <button type="button" class="star" data-value="1" aria-label="1 estrella — Muy mal día">★</button>
-                <button type="button" class="star" data-value="2" aria-label="2 estrellas — Poco productivo">★</button>
-                <button type="button" class="star" data-value="3" aria-label="3 estrellas — Día normal">★</button>
-                <button type="button" class="star" data-value="4" aria-label="4 estrellas — Productivo">★</button>
-                <button type="button" class="star" data-value="5" aria-label="5 estrellas — Excelente">★</button>
+        <aside class="day-panel" aria-label="Editor del día" id="dayPanel">
+          <!-- DETALLES DEL DIA PARA EL CALENDARIO -->
+          <div id="paneCalendarDayDetails">
+            <div class="selected-day">
+              <p class="eyebrow" id="selectedWeekday">Hoy</p>
+              <h2 id="selectedDate">1 enero 2026</h2>
+              <div class="day-total">
+                <span id="selectedTotal">0</span>
+                <small>horas totales registradas</small>
               </div>
-              <span class="rating-hint" id="ratingHint">Sin valorar</span>
+              <div class="day-split" id="daySplit">
+                <span id="selectedStudy">Estudio: 0 h</span>
+              </div>
+            </div>
+
+            <div class="notice-list" id="noticeList"></div>
+ 
+
+
+            <div class="event-form">
+              <label class="notes-label">Evento importante</label>
+              <button class="ghost-button event-open-button" id="openEventModalBtn" type="button">Añadir evento</button>
+            </div>
+
+            <div class="subjects-header">
+              <label class="notes-label" id="subjectsHeaderLabel" style="cursor: pointer;">Asignaturas</label>
+            </div>
+            <form class="subject-form" id="subjectForm"></form>
+
+            <div class="focus-tracks" id="focusTracks" aria-label="Bloques extra de tiempo"></div>
+
+            <label class="notes-label" for="dayNotes">Notas del día</label>
+            <textarea id="dayNotes" rows="4" placeholder="Exámenes, temas avanzados, sensaciones, rendimiento..."></textarea>
+
+            <div class="rating-section">
+              <label class="notes-label">Valoración del día</label>
+              <div class="rating-widget">
+                <div class="stars" id="starsContainer" role="radiogroup" aria-label="Valoración del día del 1 al 5">
+                  <button type="button" class="star" data-value="1" aria-label="1 estrella — Muy mal día">★</button>
+                  <button type="button" class="star" data-value="2" aria-label="2 estrellas — Poco productivo">★</button>
+                  <button type="button" class="star" data-value="3" aria-label="3 estrellas — Día normal">★</button>
+                  <button type="button" class="star" data-value="4" aria-label="4 estrellas — Productivo">★</button>
+                  <button type="button" class="star" data-value="5" aria-label="5 estrellas — Excelente">★</button>
+                </div>
+                <span class="rating-hint" id="ratingHint">Sin valorar</span>
+              </div>
+            </div>
+
+            <div class="panel-actions">
+              <span class="auto-save-indicator" id="autoSaveIndicator" aria-live="polite">✓ Guardado</span>
+              <button id="clearDayBtn" class="ghost-button" type="button">Vaciar día</button>
             </div>
           </div>
 
-          <div class="panel-actions">
-            <span class="auto-save-indicator" id="autoSaveIndicator" aria-live="polite">✓ Guardado</span>
-            <button id="clearDayBtn" class="ghost-button" type="button">Vaciar día</button>
+          <!-- CONTENIDO DE VISTA CHECKLIST MAIN (LISTADO GENERAL + ESTADISTICAS + VISTA PREVIA CALENDARIO) -->
+          <div id="paneChecklistMain" hidden>
+            <section class="checklist-pane" aria-label="Lista de tareas" style="box-shadow: none; border: 0; background: transparent; padding: 0; backdrop-filter: none; margin-bottom: 0;">
+              <div class="checklist-toolbar" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <h2 style="font-size: 1.22rem; margin: 0;">Lista de tareas generales</h2>
+                <div id="dayFilterIndicator" class="task-tag" style="background: rgba(15, 118, 110, 0.1); color: #0f766e; display: none; align-items: center; gap: 6px; font-weight: 700; font-size: 0.76rem; border-radius: 6px; padding: 4px 10px;">
+                  <span>Filtro de día activo</span>
+                  <button type="button" id="clearDayFilterBtn" style="border:0; background:transparent; cursor:pointer; color:inherit; font-weight:bold; font-size:1.05rem; padding:0 2px; line-height:1;">×</button>
+                </div>
+              </div>
+              
+              <div class="search-wrapper" style="position: relative; margin-bottom: 16px;">
+                <input type="text" id="taskSearchInput" placeholder="🔍 Buscar tareas y filtrar..." style="width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; background: var(--surface);">
+                
+                <div id="checklistFiltersDropdown" class="filters-dropdown" style="position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; z-index: 10; display: none; flex-direction: column; gap: 10px; backdrop-filter: blur(16px); border-color: rgba(15, 118, 110, 0.15);">
+                  <div style="font-size: 0.78rem; font-weight: 750; color: var(--muted); margin-bottom: 2px;">FILTRAR Y ORDENAR TAREAS</div>
+                  <div class="filters-row" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+                    <select id="filterSubject" aria-label="Filtrar por proyecto" style="min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 6px; font-size: 0.8rem; font-weight: bold;"></select>
+                    <select id="filterStatus" aria-label="Filtrar por estado" style="min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 6px; font-size: 0.8rem; font-weight: bold;">
+                      <option value="all" selected>Todas</option>
+                      <option value="pending">Pendientes</option>
+                      <option value="completed">Completadas</option>
+                    </select>
+                    <select id="filterSort" aria-label="Ordenar por" style="min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 6px; font-size: 0.8rem; font-weight: bold;">
+                      <option value="dueDate">Vencimiento</option>
+                      <option value="difficulty">Dificultad</option>
+                      <option value="createdAt">Creación</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                    <button id="closeFiltersBtn" class="ghost-button" type="button" style="min-height: 30px; padding: 2px 10px; font-size: 0.74rem;">Aplicar y cerrar</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="checklist-list" id="checklistList">
+                <!-- JS renders tasks -->
+              </div>
+            </section>
+
+            <!-- VISTA PREVIA CALENDARIO MENSUAL (COLUMNA DERECHA) -->
+            <section class="checklist-calendar-preview" aria-label="Vista previa del calendario" style="box-shadow: none; border: 0; background: transparent; padding: 0; backdrop-filter: none; display: flex; flex-direction: column; min-width: 0;">
+              <div class="calendar-preview-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h2 style="font-size: 1.22rem; margin: 0;">Vista previa del mes</h2>
+                <div style="display: flex; gap: 4px;">
+                  <button id="prevPreviewMonthBtn" class="icon-button" style="min-height:30px; width:30px; padding:0; border-radius:50%; font-size:1.1rem; line-height:1; display:flex; align-items:center; justify-content:center;" type="button">‹</button>
+                  <button id="nextPreviewMonthBtn" class="icon-button" style="min-height:30px; width:30px; padding:0; border-radius:50%; font-size:1.1rem; line-height:1; display:flex; align-items:center; justify-content:center;" type="button">›</button>
+                </div>
+              </div>
+              <div class="calendar-preview-month-title" style="margin-bottom: 12px; font-weight: 750; color: var(--accent-dark); font-size: 0.94rem; text-align: center; text-transform: capitalize;">Enero 2026</div>
+              
+              <div class="calendar-preview-weekday-row" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; margin-bottom: 6px; font-size: 0.74rem; font-weight: 800; color: var(--muted);">
+                <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+              </div>
+              <div id="calendarPreviewGrid" class="day-grid" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px;">
+                <!-- JS renders days -->
+              </div>
+            </section>
+
+            <!-- SECCION DE ESTADISTICAS COMPLETA (PARTE INFERIOR) -->
+            <section class="checklist-stats-pane" aria-label="Estadísticas de tareas" style="box-shadow: none; border: 0; background: transparent; padding: 0; backdrop-filter: none; margin-top: 10px;">
+              <div class="stats-header" style="margin-bottom: 16px;">
+                <h2 style="font-size: 1.22rem; margin: 0;">Estadísticas de tareas</h2>
+                <div class="stat-pill" style="align-items: center; justify-content: center;">
+                  <span id="completedPercentage" style="font-size: 1.62rem; line-height: 1;">0%</span>
+                  <small>completado</small>
+                </div>
+              </div>
+              
+              <div class="checklist-stats-grid" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px;">
+                <!-- Columna 1: Tarjetas de Métricas -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                  <div class="metric-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0;">
+                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+                      <span id="totalTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; line-height: 1; font-weight: 900;">0</span>
+                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">totales</p>
+                    </article>
+                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+                      <span id="pendingTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; line-height: 1; font-weight: 900;">0</span>
+                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">pendientes</p>
+                    </article>
+                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+                      <span id="completedTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; line-height: 1; font-weight: 900;">0</span>
+                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">completadas</p>
+                    </article>
+                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
+                      <span id="overdueTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; color: #dc2626; line-height: 1; font-weight: 900;">0</span>
+                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">atrasadas</p>
+                    </article>
+                  </div>
+                  
+                  <div class="metric-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0;">
+                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
+                      <div>
+                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Dificultad media pendiente</p>
+                        <span id="avgPendingDifficulty" style="font-size: 1.35rem; line-height: 1; font-weight: 900; color: #d97706;">—</span>
+                      </div>
+                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Media de estrellas (1-5★) de tareas restantes</p>
+                    </article>
+                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
+                      <div>
+                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Próximos 7 días</p>
+                        <span id="dueSoonTasksCount" style="font-size: 1.35rem; line-height: 1; font-weight: 900; color: #2563eb;">0</span>
+                      </div>
+                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Tareas pendientes con entrega esta semana</p>
+                    </article>
+                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
+                      <div>
+                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Racha de completado</p>
+                        <span id="taskCompletionStreak" style="font-size: 1.35rem; line-height: 1; font-weight: 900; color: #16a34a;">0 días</span>
+                      </div>
+                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Días consecutivos completando tareas</p>
+                    </article>
+                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
+                      <div>
+                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Item más exigente</p>
+                        <span id="mostDemandingSubject" style="font-size: 0.94rem; line-height: 1.2; font-weight: 850; color: #7c3aed; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Ninguno</span>
+                      </div>
+                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Proyecto/hobby con más tareas pendientes</p>
+                    </article>
+                  </div>
+                </div>
+                
+                <!-- Columna 2: Gráfico de rendimiento por proyecto -->
+                <div class="chart-panel" style="box-shadow: none; padding: 16px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); display: flex; flex-direction: column;">
+                  <h3 style="font-size: 0.88rem; margin: 0 0 12px 0; font-weight: 800; color: #374151;">Rendimiento por proyecto / hobby</h3>
+                  <div class="bar-chart" id="taskStatsChart" style="gap: 8px;"></div>
+                </div>
+              </div>
+            </section>
           </div>
         </aside>
       </main>
@@ -208,6 +396,14 @@
             <form class="settings-form" id="profileForm">
               <label>Título<input id="profileTitle" type="text" maxlength="70"></label>
               <label>Color principal<input id="profileAccent" type="color"></label>
+              <div class="settings-two">
+                <label>Nombre de asignaturas (Plural)<input id="profileSubjectsPlural" type="text" maxlength="30" placeholder="Asignaturas"></label>
+                <label>Nombre de asignatura (Singular)<input id="profileSubjectsSingular" type="text" maxlength="30" placeholder="Asignatura"></label>
+              </div>
+              <div class="settings-two">
+                <label>Nombre de hobbies (Plural)<input id="profileHobbiesPlural" type="text" maxlength="30" placeholder="Hobbies"></label>
+                <label>Nombre de hobby (Singular)<input id="profileHobbiesSingular" type="text" maxlength="30" placeholder="Hobby"></label>
+              </div>
               <p class="settings-help">Los niveles indican desde cuántas horas de estudio se intensifica el color de cada día.</p>
               <div class="settings-two">
                 <label>Horas nivel 1<input id="profileLevel1" type="number" min="0.25" max="24" step="0.25"></label>
@@ -220,13 +416,13 @@
           </article>
 
           <article class="settings-section">
-            <h3>Asignaturas</h3>
+            <h3 id="settingsSubjectsTitle" style="cursor: pointer;">Asignaturas</h3>
             <div class="settings-list" id="subjectsSettingsList"></div>
             <button class="ghost-button add-config-button" id="openSubjectModalBtn" type="button">Añadir asignatura</button>
           </article>
 
           <article class="settings-section">
-            <h3>Hobbies</h3>
+            <h3 id="settingsTracksTitle" style="cursor: pointer;">Hobbies</h3>
             <div class="settings-list" id="tracksSettingsList"></div>
             <button class="ghost-button add-config-button" id="openTrackModalBtn" type="button">Añadir hobby</button>
           </article>
@@ -239,6 +435,9 @@
             </div>
           </article>
         </div>
+        <div class="settings-footer" style="display: flex; justify-content: flex-end; align-items: center; margin-top: 18px; font-size: 0.82rem; color: var(--muted); font-weight: bold;">
+          <span id="settingsVersionIndicator">LOG of growth • Versión 1.2.0</span>
+        </div>
       </section>
     </div>
 
@@ -247,7 +446,7 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="subjectEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow">Asignaturas</p>
+            <p class="eyebrow" id="subjectEntryEyebrow">Asignaturas</p>
             <h2 id="subjectEntryTitle">Añadir asignatura</h2>
           </div>
           <button class="icon-button" id="subjectEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
@@ -267,7 +466,7 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="trackEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow">Hobbies</p>
+            <p class="eyebrow" id="trackEntryEyebrow">Hobbies</p>
             <h2 id="trackEntryTitle">Añadir hobby</h2>
           </div>
           <button class="icon-button" id="trackEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
@@ -311,8 +510,8 @@
             </label>
           </div>
           <div class="event-subject-fields" id="eventSubjectFields" hidden>
-            <label for="eventSubject">Asignatura del examen</label>
-            <select id="eventSubject" aria-label="Asignatura del examen"></select>
+            <label for="eventSubject" id="eventSubjectLabel">Asignatura del evento</label>
+            <select id="eventSubject" aria-label="Asignatura del evento"></select>
             <div class="event-new-subject-fields" id="eventNewSubjectFields" hidden>
               <input id="eventNewSubjectName" type="text" maxlength="42" placeholder="Nombre de la asignatura">
               <input id="eventNewSubjectDescription" type="text" maxlength="90" placeholder="Descripción breve">
@@ -351,6 +550,95 @@
           <button class="icon-button" id="advancedStatsCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
         <div class="advanced-stats-content" id="advancedStatsContent"></div>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="taskEntryModal" hidden>
+      <div class="entry-backdrop" data-close-task></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="taskEntryTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow" id="taskEntryEyebrow">Tareas</p>
+            <h2 id="taskEntryTitle">Añadir tarea</h2>
+          </div>
+          <button class="icon-button" id="taskEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <form class="settings-form" id="taskForm">
+          <input id="taskText" type="text" maxlength="90" placeholder="Ej. Estudiar tema 3" required>
+          
+          <label for="taskDescription">Descripción (opcional)</label>
+          <textarea id="taskDescription" rows="3" placeholder="Detalles de la tarea..." style="min-height: 70px;"></textarea>
+
+          <label for="taskLink" id="taskLinkLabel">Vincular a asignatura/hobby</label>
+          <select id="taskLink" aria-label="Vincular a asignatura o hobby">
+            <!-- JS renders subjects and tracks -->
+          </select>
+          
+          <label for="taskDueDate">Fecha de entrega (opcional)</label>
+          <input id="taskDueDate" type="date">
+          
+          <label for="taskDifficulty" id="taskDifficultyLabel">Dificultad (1-5)</label>
+          <input id="taskDifficulty" type="number" min="1" max="5" step="1" value="3" placeholder="Dificultad 1-5">
+          
+          <button class="primary-button" id="taskSubmitBtn" type="submit">Añadir tarea</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- MODAL DE DETALLES DE TAREA SUPERPUESTO -->
+    <div class="entry-modal" id="taskDetailsModal" hidden>
+      <div class="entry-backdrop" data-close-task-details></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="taskDetailsTitle" style="width: min(480px, calc(100% - 24px)); max-height: calc(100vh - 40px);">
+        <div class="settings-head" style="margin-bottom: 12px;">
+          <div>
+            <p class="eyebrow" id="taskDetailsEyebrow">Detalles de la tarea</p>
+            <h2 id="taskDetailsTitle" style="font-size: 1.25rem; margin-top: 4px; overflow-wrap: anywhere;">Título de la tarea</h2>
+          </div>
+          <button class="icon-button" id="taskDetailsCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+          <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; background: rgba(var(--accent-rgb), 0.02); min-height: 80px;">
+            <label class="notes-label" style="margin: 0 0 6px 0; font-size: 0.76rem; color: var(--muted); font-weight: 800;">DESCRIPCIÓN</label>
+            <p id="taskDetailsDesc" style="margin: 0; font-size: 0.9rem; line-height: 1.45; white-space: pre-wrap; color: var(--ink); word-break: break-word;">Aquí va la descripción detallada de la tarea...</p>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface);">
+              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">PROYECTO / HOBBY</label>
+              <div id="taskDetailsLink" style="font-size: 0.84rem; font-weight: bold;">Sin vincular</div>
+            </div>
+            
+            <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface);">
+              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">DIFICULTAD</label>
+              <div id="taskDetailsDifficulty" style="color: #eab308; font-size: 0.94rem;">★★★☆☆</div>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface);">
+              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">FECHA DE ENTREGA</label>
+              <div id="taskDetailsDueDate" style="font-size: 0.84rem; font-weight: bold;">Sin fecha</div>
+            </div>
+            
+            <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <label class="notes-label" style="margin: 0 0 2px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">ESTADO</label>
+                <div id="taskDetailsStatusText" style="font-size: 0.84rem; font-weight: bold; color: var(--muted);">Pendiente</div>
+              </div>
+              <label class="task-checkbox-wrapper" style="margin-left: 10px;">
+                <input type="checkbox" id="taskDetailsCheckbox" class="task-checkbox-input" style="display: none;">
+                <span class="task-checkbox-custom" style="width: 22px; height: 22px; border-radius: 6px; margin: 0;"></span>
+              </label>
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 14px;">
+            <button class="ghost-button" id="taskDetailsDeleteBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.3); background: rgba(220, 38, 38, 0.02); min-height: 38px; padding: 0 16px;">Eliminar</button>
+            <button class="ghost-button" id="taskDetailsEditBtn" type="button" style="color: var(--accent); border-color: rgba(var(--accent-rgb), 0.3); min-height: 38px; padding: 0 16px;">Editar</button>
+            <button class="primary-button" id="taskDetailsOkBtn" type="button" style="min-height: 38px; padding: 0 20px;">Aceptar</button>
+          </div>
+        </div>
       </section>
     </div>
 
