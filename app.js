@@ -47,8 +47,8 @@ const RATING_LABELS = [
 
 let state = loadState();
 
-// Seed mock data if checklistTasks is empty (for demo purposes)
-if (!state.checklistTasks || state.checklistTasks.length === 0) {
+// Seed mock subjects and tracks if localStorage is empty (for demo purposes, first-time visitor or after reset)
+if (!localStorage.getItem(STORAGE_KEY)) {
   if (!state.settings.subjects || state.settings.subjects.length === 0) {
     state.settings.subjects = [
       { name: "Matemáticas", description: "Álgebra y cálculo lineal", color: "#0f766e", defaultDifficulty: 4 },
@@ -67,7 +67,6 @@ if (!state.checklistTasks || state.checklistTasks.length === 0) {
       { key: "lectura", label: "Lectura", color: "#d97706" }
     ];
   }
-  state.checklistTasks = getMockTasks();
   saveState();
 }
 
@@ -3762,100 +3761,6 @@ function renderChecklistDayTasks() {
   }
 }
 
-function getMockTasks() {
-  const todayDate = new Date();
-  const formatDateOffset = (offsetDays) => {
-    const d = new Date();
-    d.setDate(todayDate.getDate() + offsetDays);
-    return toDateKey(d);
-  };
-  
-  return [
-    {
-      id: "task-mock-1",
-      text: "Estudiar para el examen parcial de Álgebra",
-      completed: false,
-      linkType: "subject",
-      linkKey: "Matemáticas",
-      dueDate: formatDateOffset(3),
-      difficulty: 4,
-      createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
-      completedAt: ""
-    },
-    {
-      id: "task-mock-2",
-      text: "Implementar maquetación responsive del dashboard",
-      completed: false,
-      linkType: "subject",
-      linkKey: "Diseño Web",
-      dueDate: formatDateOffset(0),
-      difficulty: 3,
-      createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-      completedAt: ""
-    },
-    {
-      id: "task-mock-3",
-      text: "Proyecto: Depurar índices de base de datos",
-      completed: false,
-      linkType: "subject",
-      linkKey: "Programación",
-      dueDate: formatDateOffset(-2),
-      difficulty: 5,
-      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-      completedAt: ""
-    },
-    {
-      id: "task-mock-4",
-      text: "Correr 5 km por la ruta del río",
-      completed: true,
-      linkType: "track",
-      linkKey: "deporte",
-      dueDate: formatDateOffset(-1),
-      difficulty: 2,
-      createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-      completedAt: new Date(Date.now() - 1 * 86400000).toISOString()
-    },
-    {
-      id: "task-mock-5",
-      text: "Leer 2 capítulos de novela de ciencia ficción",
-      completed: true,
-      linkType: "track",
-      linkKey: "lectura",
-      dueDate: formatDateOffset(0),
-      difficulty: 1,
-      createdAt: new Date().toISOString(),
-      completedAt: new Date().toISOString()
-    }
-  ];
-}
-
-function seedMockSubjectsAndTracksIfNeeded() {
-  let modified = false;
-  if (!state.settings.subjects || state.settings.subjects.length === 0) {
-    state.settings.subjects = [
-      { name: "Matemáticas", description: "Álgebra y cálculo lineal", color: "#0f766e", defaultDifficulty: 4 },
-      { name: "Programación", description: "Algoritmos y estructuras de datos", color: "#2563eb", defaultDifficulty: 3 },
-      { name: "Diseño Web", description: "HTML, CSS y UX/UI", color: "#7c3aed", defaultDifficulty: 2 }
-    ];
-    state.settings.subjectDifficulty = {
-      "Matemáticas": 4,
-      "Programación": 3,
-      "Diseño Web": 2
-    };
-    modified = true;
-  }
-  if (!state.settings.tracks || state.settings.tracks.length === 0) {
-    state.settings.tracks = [
-      { key: "deporte", label: "Deporte", color: "#0284c7" },
-      { key: "lectura", label: "Lectura", color: "#d97706" }
-    ];
-    modified = true;
-  }
-  if (modified) {
-    saveState();
-    syncConfigFromState();
-  }
-}
 
 // --- Renderizador de la Vista Previa del Calendario (Checklist) ---
 

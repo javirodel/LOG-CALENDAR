@@ -2,6 +2,8 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+
 ## [1.2.0] - 2026-06-01
 
 ### Added
@@ -16,6 +18,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Renombrado del botón "Guardar tarea" a "Añadir tarea".
 - Optimización de etiquetas de filtros ("Todos los items") para evitar desbordamientos visuales.
 - Vista de tareas completadas: ahora permanecen visibles (atenuadas y tachadas) de forma predeterminada bajo el filtro "Todas" para permitir desmarcado en caso de error.
+
+### Removed
+- Eliminadas las tareas de ejemplo (mock tasks) de la inicialización de la base de datos para garantizar una lista limpia en nuevas instalaciones.
 
 ### Fixed
 - Corrección de anidamiento HTML que desplazaba el panel de detalles y ocultaba la sección de Checklist.
