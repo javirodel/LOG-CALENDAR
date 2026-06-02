@@ -122,7 +122,7 @@ Como los datos del usuario se muestran en varios lugares, el texto que entra a p
 - El puntaje de riesgo es una heurística aproximada.
 - El almacenamiento del navegador puede limpiarse por el usuario o por ajustes del navegador.
 
-## 🚀 Guía de Instalación Rápida (Para todos los públicos)
+## Guía de Instalación Rápida (Para todos los públicos)
 
 No necesitas saber programar ni instalar nada raro para usar esta aplicación. Sigue estos sencillos pasos según tu sistema operativo.
 
@@ -138,7 +138,7 @@ No necesitas saber programar ni instalar nada raro para usar esta aplicación. S
 
 Para abrir el tracker con un solo clic desde tu escritorio como si fuera una app normal, sigue estos pasos:
 
-#### 🪟 En Windows (Windows 7, 10, 11)
+#### En Windows (Windows 7, 10, 11)
 1. Entra en la carpeta que acabas de descomprimir.
 2. Busca el archivo llamado `index.html`.
 3. Haz **clic derecho** sobre él.
@@ -147,14 +147,14 @@ Para abrir el tracker con un solo clic desde tu escritorio como si fuera una app
 6. En la pestaña "Acceso directo", haz clic en el botón **"Cambiar icono..."**.
 7. Haz clic en **"Examinar"**, entra en la carpeta del proyecto, ve a la carpeta `assets` y selecciona el archivo de imagen que hay dentro. ¡Listo! Ya tienes tu app con su icono.
 
-#### 🍏 En macOS (Mac)
+#### En macOS (Mac)
 1. Abre la carpeta del proyecto en el Finder.
 2. Mantén pulsadas las teclas `Alt` (Option) y `Comando` (⌘) a la vez.
 3. Haz clic en el archivo `index.html` y, **sin soltar las teclas**, arrástralo hasta tu Escritorio. Esto creará un alias (acceso directo).
 4. Para cambiarle el icono: haz clic derecho sobre el acceso directo del escritorio y dale a **"Obtener información"**.
 5. Abre la carpeta `assets` del proyecto, arrastra la imagen del icono y **suéltala justo encima del iconito pequeño que sale arriba a la izquierda** en la ventana de información.
 
-#### 🐧 En Linux (Ubuntu, Mint, etc.)
+#### En Linux (Ubuntu, Mint, etc.)
 1. Ve a tu escritorio, haz clic derecho en un espacio vacío y selecciona **"Crear un lanzador"** (Create Launcher) o "Crear enlace".
 2. En el campo **Nombre**, ponle el título del proyecto (ej. `Study Tracker`).
 3. En el campo **Comando** o **Destino**, haz clic en examinar y selecciona el archivo `index.html` de la carpeta del proyecto.
