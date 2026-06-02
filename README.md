@@ -97,22 +97,6 @@ El botón de importar acepta ese formato exportado y restaura el estado local.
 
 No subas respaldos exportados a un repositorio público sin revisar su contenido.
 
-## Estructura del proyecto
-
-El proyecto cuenta con dos versiones organizadas de la siguiente manera:
-
-```text
-.
-├── index.html          # Marcado de la app y estructura de la versión base
-├── styles.css          # Diseño y estilos adaptativos de la versión base
-├── app.js              # Estado, renderizado y persistencia de la versión base
-├── README.md           # Documentación del proyecto
-├── CHANGELOG.md        # Registro de cambios y versiones del proyecto
-└── checklist-version/  # Carpeta de la versión extendida con Gestor de Tareas
-    ├── index.html      # Estructura HTML con soporte de Checklist
-    ├── styles.css      # Estilos adaptativos extendidos con tarjetas de tarea y modales
-    └── app.js          # Lógica avanzada del Checklist, estadísticas y filtros
-```
 
 ## Notas de desarrollo
 
@@ -137,12 +121,6 @@ Como los datos del usuario se muestran en varios lugares, el texto que entra a p
 - No hay sincronización entre dispositivos.
 - El puntaje de riesgo es una heurística aproximada.
 - El almacenamiento del navegador puede limpiarse por el usuario o por ajustes del navegador.
-
-## Siguientes pasos sugeridos
-
-- Agregar pruebas automáticas para normalización de estado e importación/exportación.
-- Agregar un backend local opcional si el almacenamiento del navegador no es suficiente.
-- Agregar un archivo pequeño de datos de ejemplo fuera de la app para demos, sin cargarlo por defecto.
 
 ## 🚀 Guía de Instalación Rápida (Para todos los públicos)
 
