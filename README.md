@@ -1,6 +1,6 @@
-# LOG CALENDAR
+# Study Tracker
 
-LOG CALENDAR es una pequeña app web local para registrar tiempo de estudio, actividades extra, notas, eventos y valoraciones diarias desde una vista de calendario.
+Study Tracker es una pequeña app web local para registrar tiempo de estudio, actividades extra, notas, eventos y valoraciones diarias desde una vista de calendario.
 
 Es intencionalmente simple. No intenta reemplazar Notion, Google Calendar, un gestor de tareas ni un sistema completo de productividad. El objetivo es más acotado: llevar un registro rápido de lo que estudiaste, cuánto tiempo te tomó, qué exámenes o fechas límite se acercan y si tu balance de estudio actual tiene sentido.
 
@@ -15,6 +15,7 @@ Es intencionalmente simple. No intenta reemplazar Notion, Google Calendar, un ge
 - Se puede configurar la dificultad de cada asignatura.
 - Estadísticas de totales, promedios, rachas, patrones por día de la semana y riesgo académico.
 - Importación/exportación de una copia local en JSON.
+- **Gestor de tareas integrado (Checklist)** (en la versión extendida), con búsqueda avanzada, mini-calendario mensual interactivo para filtrado y analíticas específicas de tareas.
 
 ## Modelo de privacidad
 
@@ -51,6 +52,22 @@ Cuando el tipo de evento es `Examen`, la app pide la asignatura relacionada. Est
 
 Si la asignatura aún no existe, se puede crear desde el mismo modal del evento.
 
+## Gestor de Tareas (Checklist)
+
+La versión extendida en la carpeta `checklist-version/` integra un gestor de tareas completo que comparte la configuración de tus asignaturas y actividades registradas en el calendario.
+
+### Características Principales:
+- **Conmutador rápido:** Un botón flotante y difuminado en la parte inferior central permite alternar instantáneamente entre la vista de Calendario y la vista de Tareas (Checklist).
+- **Relación Calendario-Checklist:** Puedes asociar cada tarea a una asignatura o actividad. La vista incluye un mini-calendario interactivo a la derecha; al hacer clic en un día del calendario, la lista de tareas se filtra automáticamente para mostrar solo los vencimientos de esa fecha.
+- **Buscador y filtros inteligentes:** Una barra de búsqueda avanzada con filtros superpuestos te permite buscar por texto o filtrar por asignaturas, hobbies, dificultad y estado (pendientes, completadas, atrasadas).
+- **Métricas y estadísticas avanzadas (sección inferior):**
+  - **Racha de completado:** Días consecutivos logrando completar al menos una tarea.
+  - **Vencimientos próximos:** Panel con las tareas programadas para los siguientes 7 días.
+  - **Dificultad promedio:** Estimación de la carga de dificultad en tus tareas pendientes.
+  - **Item más exigente:** Identificación dinámica de la asignatura o hobby con mayor volumen de trabajo pendiente.
+- **Detalle de tareas:** Al hacer clic sobre cualquier tarea se abre una ventana modal con detalles (descripción larga, vinculación, dificultad y fecha límite).
+- **Flujo de completado ágil:** El checkbox de la tarjeta de tarea permite marcarla como completada/pendiente con un clic directo. Las tareas completadas se atenúan de forma predeterminada para que puedas desmarcarlas si te equivocas.
+
 ## Riesgo académico
 
 El ranking de "Riesgo académico" es una estimación, no una predicción. Combina:
@@ -82,14 +99,20 @@ No subas respaldos exportados a un repositorio público sin revisar su contenido
 
 ## Estructura del proyecto
 
-El proyecto se organiza en una estructura de archivos sencilla:
+El proyecto cuenta con dos versiones organizadas de la siguiente manera:
 
+```text
 .
-├── index.html   # Marcado de la app y estructura de modales
-├── styles.css   # Diseño, estilos adaptativos y estados visuales
-├── app.js       # Estado, renderizado, persistencia y estadísticas
-├── README.md    # Documentación del proyecto
-
+├── index.html          # Marcado de la app y estructura de la versión base
+├── styles.css          # Diseño y estilos adaptativos de la versión base
+├── app.js              # Estado, renderizado y persistencia de la versión base
+├── README.md           # Documentación del proyecto
+├── CHANGELOG.md        # Registro de cambios y versiones del proyecto
+└── checklist-version/  # Carpeta de la versión extendida con Gestor de Tareas
+    ├── index.html      # Estructura HTML con soporte de Checklist
+    ├── styles.css      # Estilos adaptativos extendidos con tarjetas de tarea y modales
+    └── app.js          # Lógica avanzada del Checklist, estadísticas y filtros
+```
 
 ## Notas de desarrollo
 
