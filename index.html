@@ -14,21 +14,8 @@
           <h1 id="calendarTitle">LOG CALENDAR</h1>
           <p class="subtitle" id="calendarSubtitle">LOG is LOG of Growth</p>
         </div>
-        <div class="topbar-right-group" style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
-          <div class="top-actions">
-            <button class="icon-button" id="exportBtn" type="button" title="Exportar copia de seguridad" aria-label="Exportar copia de seguridad">
-              <span>Exportar</span>
-            </button>
-            <label class="icon-button file-button" title="Importar copia de seguridad">
-              <input id="importInput" type="file" accept="application/json">
-              <span>Importar</span>
-            </label>
-            <button class="icon-button settings-button" id="settingsBtn" type="button" title="Ajustes" aria-label="Abrir ajustes">⚙</button>
-          </div>
-          <div class="view-switcher" role="tablist" aria-label="Navegación de vistas">
-            <button class="view-tab active" id="tabCalendar" type="button" role="tab" aria-selected="true" aria-controls="paneCalendar">📅 Calendario</button>
-            <button class="view-tab" id="tabChecklist" type="button" role="tab" aria-selected="false" aria-controls="paneChecklist">📋 Tareas</button>
-          </div>
+        <div class="topbar-right-group">
+          <!-- Transferred to Liquid Glass Dock at bottom -->
         </div>
       </header>
 
@@ -68,17 +55,24 @@
 
             <section class="stats-section" aria-label="Resumen y estadísticas">
               <div class="stats-header">
-                <div>
-                  <h2>Estadísticas principales</h2>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <h2 style="margin: 0;">Estadísticas principales</h2>
+                  <select id="statsPeriodSelect" class="stats-period-select" style="min-height: 32px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 4px 8px; color: var(--ink); font-weight: 700; font-size: 0.84rem; cursor: pointer; outline: none;">
+                    <option value="all">Todo el historial</option>
+                  </select>
+                  <button id="generateReportBtn" class="primary-button" style="padding: 4px 12px; font-size: 0.82rem; min-height: 32px; display: none; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.3);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    Informe Avanzado
+                  </button>
                 </div>
                 <div class="stat-pill-wrap">
                   <div class="stat-pill">
                     <span id="grandTotal">0 h</span>
-                    <small>total global</small>
+                    <small id="grandTotalLabel">total global</small>
                   </div>
                   <div class="stat-pill secondary">
                     <span id="weightedLoad">0</span>
-                    <small>carga ponderada</small>
+                    <small id="weightedLoadLabel">carga ponderada</small>
                   </div>
                 </div>
               </div>
@@ -86,15 +80,15 @@
               <div class="metric-grid" id="metricsGrid">
                 <article>
                   <span id="avgPerDay">0 h</span>
-                  <p>media diaria</p>
+                  <p id="avgPerDayLabel">media diaria</p>
                 </article>
                 <article>
                   <span id="avgActiveDay">0 h</span>
-                  <p>media en días activos</p>
+                  <p id="avgActiveDayLabel">media en días activos</p>
                 </article>
                 <article>
                   <span id="bestDay">-</span>
-                  <p>mejor día académico</p>
+                  <p id="bestDayLabel">mejor día académico</p>
                 </article>
                 <article>
                   <span id="streak">0</span>
@@ -118,7 +112,7 @@
                 </article>
                 <article>
                   <span id="avgRating">—</span>
-                  <p>valoración media</p>
+                  <p id="avgRatingLabel">valoración media</p>
                 </article>
                 <article class="metric-more">
                   <button id="moreStatsBtn" type="button">
@@ -129,9 +123,13 @@
               </div>
 
               <div class="charts">
-                <div class="chart-panel">
+                <div class="chart-panel" id="subjectChartPanel">
                   <h3 id="subjectChartTitle">Horas por asignatura</h3>
                   <div class="bar-chart" id="subjectChart"></div>
+                </div>
+                <div class="chart-panel" id="hobbyFrequencyPanel" hidden>
+                  <h3>Frecuencia y constancia por hobby</h3>
+                  <div class="bar-chart" id="hobbyFrequencyChart"></div>
                 </div>
                 <div class="chart-panel">
                   <h3>Distribución de valoraciones</h3>
@@ -204,8 +202,6 @@
             </div>
 
             <div class="notice-list" id="noticeList"></div>
- 
-
 
             <div class="event-form">
               <label class="notes-label">Evento importante</label>
@@ -243,135 +239,107 @@
           </div>
 
           <!-- CONTENIDO DE VISTA CHECKLIST MAIN (LISTADO GENERAL + ESTADISTICAS + VISTA PREVIA CALENDARIO) -->
+          <!-- VISTA DEL TRACKER DE HÁBITOS DIARIOS ("RoutineKraft" STYLE DASHBOARD) -->
           <div id="paneChecklistMain" hidden>
-            <section class="checklist-pane" aria-label="Lista de tareas" style="box-shadow: none; border: 0; background: transparent; padding: 0; backdrop-filter: none; margin-bottom: 0;">
-              <div class="checklist-toolbar" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                <h2 style="font-size: 1.22rem; margin: 0;">Lista de tareas generales</h2>
-                <div id="dayFilterIndicator" class="task-tag" style="background: rgba(15, 118, 110, 0.1); color: #0f766e; display: none; align-items: center; gap: 6px; font-weight: 700; font-size: 0.76rem; border-radius: 6px; padding: 4px 10px;">
-                  <span>Filtro de día activo</span>
-                  <button type="button" id="clearDayFilterBtn" style="border:0; background:transparent; cursor:pointer; color:inherit; font-weight:bold; font-size:1.05rem; padding:0 2px; line-height:1;">×</button>
+            <div class="tracker-dashboard">
+              <!-- CABECERA DE CONTROL DE MES -->
+              <div class="tracker-header">
+                <div class="tracker-title-group">
+                  <span class="tracker-badge">RESUMEN MENSUAL</span>
+                  <div class="tracker-month-nav">
+                    <button id="routinePrevMonthBtn" class="tracker-icon-btn" type="button" title="Mes anterior">‹</button>
+                    <h2 id="routineMonthTitle" class="tracker-month-title">ENERO 2026</h2>
+                    <button id="routineNextMonthBtn" class="tracker-icon-btn" type="button" title="Mes siguiente">›</button>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="search-wrapper" style="position: relative; margin-bottom: 16px;">
-                <input type="text" id="taskSearchInput" placeholder="🔍 Buscar tareas y filtrar..." style="width: 100%; min-height: 40px; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; background: var(--surface);">
-                
-                <div id="checklistFiltersDropdown" class="filters-dropdown" style="position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; z-index: 10; display: none; flex-direction: column; gap: 10px; backdrop-filter: blur(16px); border-color: rgba(15, 118, 110, 0.15);">
-                  <div style="font-size: 0.78rem; font-weight: 750; color: var(--muted); margin-bottom: 2px;">FILTRAR Y ORDENAR TAREAS</div>
-                  <div class="filters-row" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
-                    <select id="filterSubject" aria-label="Filtrar por proyecto" style="min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 6px; font-size: 0.8rem; font-weight: bold;"></select>
-                    <select id="filterStatus" aria-label="Filtrar por estado" style="min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 6px; font-size: 0.8rem; font-weight: bold;">
-                      <option value="all" selected>Todas</option>
-                      <option value="pending">Pendientes</option>
-                      <option value="completed">Completadas</option>
-                    </select>
-                    <select id="filterSort" aria-label="Ordenar por" style="min-height: 38px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 6px; font-size: 0.8rem; font-weight: bold;">
-                      <option value="dueDate">Vencimiento</option>
-                      <option value="difficulty">Dificultad</option>
-                      <option value="createdAt">Creación</option>
-                    </select>
-                  </div>
-                  <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                    <button id="closeFiltersBtn" class="ghost-button" type="button" style="min-height: 30px; padding: 2px 10px; font-size: 0.74rem;">Aplicar y cerrar</button>
-                  </div>
+                <div class="tracker-actions">
+                  <select id="routineMonthSelect" class="tracker-select" aria-label="Seleccionar mes"></select>
+                  <button id="addHabitBtn" class="tracker-btn primary" type="button" onclick="openHabitModal(null)">+ Añadir Hábito</button>
+                  <button id="resetMonthBtn" class="tracker-btn danger" type="button" title="Vaciar marcas de este mes">Restablecer Mes</button>
                 </div>
               </div>
 
-              <div class="checklist-list" id="checklistList">
-                <!-- JS renders tasks -->
-              </div>
-            </section>
-
-            <!-- VISTA PREVIA CALENDARIO MENSUAL (COLUMNA DERECHA) -->
-            <section class="checklist-calendar-preview" aria-label="Vista previa del calendario" style="box-shadow: none; border: 0; background: transparent; padding: 0; backdrop-filter: none; display: flex; flex-direction: column; min-width: 0;">
-              <div class="calendar-preview-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <h2 style="font-size: 1.22rem; margin: 0;">Vista previa del mes</h2>
-                <div style="display: flex; gap: 4px;">
-                  <button id="prevPreviewMonthBtn" class="icon-button" style="min-height:30px; width:30px; padding:0; border-radius:50%; font-size:1.1rem; line-height:1; display:flex; align-items:center; justify-content:center;" type="button">‹</button>
-                  <button id="nextPreviewMonthBtn" class="icon-button" style="min-height:30px; width:30px; padding:0; border-radius:50%; font-size:1.1rem; line-height:1; display:flex; align-items:center; justify-content:center;" type="button">›</button>
-                </div>
-              </div>
-              <div class="calendar-preview-month-title" style="margin-bottom: 12px; font-weight: 750; color: var(--accent-dark); font-size: 0.94rem; text-align: center; text-transform: capitalize;">Enero 2026</div>
-              
-              <div class="calendar-preview-weekday-row" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; margin-bottom: 6px; font-size: 0.74rem; font-weight: 800; color: var(--muted);">
-                <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
-              </div>
-              <div id="calendarPreviewGrid" class="day-grid" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px;">
-                <!-- JS renders days -->
-              </div>
-            </section>
-
-            <!-- SECCION DE ESTADISTICAS COMPLETA (PARTE INFERIOR) -->
-            <section class="checklist-stats-pane" aria-label="Estadísticas de tareas" style="box-shadow: none; border: 0; background: transparent; padding: 0; backdrop-filter: none; margin-top: 10px;">
-              <div class="stats-header" style="margin-bottom: 16px;">
-                <h2 style="font-size: 1.22rem; margin: 0;">Estadísticas de tareas</h2>
-                <div class="stat-pill" style="align-items: center; justify-content: center;">
-                  <span id="completedPercentage" style="font-size: 1.62rem; line-height: 1;">0%</span>
-                  <small>completado</small>
-                </div>
-              </div>
-              
-              <div class="checklist-stats-grid" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px;">
-                <!-- Columna 1: Tarjetas de Métricas -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                  <div class="metric-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0;">
-                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
-                      <span id="totalTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; line-height: 1; font-weight: 900;">0</span>
-                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">totales</p>
-                    </article>
-                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
-                      <span id="pendingTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; line-height: 1; font-weight: 900;">0</span>
-                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">pendientes</p>
-                    </article>
-                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
-                      <span id="completedTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; line-height: 1; font-weight: 900;">0</span>
-                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">completadas</p>
-                    </article>
-                    <article style="padding: 12px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);">
-                      <span id="overdueTasksCount" style="font-size: 1.35rem; margin-bottom: 2px; color: #dc2626; line-height: 1; font-weight: 900;">0</span>
-                      <p style="font-size: 0.76rem; margin: 0; color: var(--muted); font-weight: 750;">atrasadas</p>
-                    </article>
+              <!-- GRÁFICO DE TENDENCIA DIARIA (AREA CHART) -->
+              <div class="tracker-card trend-card">
+                <div class="card-header flex-between">
+                  <div>
+                    <h3>TENDENCIA DE CUMPLIMIENTO DIARIO</h3>
+                    <span id="trendSubtitle" class="card-subtitle">% de hábitos completados cada día del mes</span>
                   </div>
-                  
-                  <div class="metric-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0;">
-                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
-                      <div>
-                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Dificultad media pendiente</p>
-                        <span id="avgPendingDifficulty" style="font-size: 1.35rem; line-height: 1; font-weight: 900; color: #d97706;">—</span>
-                      </div>
-                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Media de estrellas (1-5★) de tareas restantes</p>
-                    </article>
-                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
-                      <div>
-                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Próximos 7 días</p>
-                        <span id="dueSoonTasksCount" style="font-size: 1.35rem; line-height: 1; font-weight: 900; color: #2563eb;">0</span>
-                      </div>
-                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Tareas pendientes con entrega esta semana</p>
-                    </article>
-                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
-                      <div>
-                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Racha de completado</p>
-                        <span id="taskCompletionStreak" style="font-size: 1.35rem; line-height: 1; font-weight: 900; color: #16a34a;">0 días</span>
-                      </div>
-                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Días consecutivos completando tareas</p>
-                    </article>
-                    <article style="padding: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; justify-content: space-between;">
-                      <div>
-                        <p style="font-size: 0.76rem; margin: 0 0 4px 0; color: var(--muted); font-weight: 750;">Item más exigente</p>
-                        <span id="mostDemandingSubject" style="font-size: 0.94rem; line-height: 1.2; font-weight: 850; color: #7c3aed; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Ninguno</span>
-                      </div>
-                      <p style="font-size: 0.68rem; margin: 4px 0 0 0; color: var(--muted);">Proyecto/hobby con más tareas pendientes</p>
-                    </article>
+                  <div class="trend-badge" id="trendMonthSummaryBadge">0% Cumplido</div>
+                </div>
+                <div class="trend-chart-wrapper" id="trendChartWrapper">
+                  <!-- SVG Area Chart rendered dynamically by JS -->
+                </div>
+              </div>
+
+              <!-- DISPOSICIÓN PRINCIPAL DE DASHBOARD: MATRIZ Y SIDEBAR -->
+              <div class="tracker-grid-layout">
+                <!-- MATRIZ DE CHECKBOXES (RUTINAS DIARIAS) -->
+                <div class="tracker-card matrix-card">
+                  <div class="card-header flex-between">
+                    <div>
+                      <h3>RUTINAS Y HÁBITOS DIARIOS</h3>
+                      <span id="matrixSubtitle" class="card-subtitle">Haz clic en las casillas para registrar el progreso diario</span>
+                    </div>
+                    <span class="badge-tag cyan">Control Semanal</span>
+                  </div>
+                  <div class="table-scroll-container">
+                    <table class="routine-matrix-table" id="routineMatrixTable">
+                      <!-- Rendered by JS -->
+                    </table>
+                  </div>
+
+                  <!-- SECCIÓN DE ANÁLISIS SEMANAL E HISTOGRAMA DE BARRAS -->
+                  <div class="weekly-analysis-section">
+                    <div class="card-header">
+                      <h3>ANÁLISIS SEMANAL Y HÁBITOS COMPLETADOS</h3>
+                    </div>
+                    <!-- Gráfico de Barras Diarias por Semana -->
+                    <div class="daily-bars-container" id="dailyBarsContainer">
+                      <!-- Rendered by JS -->
+                    </div>
+                    <!-- Filas Resumen COMPLETADOS / OBJETIVO / PENDIENTES / PROGRESO SEMANAL -->
+                    <div class="weekly-stats-summary" id="weeklyStatsSummary">
+                      <!-- Rendered by JS -->
+                    </div>
                   </div>
                 </div>
-                
-                <!-- Columna 2: Gráfico de rendimiento por proyecto -->
-                <div class="chart-panel" style="box-shadow: none; padding: 16px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); display: flex; flex-direction: column;">
-                  <h3 style="font-size: 0.88rem; margin: 0 0 12px 0; font-weight: 800; color: #374151;">Rendimiento por proyecto / hobby</h3>
-                  <div class="bar-chart" id="taskStatsChart" style="gap: 8px;"></div>
+
+                <!-- SIDEBAR DERECHA: OVERVIEW + DONUT CHART + TOP 10 RANKING -->
+                <div class="tracker-sidebar">
+                  <!-- DONUT CHART & GLOBAL % -->
+                  <div class="tracker-card overview-card">
+                    <div class="card-header">
+                      <h3>CUMPLIMIENTO GLOBAL</h3>
+                    </div>
+                    <div class="donut-chart-container">
+                      <div class="donut-svg-wrapper" id="donutSvgWrapper">
+                        <!-- Rendered by JS -->
+                      </div>
+                      <div class="donut-stats-text">
+                        <span id="donutGlobalPct" class="donut-pct">0%</span>
+                        <span id="donutGlobalSub" class="donut-sub">0 de 0 completados</span>
+                      </div>
+                    </div>
+                    <div class="habit-overview-list" id="habitOverviewList">
+                      <!-- Rendered by JS -->
+                    </div>
+                  </div>
+
+                  <!-- TOP 10 RANKING DINÁMICO -->
+                  <div class="tracker-card ranking-card">
+                    <div class="card-header flex-between">
+                      <h3>TOP HÁBITOS DIARIOS</h3>
+                      <span class="badge-tag purple">Ranking Dinámico</span>
+                    </div>
+                    <div class="ranking-list" id="rankingList">
+                      <!-- Rendered by JS -->
+                    </div>
+                  </div>
                 </div>
               </div>
-            </section>
+            </div>
           </div>
         </aside>
       </main>
@@ -387,7 +355,7 @@
             <p class="eyebrow">Configuración</p>
             <h2 id="settingsTitle">Ajustes del calendario</h2>
           </div>
-          <button class="icon-button" id="settingsCloseBtn" type="button" aria-label="Cerrar ajustes">×</button>
+          <button class="icon-button" id="settingsCloseBtn" type="button" aria-label="Cerrar ajustes" onclick="closeSettings()">×</button>
         </div>
 
         <div class="settings-grid">
@@ -419,6 +387,12 @@
             <h3 id="settingsSubjectsTitle" style="cursor: pointer;">Asignaturas</h3>
             <div class="settings-list" id="subjectsSettingsList"></div>
             <button class="ghost-button add-config-button" id="openSubjectModalBtn" type="button">Añadir asignatura</button>
+          </article>
+
+          <article class="settings-section">
+            <h3 id="settingsPeriodsTitle" style="cursor: pointer;">Cursos Académicos</h3>
+            <div class="settings-list" id="periodsSettingsList"></div>
+            <button class="ghost-button add-config-button" id="openPeriodModalBtn" type="button">Añadir curso</button>
           </article>
 
           <article class="settings-section">
@@ -476,6 +450,41 @@
           <input id="newTrackDescription" type="text" maxlength="90" placeholder="Descripción" required>
           <input id="newTrackColor" type="color" value="#d97706" aria-label="Color del hobby">
           <button class="primary-button" type="submit">Añadir hobby</button>
+        </form>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="periodEntryModal" hidden>
+      <div class="entry-backdrop" data-close-period-modal></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="periodEntryTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow" id="periodEntryEyebrow">Cursos Académicos</p>
+            <h2 id="periodEntryTitle">Añadir curso académico</h2>
+          </div>
+          <button class="icon-button" id="periodEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <form class="settings-form" id="periodSettingsForm">
+          <input id="newPeriodName" type="text" maxlength="50" placeholder="Nombre del curso (ej. Curso 2025-2026)" required>
+          <div class="settings-two">
+            <label style="display: flex; flex-direction: column; gap: 4px;">Fecha de inicio<input id="newPeriodStart" type="date" required style="min-height:38px; padding:6px; border:1px solid var(--line); border-radius:var(--radius);"></label>
+            <label style="display: flex; flex-direction: column; gap: 4px;">Fecha de fin<input id="newPeriodEnd" type="date" required style="min-height:38px; padding:6px; border:1px solid var(--line); border-radius:var(--radius);"></label>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+            <div>
+              <label style="font-weight: 750; font-size: 0.86rem; display: block; margin-bottom: 6px;">Asignaturas incluidas</label>
+              <div id="periodSubjectsCheckboxes" class="checkbox-group-settings" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; border: 1px solid var(--line); padding: 10px; border-radius: var(--radius); background: var(--surface);">
+                <!-- JS will render checkboxes -->
+              </div>
+            </div>
+            <div>
+              <label style="font-weight: 750; font-size: 0.86rem; display: block; margin-bottom: 6px;">Hobbies vinculados</label>
+              <div id="periodTracksCheckboxes" class="checkbox-group-settings" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; border: 1px solid var(--line); padding: 10px; border-radius: var(--radius); background: var(--surface);">
+                <!-- JS will render checkboxes -->
+              </div>
+            </div>
+          </div>
+          <button class="primary-button" type="submit" style="margin-top: 14px; width: 100%;">Añadir curso / periodo</button>
         </form>
       </section>
     </div>
@@ -641,6 +650,210 @@
         </div>
       </section>
     </div>
+
+    <div class="entry-modal" id="periodReportModal" hidden>
+      <div class="entry-backdrop" data-close-report-modal></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="periodReportTitle" style="max-width: 680px; width: 92%; max-height: 90vh; overflow-y: auto;">
+        <div class="settings-head" style="border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(var(--accent-rgb), 0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+              📊
+            </div>
+            <div>
+              <p class="eyebrow" id="periodReportEyebrow">Informe de Rendimiento</p>
+              <h2 id="periodReportTitle" style="margin: 0; font-size: 1.35rem;">Resumen Avanzado</h2>
+            </div>
+          </div>
+          <button class="icon-button" id="periodReportCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+
+        <!-- Pestañas interactivas -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 12px; overflow-x: auto;">
+          <button id="tabReportSummary" class="report-tab-btn active" type="button" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700; border-radius: 20px; border: 1px solid var(--accent); background: var(--accent); color: white; cursor: pointer;">📌 Resumen Ejecutivo</button>
+          <button id="tabReportSubjects" class="report-tab-btn" type="button" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;">📚 Materias & Hobbies</button>
+          <button id="tabReportInsights" class="report-tab-btn" type="button" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;">🧠 Insights & Hábitos</button>
+          <button id="tabReportBadges" class="report-tab-btn" type="button" style="padding: 6px 12px; font-size: 0.82rem; font-weight: 700; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;">🏆 Logros Obtenidos</button>
+        </div>
+
+        <!-- Contenido de las Pestañas -->
+        <!-- PESTAÑA 1: RESUMEN EJECUTIVO -->
+        <div id="reportTabContentSummary" class="report-tab-content">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+            <div class="stat-card-premium" style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+              <span id="repTotalHours" style="font-size: 1.6rem; font-weight: 800; color: var(--accent);">0 h</span>
+              <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--muted); font-weight: 700;">TIEMPO TOTAL INVERTIDO</p>
+            </div>
+            <div class="stat-card-premium" style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+              <span id="repStudyHours" style="font-size: 1.6rem; font-weight: 800; color: var(--ink);">0 h</span>
+              <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--muted); font-weight: 700;">HORAS DE ESTUDIO</p>
+            </div>
+            <div class="stat-card-premium" style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+              <span id="repHobbyHours" style="font-size: 1.6rem; font-weight: 800; color: var(--ink);">0 h</span>
+              <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--muted); font-weight: 700;">HORAS DE HOBBIES</p>
+            </div>
+            <div class="stat-card-premium" style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+              <span id="repActiveDays" style="font-size: 1.6rem; font-weight: 800; color: var(--accent);">0</span>
+              <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: var(--muted); font-weight: 700;">DÍAS ACTIVOS</p>
+            </div>
+          </div>
+
+          <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; background: rgba(var(--accent-rgb), 0.03); margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1.05rem; color: var(--accent-dark); display: flex; align-items: center; gap: 8px;">
+              <span>⚡</span> Balance de Energía & Productividad
+            </h3>
+            <p id="repEnergyNarrative" style="margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--ink);">Cargando análisis de rendimiento...</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface);">
+              <h4 style="margin: 0 0 8px 0; font-size: 0.85rem; color: var(--muted); font-weight: 800;">TAREAS COMPLETADAS</h4>
+              <div style="display: flex; align-items: baseline; gap: 10px;">
+                <span id="repTasksCompleted" style="font-size: 1.8rem; font-weight: 800; color: #16a34a;">0</span>
+                <span id="repTasksTotal" style="font-size: 0.9rem; color: var(--muted); font-weight: 600;">de 0 tareas</span>
+              </div>
+              <div style="width: 100%; background: var(--line); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden;">
+                <div id="repTasksBar" style="background: #16a34a; height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+              </div>
+            </div>
+
+            <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--surface);">
+              <h4 style="margin: 0 0 8px 0; font-size: 0.85rem; color: var(--muted); font-weight: 800;">ESTADO DE ÁNIMO MEDIO</h4>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="repAvgRatingStars" style="font-size: 1.6rem; color: #eab308; font-weight: bold;">★★★☆☆</span>
+                <span id="repAvgRatingText" style="font-size: 0.9rem; color: var(--muted); font-weight: 700;">(3.0)</span>
+              </div>
+              <p id="repRatingDesc" style="margin: 6px 0 0 0; font-size: 0.82rem; color: var(--ink);">Día normal en promedio.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 2: MATERIAS Y HOBBIES -->
+        <div id="reportTabContentSubjects" class="report-tab-content" hidden>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+            <h3 style="margin: 0; font-size: 1.05rem; color: var(--ink);">Desglose por Elemento</h3>
+            <div style="display: flex; gap: 6px;">
+              <button id="sortRepSubjectsHours" class="filter-chip active" type="button" style="padding: 2px 8px; font-size: 0.76rem;">Por Horas</button>
+              <button id="sortRepSubjectsName" class="filter-chip" type="button" style="padding: 2px 8px; font-size: 0.76rem;">Por Nombre</button>
+            </div>
+          </div>
+          <div id="repSubjectsBreakdownList" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- JS renders subject/track items with beautiful progress bars -->
+          </div>
+        </div>
+
+        <!-- PESTAÑA 3: INSIGHTS & HÁBITOS -->
+        <div id="reportTabContentInsights" class="report-tab-content" hidden>
+          <h3 style="margin: 0 0 12px 0; font-size: 1.05rem; color: var(--ink);">Distribución por Día de la Semana</h3>
+          <div id="repWeekdayChart" style="display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; background: var(--surface); margin-bottom: 20px;">
+            <!-- JS renders horizontal bars for Mon-Sun -->
+          </div>
+
+          <h3 style="margin: 0 0 12px 0; font-size: 1.05rem; color: var(--ink);">Correlación: Ánimo vs Dedicación</h3>
+          <div id="repMoodCorrelation" style="display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; background: var(--surface);">
+            <!-- JS renders correlation info -->
+          </div>
+        </div>
+
+        <!-- PESTAÑA 4: LOGROS OBTENIDOS -->
+        <div id="reportTabContentBadges" class="report-tab-content" hidden>
+          <p style="margin: 0 0 14px 0; font-size: 0.9rem; color: var(--muted);">Insignias desbloqueadas según tu desempeño en este periodo:</p>
+          <div id="repBadgesGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+            <!-- JS renders badges -->
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; border-top: 1px solid var(--line); padding-top: 14px; display: flex; justify-content: flex-end;">
+          <button class="primary-button" id="periodReportDoneBtn" type="button" style="min-height: 38px; padding: 0 24px;">Cerrar Informe</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- MODAL DE CREACIÓN / EDICIÓN DE HÁBITO -->
+    <div class="entry-modal" id="habitEntryModal" hidden>
+      <div class="entry-backdrop" data-close-habit></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="habitEntryTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow">Rutinas y Hábitos</p>
+            <h2 id="habitEntryTitle">Añadir Hábito</h2>
+          </div>
+          <button class="icon-button" id="habitEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <form class="settings-form" id="habitForm">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <label style="display: flex; flex-direction: column; font-size: 0.78rem; font-weight: bold; width: 80px;">Emoji
+              <input id="habitEmojiInput" type="text" maxlength="4" placeholder="Ej. 🏋" value="⭐" style="text-align: center; font-size: 1.2rem; min-height: 38px; margin-top: 4px;" required>
+            </label>
+            <label style="display: flex; flex-direction: column; font-size: 0.78rem; font-weight: bold; flex: 1;">Nombre del Hábito
+              <input id="habitNameInput" type="text" maxlength="50" placeholder="Ej. Gimnasio / Ejercicio" required style="min-height: 38px; margin-top: 4px;">
+            </label>
+          </div>
+          <label style="font-size: 0.78rem; font-weight: bold; margin-top: 6px; display: flex; flex-direction: column;">Objetivo Mensual (Días objetivo)
+            <input id="habitGoalInput" type="number" min="1" max="31" value="30" placeholder="30" style="min-height: 38px; margin-top: 4px;">
+          </label>
+          <div style="display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end;">
+            <button class="ghost-button" id="habitDeleteBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.3); display: none;">Eliminar Hábito</button>
+            <button class="primary-button" type="submit" style="min-height: 38px; padding: 0 20px;">Guardar Hábito</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- DOCK FLOTANTE APPLE LIQUID GLASS -->
+    <div class="liquid-glass-dock" role="navigation" aria-label="Navegación principal">
+      <div class="dock-segment tabs-segment" role="tablist">
+        <button class="dock-tab active" id="tabCalendar" type="button" role="tab" aria-selected="true" aria-controls="paneCalendar" onclick="switchView('calendar')">
+          <span class="dock-icon">📅</span>
+          <span class="dock-label">Calendario</span>
+        </button>
+        <button class="dock-tab" id="tabChecklist" type="button" role="tab" aria-selected="false" aria-controls="paneChecklistMain" onclick="switchView('checklist')">
+          <span class="dock-icon">📋</span>
+          <span class="dock-label">Tracker</span>
+        </button>
+      </div>
+
+      <div class="dock-divider"></div>
+
+      <!-- MENÚ HOME CON POPOVER DESPLEGABLE -->
+      <div class="dock-home-wrapper">
+        <button class="dock-tab home-btn" id="dockHomeBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Menú de herramientas">
+          <span class="dock-icon">🏠</span>
+          <span class="dock-label">Inicio</span>
+        </button>
+
+        <!-- POPOVER DESPLEGABLE LIQUID GLASS -->
+        <div class="home-popover-menu" id="homePopoverMenu" hidden>
+          <button class="popover-item" id="dockExportBtn" type="button">
+            <span class="popover-icon">📥</span>
+            <div class="popover-text">
+              <span class="popover-title">Exportar Datos</span>
+              <span class="popover-sub">Guardar archivo JSON</span>
+            </div>
+          </button>
+
+          <button class="popover-item" id="dockImportTriggerBtn" type="button">
+            <span class="popover-icon">📤</span>
+            <div class="popover-text">
+              <span class="popover-title">Importar Datos</span>
+              <span class="popover-sub">Restaurar desde archivo</span>
+            </div>
+          </button>
+
+          <div class="popover-divider"></div>
+
+          <button class="popover-item" id="dockSettingsBtn" type="button">
+            <span class="popover-icon">⚙️</span>
+            <div class="popover-text">
+              <span class="popover-title">Ajustes</span>
+              <span class="popover-sub">Colores, temas y materias</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Elemento oculto para la selección de archivo de importación -->
+    <input id="dockImportInput" type="file" accept="application/json" style="display: none !important;">
 
     <script src="app.js"></script>
   </body>

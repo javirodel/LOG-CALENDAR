@@ -17,6 +17,7 @@ const DEFAULT_EXTRA_TRACKS = [];
 
 let subjects = DEFAULT_SUBJECTS.map((subject) => ({ ...subject }));
 let EXTRA_TRACKS = DEFAULT_EXTRA_TRACKS.map((track) => ({ ...track }));
+let academicPeriods = [];
 
 const events = {};
 
@@ -47,25 +48,21 @@ const RATING_LABELS = [
 
 let state = loadState();
 
-// Seed mock subjects and tracks if localStorage is empty (for demo purposes, first-time visitor or after reset)
+// Default clean configuration for new users
+function getDefaultRoutineHabits() {
+  return [];
+}
+
 if (!localStorage.getItem(STORAGE_KEY)) {
-  if (!state.settings.subjects || state.settings.subjects.length === 0) {
-    state.settings.subjects = [
-      { name: "Matemáticas", description: "Álgebra y cálculo lineal", color: "#0f766e", defaultDifficulty: 4 },
-      { name: "Programación", description: "Algoritmos y estructuras de datos", color: "#2563eb", defaultDifficulty: 3 },
-      { name: "Diseño Web", description: "HTML, CSS y UX/UI", color: "#7c3aed", defaultDifficulty: 2 }
-    ];
-    state.settings.subjectDifficulty = {
-      "Matemáticas": 4,
-      "Programación": 3,
-      "Diseño Web": 2
-    };
+  if (!state.settings.subjects) {
+    state.settings.subjects = [];
+    state.settings.subjectDifficulty = {};
   }
-  if (!state.settings.tracks || state.settings.tracks.length === 0) {
-    state.settings.tracks = [
-      { key: "deporte", label: "Deporte", color: "#0284c7" },
-      { key: "lectura", label: "Lectura", color: "#d97706" }
-    ];
+  if (!state.settings.tracks) {
+    state.settings.tracks = [];
+  }
+  if (!state.routineTracker) {
+    state.routineTracker = { habits: [], monthlyChecks: {} };
   }
   saveState();
 }
@@ -81,8 +78,18 @@ let editingEventTarget = null;
 let editingSubjectTarget = null;
 let editingTrackTarget = null;
 let editingTaskTarget = null;
+let selectedStatsPeriodId = "all";
+let editingPeriodTarget = null;
 let selectedPreviewDateFilter = null;
-let previewVisibleMonth = new Date();
+function getTodayYearMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+let routineActiveMonth = getTodayYearMonth();
+let editingHabitTarget = null;
 
 const eventLegendEl = document.getElementById("eventLegend");
 const monthsEl = document.getElementById("months");
@@ -153,6 +160,23 @@ const trackSettingsFormEl = document.getElementById("trackSettingsForm");
 const newTrackNameEl = document.getElementById("newTrackName");
 const newTrackDescriptionEl = document.getElementById("newTrackDescription");
 const newTrackColorEl = document.getElementById("newTrackColor");
+
+const openPeriodModalBtn = document.getElementById("openPeriodModalBtn");
+const periodEntryModalEl = document.getElementById("periodEntryModal");
+const periodEntryTitleEl = document.getElementById("periodEntryTitle");
+const periodEntryCloseBtn = document.getElementById("periodEntryCloseBtn");
+const periodSettingsFormEl = document.getElementById("periodSettingsForm");
+const newPeriodNameEl = document.getElementById("newPeriodName");
+const newPeriodStartEl = document.getElementById("newPeriodStart");
+const newPeriodEndEl = document.getElementById("newPeriodEnd");
+const periodSubjectsCheckboxesEl = document.getElementById("periodSubjectsCheckboxes");
+const periodTracksCheckboxesEl = document.getElementById("periodTracksCheckboxes");
+const periodsSettingsListEl = document.getElementById("periodsSettingsList");
+const statsPeriodSelectEl = document.getElementById("statsPeriodSelect");
+const generateReportBtn = document.getElementById("generateReportBtn");
+const periodReportModalEl = document.getElementById("periodReportModal");
+const periodReportCloseBtn = document.getElementById("periodReportCloseBtn");
+const periodReportDoneBtn = document.getElementById("periodReportDoneBtn");
 const grandTotalEl = document.getElementById("grandTotal");
 const weightedLoadEl = document.getElementById("weightedLoad");
 const avgPerDayEl = document.getElementById("avgPerDay");
@@ -164,8 +188,22 @@ const studyFocusEl = document.getElementById("studyFocus");
 const hobbyFocusEl = document.getElementById("hobbyFocus");
 const topSubjectEl = document.getElementById("topSubject");
 const topTrackEl = document.getElementById("topTrack");
+const grandTotalLabel = document.getElementById("grandTotalLabel");
+const weightedLoadLabel = document.getElementById("weightedLoadLabel");
+const avgPerDayLabel = document.getElementById("avgPerDayLabel");
+const avgActiveDayLabel = document.getElementById("avgActiveDayLabel");
+const bestDayLabel = document.getElementById("bestDayLabel");
+const streakLabel = document.getElementById("streakLabel");
+const studyFocusLabel = document.getElementById("studyFocusLabel");
+const hobbyFocusLabel = document.getElementById("hobbyFocusLabel");
+const topSubjectLabel = document.getElementById("topSubjectLabel");
+const topTrackLabel = document.getElementById("topTrackLabel");
+const avgRatingLabel = document.getElementById("avgRatingLabel");
 const moreStatsBtn = document.getElementById("moreStatsBtn");
 const subjectChartEl = document.getElementById("subjectChart");
+const subjectChartPanel = document.getElementById("subjectChartPanel");
+const hobbyFrequencyPanel = document.getElementById("hobbyFrequencyPanel");
+const hobbyFrequencyChart = document.getElementById("hobbyFrequencyChart");
 const ratingsChartEl = document.getElementById("ratingsChart");
 const balanceChartEl = document.getElementById("balanceChart");
 const advancedStatsModalEl = document.getElementById("advancedStatsModal");
@@ -263,6 +301,19 @@ renderStats();
 renderSettings();
 renderEventLegend();
 updateDynamicLabels();
+if (typeof initRoutineTrackerEvents === "function") {
+  initRoutineTrackerEvents();
+}
+if (typeof renderRoutineTracker === "function") {
+  renderRoutineTracker();
+}
+
+if (statsPeriodSelectEl) {
+  statsPeriodSelectEl.addEventListener("change", () => {
+    selectedStatsPeriodId = statsPeriodSelectEl.value;
+    renderStats();
+  });
+}
 
 // Eventos del modal de detalles
 if (taskDetailsCloseBtn) taskDetailsCloseBtn.addEventListener("click", closeTaskDetailsModal);
@@ -330,9 +381,9 @@ if (settingsTracksTitleEl) {
 }
 
 clearDayBtn.addEventListener("click", clearSelectedDay);
-exportBtn.addEventListener("click", exportData);
-importInput.addEventListener("change", importData);
-settingsBtn.addEventListener("click", openSettings);
+if (exportBtn) exportBtn.addEventListener("click", exportData);
+if (importInput) importInput.addEventListener("change", importData);
+if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
 if (resetDataBtn) resetDataBtn.addEventListener("click", resetAllData);
 prevMonthsBtn.addEventListener("click", () => moveVisibleMonths(-2));
 nextMonthsBtn.addEventListener("click", () => moveVisibleMonths(2));
@@ -347,6 +398,7 @@ settingsModalEl.addEventListener("click", (event) => {
 });
 openSubjectModalBtn.addEventListener("click", openSubjectEntry);
 openTrackModalBtn.addEventListener("click", openTrackEntry);
+if (openPeriodModalBtn) openPeriodModalBtn.addEventListener("click", () => openPeriodEntry());
 openEventModalBtn.addEventListener("click", () => openEventEntry());
 eventEntryCloseBtn.addEventListener("click", closeEventEntry);
 eventEntryModalEl.addEventListener("click", (event) => {
@@ -354,11 +406,45 @@ eventEntryModalEl.addEventListener("click", (event) => {
 });
 subjectEntryCloseBtn.addEventListener("click", closeSubjectEntry);
 trackEntryCloseBtn.addEventListener("click", closeTrackEntry);
+if (periodEntryCloseBtn) periodEntryCloseBtn.addEventListener("click", closePeriodEntry);
 subjectEntryModalEl.addEventListener("click", (event) => {
   if (event.target.hasAttribute("data-close-entry")) closeSubjectEntry();
 });
 trackEntryModalEl.addEventListener("click", (event) => {
   if (event.target.hasAttribute("data-close-entry")) closeTrackEntry();
+});
+if (periodEntryModalEl) {
+  periodEntryModalEl.addEventListener("click", (event) => {
+    if (event.target.hasAttribute("data-close-period-modal")) closePeriodEntry();
+  });
+}
+if (generateReportBtn) generateReportBtn.addEventListener("click", openPeriodReportModal);
+if (periodReportCloseBtn) periodReportCloseBtn.addEventListener("click", closePeriodReportModal);
+if (periodReportDoneBtn) periodReportDoneBtn.addEventListener("click", closePeriodReportModal);
+if (periodReportModalEl) {
+  periodReportModalEl.addEventListener("click", (event) => {
+    if (event.target.hasAttribute("data-close-report-modal")) closePeriodReportModal();
+  });
+}
+const tabSummary = document.getElementById("tabReportSummary");
+const tabSubjects = document.getElementById("tabReportSubjects");
+const tabInsights = document.getElementById("tabReportInsights");
+const tabBadges = document.getElementById("tabReportBadges");
+if (tabSummary) tabSummary.addEventListener("click", () => switchReportTab("Summary"));
+if (tabSubjects) tabSubjects.addEventListener("click", () => switchReportTab("Subjects"));
+if (tabInsights) tabInsights.addEventListener("click", () => switchReportTab("Insights"));
+if (tabBadges) tabBadges.addEventListener("click", () => switchReportTab("Badges"));
+const sortRepHours = document.getElementById("sortRepSubjectsHours");
+const sortRepName = document.getElementById("sortRepSubjectsName");
+if (sortRepHours) sortRepHours.addEventListener("click", () => {
+  sortRepHours.classList.add("active");
+  sortRepName.classList.remove("active");
+  renderReportSubjectsBreakdown("hours");
+});
+if (sortRepName) sortRepName.addEventListener("click", () => {
+  sortRepName.classList.add("active");
+  sortRepHours.classList.remove("active");
+  renderReportSubjectsBreakdown("name");
 });
 rangeEntryCloseBtn.addEventListener("click", closeRangeEntry);
 rangeEntryConfirmBtn.addEventListener("click", extendCalendarRange);
@@ -380,8 +466,10 @@ eventSubjectEl.addEventListener("change", updateEventEntryFields);
 profileFormEl.addEventListener("submit", saveProfileSettings);
 subjectSettingsFormEl.addEventListener("submit", addSubjectFromSettings);
 trackSettingsFormEl.addEventListener("submit", addTrackFromSettings);
+if (periodSettingsFormEl) periodSettingsFormEl.addEventListener("submit", saveAcademicPeriod);
 subjectsSettingsListEl.addEventListener("click", handleSubjectSettingsClick);
 tracksSettingsListEl.addEventListener("click", handleTrackSettingsClick);
+if (periodsSettingsListEl) periodsSettingsListEl.addEventListener("click", handlePeriodSettingsClick);
 
 // Checklist View and Form Listeners
 if (tabCalendar && tabChecklist) {
@@ -686,6 +774,10 @@ function loadState() {
   }
 }
 
+function getDefaultRoutineHabits() {
+  return [];
+}
+
 function createFallbackState() {
   return {
     settings: {
@@ -697,12 +789,17 @@ function createFallbackState() {
       profile: { ...DEFAULT_PROFILE },
       calendarRange: { start: INITIAL_START_DATE, end: INITIAL_END_DATE },
       subjects: DEFAULT_SUBJECTS.map((subject) => ({ ...subject })),
-      tracks: DEFAULT_EXTRA_TRACKS.map((track) => ({ ...track }))
+      tracks: DEFAULT_EXTRA_TRACKS.map((track) => ({ ...track })),
+      academicPeriods: []
     },
     days: {},
     dismissedEvents: {},
     customEventCategories: {},
-    checklistTasks: []
+    checklistTasks: [],
+    routineTracker: {
+      habits: getDefaultRoutineHabits(),
+      monthlyChecks: {}
+    }
   };
 }
 
@@ -729,7 +826,8 @@ function normalizeState(candidate) {
       profile: normalizeProfile(candidate.settings.profile),
       calendarRange: normalizeCalendarRange(candidate.settings.calendarRange),
       subjects: normalizeSubjects(candidate.settings.subjects),
-      tracks: normalizeTracks(candidate.settings.tracks)
+      tracks: normalizeTracks(candidate.settings.tracks),
+      academicPeriods: normalizeAcademicPeriods(candidate.settings.academicPeriods)
     };
   }
 
@@ -747,6 +845,27 @@ function normalizeState(candidate) {
     normalized.checklistTasks = candidate.settings.checklistTasks.map(normalizeTask).filter(Boolean);
   } else {
     normalized.checklistTasks = [];
+  }
+
+  if (candidate.routineTracker && typeof candidate.routineTracker === "object") {
+    normalized.routineTracker = {
+      habits: Array.isArray(candidate.routineTracker.habits) && candidate.routineTracker.habits.length > 0
+        ? candidate.routineTracker.habits.map(h => ({
+            id: String(h.id || ("h_" + Math.random().toString(36).substring(2, 7))),
+            name: String(h.name || "Hábito"),
+            emoji: String(h.emoji || "⭐"),
+            goal: Number(h.goal) || 30
+          }))
+        : getDefaultRoutineHabits(),
+      monthlyChecks: (candidate.routineTracker.monthlyChecks && typeof candidate.routineTracker.monthlyChecks === "object")
+        ? candidate.routineTracker.monthlyChecks
+        : {}
+    };
+  } else {
+    normalized.routineTracker = {
+      habits: getDefaultRoutineHabits(),
+      monthlyChecks: {}
+    };
   }
 
   return normalized;
@@ -779,8 +898,10 @@ function getSubjectDifficulty(subjectName) {
 function syncConfigFromState() {
   subjects = normalizeSubjects(state.settings.subjects);
   EXTRA_TRACKS = normalizeTracks(state.settings.tracks);
+  academicPeriods = normalizeAcademicPeriods(state.settings.academicPeriods);
   state.settings.subjects = subjects;
   state.settings.tracks = EXTRA_TRACKS;
+  state.settings.academicPeriods = academicPeriods;
   state.settings.profile = normalizeProfile(state.settings.profile);
   state.settings.calendarRange = normalizeCalendarRange(state.settings.calendarRange);
 
@@ -854,6 +975,18 @@ function normalizeTracks(source) {
       };
     })
     .filter((track) => track.key && track.label && !seen.has(track.key) && seen.add(track.key));
+}
+
+function normalizeAcademicPeriods(periods) {
+  if (!Array.isArray(periods)) return [];
+  return periods.filter(p => p && typeof p === "object" && typeof p.name === "string" && p.name.trim()).map(p => ({
+    id: typeof p.id === "string" && p.id.trim() ? p.id.trim() : `period_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: p.name.trim(),
+    startDate: typeof p.startDate === "string" ? p.startDate : TODAY_DATE,
+    endDate: typeof p.endDate === "string" ? p.endDate : TODAY_DATE,
+    subjects: Array.isArray(p.subjects) ? p.subjects.filter(s => typeof s === "string") : [],
+    tracks: Array.isArray(p.tracks) ? p.tracks.filter(t => typeof t === "string") : EXTRA_TRACKS.map(t => t.key)
+  }));
 }
 
 function clampDifficulty(value) {
@@ -1018,7 +1151,49 @@ function renderSubjectInputs() {
     return;
   }
 
-  for (const subject of subjects) {
+  const day = ensureDay(selectedDate);
+  let visibleSubjects = subjects;
+  let isPeriodOff = false;
+
+  if (academicPeriods.length > 0) {
+    const activePeriod = academicPeriods.find(p => selectedDate >= p.startDate && selectedDate <= p.endDate);
+    if (activePeriod) {
+      visibleSubjects = subjects.filter(s => activePeriod.subjects.includes(s.name) || (day.subjects[s.name] > 0));
+    } else {
+      visibleSubjects = subjects.filter(s => day.subjects[s.name] > 0);
+      if (visibleSubjects.length === 0) {
+        isPeriodOff = true;
+      }
+    }
+  }
+
+  if (isPeriodOff) {
+    subjectFormEl.innerHTML = `
+      <div class="empty-state" style="padding: 8px 0; font-size: 0.86rem; color: var(--muted); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <span>Periodo no lectivo (vacaciones)</span>
+        <button type="button" id="showAllSubjectsBtn" class="ghost-button" style="min-height: 28px; padding: 2px 10px; font-size: 0.76rem; width: 100%; border-radius: 6px;">Mostrar asignaturas</button>
+      </div>
+    `;
+    const showAllBtn = document.getElementById("showAllSubjectsBtn");
+    if (showAllBtn) {
+      showAllBtn.addEventListener("click", () => {
+        renderSubjectInputsWithList(subjects);
+      });
+    }
+    return;
+  }
+
+  renderSubjectInputsWithList(visibleSubjects);
+}
+
+function renderSubjectInputsWithList(list) {
+  subjectFormEl.innerHTML = "";
+  if (!list.length) {
+    subjectFormEl.innerHTML = `<div class="empty-state">Sin asignaturas asignadas.</div>`;
+    return;
+  }
+
+  for (const subject of list) {
     const row = document.createElement("label");
     row.className = "subject-row";
     row.innerHTML = `
@@ -1265,6 +1440,7 @@ function renderSelectedDay() {
   if (typeof renderChecklistSelectedDay === "function") {
     renderChecklistSelectedDay();
   }
+  renderStats();
 }
 
 function renderDaySplit() {
@@ -1633,7 +1809,14 @@ function clearSelectedDay() {
 }
 
 function renderStats() {
+  const { currentPeriod, isVacation, activeSubjects, activeTracks } = getActiveStatsContext();
   const keys = getStatsRangeKeys();
+  
+  if (generateReportBtn) {
+    const isLectivoFinished = currentPeriod && !isVacation && getTodayDateKey() >= currentPeriod.endDate;
+    generateReportBtn.style.display = isLectivoFinished ? "flex" : "none";
+  }
+
   const totalsBySubject = Object.fromEntries(subjects.map((subject) => [subject.name, 0]));
   const totalsByTrack = Object.fromEntries(EXTRA_TRACKS.map((track) => [track.key, 0]));
 
@@ -1648,26 +1831,31 @@ function renderStats() {
 
   for (const key of keys) {
     const day = ensureDay(key);
-    const studyTotal = getStudyTotal(key);
-    const trackTotal = getTrackTotal(key);
-    const dayTotal = studyTotal + trackTotal;
+    let studyTotal = 0;
+    let trackTotal = 0;
 
+    for (const track of activeTracks) {
+      const h = day.extra[track.key] || 0;
+      totalsByTrack[track.key] += h;
+      trackTotal += h;
+    }
+
+    for (const subject of activeSubjects) {
+      const subjectHours = day.subjects[subject.name] || 0;
+      totalsBySubject[subject.name] += subjectHours;
+      studyTotal += subjectHours;
+      weightedLoad += subjectHours * getSubjectDifficulty(subject.name);
+    }
+
+    const dayTotal = studyTotal + trackTotal;
     totalHours += dayTotal;
     totalStudy += studyTotal;
     totalTracks += trackTotal;
 
     if (dayTotal > 0) activeDays++;
-    if (studyTotal > best.total) best = { key, total: studyTotal };
-
-    for (const track of EXTRA_TRACKS) {
-      totalsByTrack[track.key] += day.extra[track.key] || 0;
-    }
-
-    for (const subject of subjects) {
-      const subjectHours = day.subjects[subject.name] || 0;
-      totalsBySubject[subject.name] += subjectHours;
-      weightedLoad += subjectHours * getSubjectDifficulty(subject.name);
-    }
+    
+    const relevantTotal = activeSubjects.length === 0 ? trackTotal : studyTotal;
+    if (relevantTotal > best.total) best = { key, total: relevantTotal };
 
     const rating = day.rating || 0;
     if (rating > 0) {
@@ -1676,26 +1864,74 @@ function renderStats() {
     }
   }
 
-  const topSubject = subjects
-    .map((subject) => ({ name: subject.name, total: totalsBySubject[subject.name] }))
-    .sort((a, b) => b.total - a.total)[0];
-  const topTrack = EXTRA_TRACKS
-    .map((track) => ({ label: track.label, total: totalsByTrack[track.key], activeDays: countActiveTrackDays(keys, track.key) }))
-    .sort((a, b) => b.total - a.total || b.activeDays - a.activeDays)[0];
-  const currentStreak = calculateCurrentStreak(keys, getTodayDateKey());
+  const lastKeyOfPeriod = keys[keys.length - 1] || getTodayDateKey();
+  const isHobbyMode = isVacation || (currentPeriod && activeSubjects.length === 0);
+  const currentStreak = calculateCurrentStreak(keys, lastKeyOfPeriod, isHobbyMode);
   const averageRating = ratedDays > 0 ? totalRating / ratedDays : 0;
   const elapsedDays = Math.max(1, keys.length);
 
   grandTotalEl.textContent = `${formatNumber(totalHours)} h`;
-  weightedLoadEl.textContent = `${formatNumber(weightedLoad)}`;
   avgPerDayEl.textContent = `${formatNumber(totalHours / elapsedDays)} h`;
   avgActiveDayEl.textContent = activeDays ? `${formatNumber(totalHours / activeDays)} h` : "0 h";
   bestDayEl.textContent = best.key ? `${formatShortDate(best.key)} (${formatNumber(best.total)} h)` : "-";
   streakEl.textContent = `${currentStreak} días`;
-  studyFocusEl.textContent = totalHours ? `${formatNumber((totalStudy / totalHours) * 100)}%` : "0%";
-  hobbyFocusEl.textContent = totalHours ? `${formatNumber((totalTracks / totalHours) * 100)}%` : "0%";
-  topSubjectEl.textContent = topSubject && topSubject.total > 0 ? `${topSubject.name} (${formatNumber(topSubject.total)} h)` : "-";
-  topTrackEl.textContent = topTrack && topTrack.total > 0 ? `${topTrack.label} (${formatNumber(topTrack.total)} h)` : "-";
+
+  let topSubject = null;
+  let topTrack = null;
+
+  if (isHobbyMode) {
+    // Periodo sin asignaturas (ej. vacaciones / solo hobbies)
+    if (grandTotalLabel) grandTotalLabel.textContent = "total hobbies";
+    if (weightedLoadLabel) weightedLoadLabel.textContent = "hobbies vinculados";
+    weightedLoadEl.textContent = `${activeTracks.length}`;
+    if (avgPerDayLabel) avgPerDayLabel.textContent = "media diaria (hobbies)";
+    if (avgActiveDayLabel) avgActiveDayLabel.textContent = "media en días activos";
+    if (bestDayLabel) bestDayLabel.textContent = "mejor día de hobbies";
+    if (streakLabel) streakLabel.textContent = "racha de días con hobbies";
+    if (studyFocusLabel) studyFocusLabel.textContent = "foco principal";
+    if (hobbyFocusLabel) hobbyFocusLabel.textContent = "foco secundario";
+    if (topSubjectLabel) topSubjectLabel.textContent = "hobby principal";
+    if (topTrackLabel) topTrackLabel.textContent = "segundo hobby";
+
+    const sortedTracks = activeTracks
+      .map((track) => ({ label: track.label, total: totalsByTrack[track.key] }))
+      .sort((a, b) => b.total - a.total);
+    const t1 = sortedTracks[0];
+    const t2 = sortedTracks[1];
+
+    topSubjectEl.textContent = t1 && t1.total > 0 ? `${t1.label} (${formatNumber(t1.total)} h)` : "-";
+    topTrackEl.textContent = t2 && t2.total > 0 ? `${t2.label} (${formatNumber(t2.total)} h)` : "-";
+    
+    studyFocusEl.textContent = totalHours && t1 ? `${formatNumber((t1.total / totalHours) * 100)}%` : "0%";
+    hobbyFocusEl.textContent = totalHours && t2 ? `${formatNumber((t2.total / totalHours) * 100)}%` : "0%";
+    topSubject = t1 ? { name: t1.label, total: t1.total } : null;
+    topTrack = t2 ? { label: t2.label, total: t2.total } : null;
+  } else {
+    // Periodo normal (estudio o mixto)
+    if (grandTotalLabel) grandTotalLabel.textContent = "total global";
+    if (weightedLoadLabel) weightedLoadLabel.textContent = "carga ponderada";
+    weightedLoadEl.textContent = `${formatNumber(weightedLoad)}`;
+    if (avgPerDayLabel) avgPerDayLabel.textContent = "media diaria";
+    if (avgActiveDayLabel) avgActiveDayLabel.textContent = "media en días activos";
+    if (bestDayLabel) bestDayLabel.textContent = "mejor día académico";
+    if (streakLabel) streakLabel.textContent = "racha de días seguidos con estudio";
+    if (studyFocusLabel) studyFocusLabel.textContent = "foco en estudio";
+    if (hobbyFocusLabel) hobbyFocusLabel.textContent = "foco en hobbies";
+    if (topSubjectLabel) topSubjectLabel.textContent = "asignatura dominante";
+    if (topTrackLabel) topTrackLabel.textContent = "hobby dominante";
+
+    topSubject = activeSubjects
+      .map((subject) => ({ name: subject.name, total: totalsBySubject[subject.name] }))
+      .sort((a, b) => b.total - a.total)[0];
+    topTrack = activeTracks
+      .map((track) => ({ label: track.label, total: totalsByTrack[track.key], activeDays: countActiveTrackDays(keys, track.key) }))
+      .sort((a, b) => b.total - a.total || b.activeDays - a.activeDays)[0];
+
+    topSubjectEl.textContent = topSubject && topSubject.total > 0 ? `${topSubject.name} (${formatNumber(topSubject.total)} h)` : "-";
+    topTrackEl.textContent = topTrack && topTrack.total > 0 ? `${topTrack.label} (${formatNumber(topTrack.total)} h)` : "-";
+    studyFocusEl.textContent = totalHours ? `${formatNumber((totalStudy / totalHours) * 100)}%` : "0%";
+    hobbyFocusEl.textContent = totalHours ? `${formatNumber((totalTracks / totalHours) * 100)}%` : "0%";
+  }
 
   if (ratedDays > 0) {
     const full = Math.round(averageRating);
@@ -1722,17 +1958,66 @@ function renderStats() {
     averageRating,
     topSubject,
     topTrack,
-    currentStreak
+    currentStreak,
+    activeSubjects,
+    activeTracks
   };
 
-  renderSubjectChart(totalsBySubject);
+  if (isHobbyMode || activeSubjects.length === 0) {
+    if (subjectChartPanel) subjectChartPanel.hidden = true;
+    if (hobbyFrequencyPanel) hobbyFrequencyPanel.hidden = false;
+    renderHobbyFrequencyChart(keys, activeTracks, totalsByTrack);
+  } else {
+    if (subjectChartPanel) subjectChartPanel.hidden = false;
+    if (hobbyFrequencyPanel) hobbyFrequencyPanel.hidden = true;
+    renderSubjectChart(totalsBySubject, activeSubjects);
+  }
   renderRatingsChart(keys);
-  renderBalanceChart(totalStudy, totalsByTrack, totalHours);
+  renderBalanceChart(totalStudy, totalsByTrack, totalHours, activeTracks);
 }
 
-function renderSubjectChart(totalsBySubject) {
+function renderHobbyFrequencyChart(keys, activeTracks, totalsByTrack) {
+  const container = hobbyFrequencyChart;
+  if (!container) return;
+  container.innerHTML = "";
+
+  const ranking = activeTracks
+    .map((track) => {
+      const activeDays = countActiveTrackDays(keys, track.key);
+      const totalHours = totalsByTrack[track.key] || 0;
+      const avgPerActiveDay = activeDays > 0 ? totalHours / activeDays : 0;
+      return { ...track, activeDays, totalHours, avgPerActiveDay };
+    })
+    .sort((a, b) => b.activeDays - a.activeDays || b.totalHours - a.totalHours || a.label.localeCompare(b.label, "es-ES"));
+
+  const maxDays = Math.max(1, ...ranking.map((t) => t.activeDays));
+
+  if (ranking.length === 0) {
+    container.innerHTML = `<div class="empty-state">No hay hobbies vinculados a este periodo.</div>`;
+    return;
+  }
+
+  for (const [index, track] of ranking.entries()) {
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `
+      <span class="bar-label">
+        <span class="bar-rank">#${index + 1}</span>
+        <span>${escapeHtml(track.label)}</span>
+        <small>Media ${formatNumber(track.avgPerActiveDay)}h/día</small>
+      </span>
+      <span class="bar-track">
+        <span class="bar-fill" style="background:${track.color}; width:${(track.activeDays / maxDays) * 100}%"></span>
+      </span>
+      <span class="bar-value">${track.activeDays} ${track.activeDays === 1 ? 'día' : 'días'}</span>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function renderSubjectChart(totalsBySubject, activeSubjects = subjects) {
   subjectChartEl.innerHTML = "";
-  const ranking = subjects
+  const ranking = activeSubjects
     .map((subject) => ({ ...subject, total: totalsBySubject[subject.name] }))
     .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es-ES"));
   const max = Math.max(1, ...ranking.map((subject) => subject.total));
@@ -1794,13 +2079,14 @@ function renderRatingsChart(keys) {
   }
 }
 
-function renderBalanceChart(totalStudy, totalsByTrack, totalHours) {
+function renderBalanceChart(totalStudy, totalsByTrack, totalHours, activeTracks = EXTRA_TRACKS) {
   balanceChartEl.innerHTML = "";
 
-  const parts = [
-    { label: state.settings.subjectsLabelPlural || "Estudio", value: totalStudy, color: state.settings.profile.accentColor },
-    ...EXTRA_TRACKS.map((track) => ({ label: track.label, value: totalsByTrack[track.key] || 0, color: track.color }))
-  ];
+  const parts = [];
+  if (totalStudy > 0 || latestStats?.activeSubjects?.length > 0) {
+    parts.push({ label: state.settings.subjectsLabelPlural || "Estudio", value: totalStudy, color: state.settings.profile.accentColor });
+  }
+  parts.push(...activeTracks.map((track) => ({ label: track.label, value: totalsByTrack[track.key] || 0, color: track.color })));
 
   for (const part of parts) {
     const value = part.value;
@@ -2259,6 +2545,8 @@ function renderSettings() {
   });
   renderSubjectsSettings();
   renderTracksSettings();
+  renderAcademicPeriodsSettings();
+  populateStatsPeriodSelect();
 }
 
 function renderSubjectsSettings() {
@@ -2302,6 +2590,242 @@ function renderTracksSettings() {
       </div>
     `;
     tracksSettingsListEl.appendChild(item);
+  }
+}
+
+function renderAcademicPeriodsSettings() {
+  if (!periodsSettingsListEl) return;
+  periodsSettingsListEl.innerHTML = "";
+  if (!academicPeriods.length) {
+    periodsSettingsListEl.innerHTML = `<div class="empty-state">Vacío.</div>`;
+    return;
+  }
+
+  for (const period of academicPeriods) {
+    const item = document.createElement("div");
+    item.className = "settings-item";
+    
+    const dateText = `${formatShortDate(period.startDate)} - ${formatShortDate(period.endDate)}`;
+    const subCount = period.subjects.length;
+    const trackCount = (period.tracks || []).length;
+    const subLabel = subCount === 1 ? (state.settings.subjectsLabelSingular || "Asignatura") : (state.settings.subjectsLabelPlural || "Asignaturas");
+    
+    item.innerHTML = `
+      <span class="settings-color" style="background:var(--accent)"></span>
+      <span style="flex: 1 1 auto; margin-right: 10px;">
+        <strong>${escapeHtml(period.name)}</strong>
+        <small>${escapeHtml(dateText)} · ${subCount} ${escapeHtml(subLabel.toLowerCase())} · ${trackCount} hobbies</small>
+      </span>
+      <div class="notice-actions">
+        <button type="button" class="notice-action" data-edit-period="${period.id}" title="Editar" style="color: var(--accent); border-color: rgba(var(--accent-rgb), 0.25);">✎</button>
+        <button type="button" class="notice-action" data-delete-period="${period.id}" title="Eliminar" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">🗑</button>
+      </div>
+    `;
+    periodsSettingsListEl.appendChild(item);
+  }
+}
+
+function openPeriodEntry(targetPeriod = null) {
+  if (!periodEntryModalEl) return;
+  
+  if (periodSubjectsCheckboxesEl) {
+    periodSubjectsCheckboxesEl.innerHTML = "";
+    if (subjects.length === 0) {
+      periodSubjectsCheckboxesEl.innerHTML = `<div style="font-size: 0.8rem; color: var(--muted); padding: 4px 0;">Crea primero alguna asignatura.</div>`;
+    } else {
+      for (const subject of subjects) {
+        const wrap = document.createElement("label");
+        wrap.style.display = "flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "8px";
+        wrap.style.fontSize = "0.84rem";
+        wrap.style.fontWeight = "bold";
+        wrap.style.cursor = "pointer";
+        wrap.innerHTML = `
+          <input type="checkbox" value="${escapeHtml(subject.name)}" data-period-subject style="width:16px; height:16px; cursor:pointer;">
+          <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${subject.color};"></span>
+          <span>${escapeHtml(subject.name)}</span>
+        `;
+        periodSubjectsCheckboxesEl.appendChild(wrap);
+      }
+    }
+  }
+
+  if (periodTracksCheckboxesEl) {
+    periodTracksCheckboxesEl.innerHTML = "";
+    if (EXTRA_TRACKS.length === 0) {
+      periodTracksCheckboxesEl.innerHTML = `<div style="font-size: 0.8rem; color: var(--muted); padding: 4px 0;">No hay hobbies creados.</div>`;
+    } else {
+      for (const track of EXTRA_TRACKS) {
+        const wrap = document.createElement("label");
+        wrap.style.display = "flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "8px";
+        wrap.style.fontSize = "0.84rem";
+        wrap.style.fontWeight = "bold";
+        wrap.style.cursor = "pointer";
+        wrap.innerHTML = `
+          <input type="checkbox" value="${escapeHtml(track.key)}" data-period-track style="width:16px; height:16px; cursor:pointer;">
+          <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${track.color};"></span>
+          <span>${escapeHtml(track.label)}</span>
+        `;
+        periodTracksCheckboxesEl.appendChild(wrap);
+      }
+    }
+  }
+
+  if (targetPeriod) {
+    editingPeriodTarget = targetPeriod.id;
+    periodEntryTitleEl.textContent = "Editar curso académico";
+    newPeriodNameEl.value = targetPeriod.name;
+    newPeriodStartEl.value = targetPeriod.startDate;
+    newPeriodEndEl.value = targetPeriod.endDate;
+    
+    if (periodSubjectsCheckboxesEl) {
+      for (const checkbox of periodSubjectsCheckboxesEl.querySelectorAll("input[data-period-subject]")) {
+        checkbox.checked = targetPeriod.subjects.includes(checkbox.value);
+      }
+    }
+    if (periodTracksCheckboxesEl) {
+      const pTracks = targetPeriod.tracks || EXTRA_TRACKS.map(t => t.key);
+      for (const checkbox of periodTracksCheckboxesEl.querySelectorAll("input[data-period-track]")) {
+        checkbox.checked = pTracks.includes(checkbox.value);
+      }
+    }
+    periodSettingsFormEl.querySelector('button[type="submit"]').textContent = "Guardar cambios";
+  } else {
+    editingPeriodTarget = null;
+    periodEntryTitleEl.textContent = "Añadir curso académico";
+    if (periodSettingsFormEl) periodSettingsFormEl.reset();
+    newPeriodNameEl.value = "";
+    newPeriodStartEl.value = TODAY_DATE;
+    newPeriodEndEl.value = TODAY_DATE;
+    
+    if (periodSubjectsCheckboxesEl) {
+      for (const checkbox of periodSubjectsCheckboxesEl.querySelectorAll("input[data-period-subject]")) {
+        checkbox.checked = false;
+      }
+    }
+    if (periodTracksCheckboxesEl) {
+      for (const checkbox of periodTracksCheckboxesEl.querySelectorAll("input[data-period-track]")) {
+        checkbox.checked = true; // Por defecto los hobbies activos en todos los cursos
+      }
+    }
+    periodSettingsFormEl.querySelector('button[type="submit"]').textContent = "Añadir curso / periodo";
+  }
+
+  periodEntryModalEl.hidden = false;
+  newPeriodNameEl.focus();
+}
+
+function closePeriodEntry() {
+  if (periodEntryModalEl) periodEntryModalEl.hidden = true;
+  editingPeriodTarget = null;
+}
+
+function saveAcademicPeriod(event) {
+  event.preventDefault();
+  
+  const name = newPeriodNameEl.value.trim();
+  const start = newPeriodStartEl.value;
+  const end = newPeriodEndEl.value;
+  
+  if (start > end) {
+    alert("La fecha de inicio no puede ser posterior a la de fin.");
+    return;
+  }
+  
+  const selectedSubjects = [];
+  if (periodSubjectsCheckboxesEl) {
+    for (const checkbox of periodSubjectsCheckboxesEl.querySelectorAll("input[data-period-subject]")) {
+      if (checkbox.checked) {
+        selectedSubjects.push(checkbox.value);
+      }
+    }
+  }
+
+  const selectedTracks = [];
+  if (periodTracksCheckboxesEl) {
+    for (const checkbox of periodTracksCheckboxesEl.querySelectorAll("input[data-period-track]")) {
+      if (checkbox.checked) {
+        selectedTracks.push(checkbox.value);
+      }
+    }
+  }
+  
+  if (editingPeriodTarget) {
+    const period = state.settings.academicPeriods.find(p => p.id === editingPeriodTarget);
+    if (period) {
+      period.name = name;
+      period.startDate = start;
+      period.endDate = end;
+      period.subjects = selectedSubjects;
+      period.tracks = selectedTracks;
+    }
+  } else {
+    if (!state.settings.academicPeriods) state.settings.academicPeriods = [];
+    state.settings.academicPeriods.push({
+      id: `period_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      startDate: start,
+      endDate: end,
+      subjects: selectedSubjects,
+      tracks: selectedTracks
+    });
+  }
+  
+  closePeriodEntry();
+  refreshAfterConfigChange("Curso académico guardado.");
+  populateStatsPeriodSelect();
+}
+
+function handlePeriodSettingsClick(event) {
+  const editBtn = event.target.closest("[data-edit-period]");
+  if (editBtn) {
+    const id = editBtn.dataset.editPeriod;
+    const period = academicPeriods.find(p => p.id === id);
+    if (!period) return;
+    openPeriodEntry(period);
+    return;
+  }
+
+  const deleteBtn = event.target.closest("[data-delete-period]");
+  if (!deleteBtn) return;
+  const id = deleteBtn.dataset.deletePeriod;
+  const period = academicPeriods.find(p => p.id === id);
+  if (!period) return;
+  
+  const ok = confirm(`¿Estás seguro de que quieres eliminar el curso académico "${period.name}"? Los datos de estudio y asignaturas no se borrarán.`);
+  if (!ok) return;
+  
+  state.settings.academicPeriods = state.settings.academicPeriods.filter(p => p.id !== id);
+  
+  if (selectedStatsPeriodId === id) {
+    selectedStatsPeriodId = "all";
+    if (statsPeriodSelectEl) statsPeriodSelectEl.value = "all";
+  }
+  
+  refreshAfterConfigChange("Curso académico eliminado.");
+  populateStatsPeriodSelect();
+}
+
+function populateStatsPeriodSelect() {
+  if (!statsPeriodSelectEl) return;
+  const currentValue = statsPeriodSelectEl.value;
+  statsPeriodSelectEl.innerHTML = '<option value="all">Todo el historial</option>';
+  
+  for (const period of academicPeriods) {
+    const opt = document.createElement("option");
+    opt.value = period.id;
+    opt.textContent = period.name;
+    statsPeriodSelectEl.appendChild(opt);
+  }
+  
+  if (Array.from(statsPeriodSelectEl.options).some(o => o.value === currentValue)) {
+    statsPeriodSelectEl.value = currentValue;
+  } else {
+    statsPeriodSelectEl.value = "all";
+    selectedStatsPeriodId = "all";
   }
 }
 
@@ -2672,23 +3196,144 @@ function countActiveTrackDays(keys, trackKey) {
   return keys.filter((key) => (ensureDay(key).extra[trackKey] || 0) > 0).length;
 }
 
-function calculateCurrentStreak(keys, endKey = getTodayDateKey()) {
+function calculateCurrentStreak(keys, endKey = getTodayDateKey(), isHobbyMode = false) {
   const todayIndex = keys.indexOf(endKey);
   let endIndex = todayIndex >= 0 ? todayIndex : keys.length - 1;
-  if (todayIndex >= 0 && getStudyTotal(endKey) <= 0) {
+  const checkTotal = (key) => isHobbyMode ? getTrackTotal(key) : getStudyTotal(key);
+  
+  if (todayIndex >= 0 && checkTotal(endKey) <= 0) {
     endIndex = todayIndex - 1;
   }
   let streak = 0;
   for (let i = endIndex; i >= 0; i--) {
-    if (getStudyTotal(keys[i]) <= 0) break;
+    if (checkTotal(keys[i]) <= 0) break;
     streak++;
   }
   return streak;
 }
 
+function classifyConfigItems() {
+  const allPeriods = academicPeriods || [];
+  
+  const annualSubjects = [];
+  const periodSubjectsMap = {}; 
+
+  for (const sub of subjects) {
+    if (allPeriods.length === 0) {
+      annualSubjects.push(sub.name);
+      continue;
+    }
+    let count = 0;
+    const pIds = [];
+    for (const p of allPeriods) {
+      if (p.subjects && p.subjects.includes(sub.name)) {
+        pIds.push(p.id);
+        count++;
+      }
+    }
+    if (count === allPeriods.length || count === 0) {
+      annualSubjects.push(sub.name);
+    } else {
+      periodSubjectsMap[sub.name] = pIds;
+    }
+  }
+
+  const annualTracks = [];
+  const periodTracksMap = {}; 
+
+  for (const trk of EXTRA_TRACKS) {
+    if (allPeriods.length === 0) {
+      annualTracks.push(trk.key);
+      continue;
+    }
+    let count = 0;
+    const pIds = [];
+    for (const p of allPeriods) {
+      const pTracks = Array.isArray(p.tracks) ? p.tracks : EXTRA_TRACKS.map(t => t.key);
+      if (pTracks.includes(trk.key)) {
+        pIds.push(p.id);
+        count++;
+      }
+    }
+    if (count === allPeriods.length || count === 0) {
+      annualTracks.push(trk.key);
+    } else {
+      periodTracksMap[trk.key] = pIds;
+    }
+  }
+
+  return { annualSubjects, periodSubjectsMap, annualTracks, periodTracksMap };
+}
+
+function getActiveStatsContext() {
+  const { annualSubjects, periodSubjectsMap, annualTracks, periodTracksMap } = classifyConfigItems();
+  const allPeriods = academicPeriods || [];
+
+  let currentPeriod = null;
+  let isVacation = false;
+
+  if (selectedStatsPeriodId !== "all") {
+    currentPeriod = allPeriods.find(p => p.id === selectedStatsPeriodId) || null;
+  } else {
+    currentPeriod = allPeriods.find(p => selectedDate >= p.startDate && selectedDate <= p.endDate) || null;
+    if (!currentPeriod && allPeriods.length > 0) {
+      isVacation = true; 
+    }
+  }
+
+  const activeSubjects = subjects.filter(sub => {
+    if (isVacation) return false; 
+    if (annualSubjects.includes(sub.name)) return true; 
+    if (currentPeriod) {
+      const pIds = periodSubjectsMap[sub.name] || [];
+      return pIds.includes(currentPeriod.id);
+    }
+    return true; 
+  });
+
+  const activeTracks = EXTRA_TRACKS.filter(trk => {
+    if (annualTracks.includes(trk.key)) return true; 
+    if (currentPeriod) {
+      const pIds = periodTracksMap[trk.key] || [];
+      return pIds.includes(currentPeriod.id);
+    }
+    if (isVacation) {
+      return false; 
+    }
+    return true; 
+  });
+
+  return {
+    currentPeriod,
+    isVacation,
+    activeSubjects,
+    activeTracks,
+    annualSubjects,
+    annualTracks
+  };
+}
+
+function getEffectiveStatsPeriod() {
+  const { currentPeriod, isVacation } = getActiveStatsContext();
+  if (currentPeriod) return { ...currentPeriod, isVacation: false };
+  if (isVacation) {
+    return {
+      id: "vacation",
+      name: "Vacaciones / Periodo no lectivo",
+      startDate: getCalendarStart(),
+      endDate: getCalendarEnd(),
+      subjects: [],
+      tracks: EXTRA_TRACKS.map(t => t.key),
+      isVacation: true
+    };
+  }
+  return null;
+}
+
 function getStatsRangeKeys() {
   const todayKey = getTodayDateKey();
   const rangeKeys = getDateRangeKeys().filter((key) => key <= todayKey);
+  
   const firstRecordedKey = rangeKeys.find(hasRecordedDayData);
   if (!firstRecordedKey) return [];
   return rangeKeys.filter((key) => key >= firstRecordedKey);
@@ -2952,6 +3597,658 @@ function renderEventLegend() {
   }
 }
 
+// --- LÓGICA Y RENDERIZADO DEL TRACKER DE HÁBITOS ("RoutineKraft" STYLE DASHBOARD) ---
+
+function initRoutineTrackerEvents() {
+  // Global window bindings for inline handlers
+  window.openHabitModal = openHabitModal;
+  window.closeHabitModal = closeHabitModal;
+  window.toggleHabitCheck = toggleHabitCheck;
+  window.updateHabitGoalInline = updateHabitGoalInline;
+  window.switchView = switchView;
+  window.openSettings = openSettings;
+  window.closeSettings = closeSettings;
+
+  const prevBtn = document.getElementById("routinePrevMonthBtn");
+  const nextBtn = document.getElementById("routineNextMonthBtn");
+  const monthSelect = document.getElementById("routineMonthSelect");
+  const addHabitBtn = document.getElementById("addHabitBtn");
+  const resetBtn = document.getElementById("resetMonthBtn");
+
+  // Dock Action Buttons & Popover Menu
+  const dockExportBtn = document.getElementById("dockExportBtn");
+  const dockImportInput = document.getElementById("dockImportInput");
+  const dockSettingsBtn = document.getElementById("dockSettingsBtn");
+  const dockHomeBtn = document.getElementById("dockHomeBtn");
+  const homePopoverMenu = document.getElementById("homePopoverMenu");
+
+  const openPopoverMenu = () => {
+    if (!homePopoverMenu) return;
+    homePopoverMenu.classList.remove("closing");
+    homePopoverMenu.removeAttribute("hidden");
+    void homePopoverMenu.offsetWidth;
+    homePopoverMenu.classList.add("open");
+  };
+
+  const closePopoverMenu = () => {
+    if (!homePopoverMenu || !homePopoverMenu.classList.contains("open")) return;
+    homePopoverMenu.classList.remove("open");
+    homePopoverMenu.classList.add("closing");
+    setTimeout(() => {
+      if (homePopoverMenu.classList.contains("closing")) {
+        homePopoverMenu.classList.remove("closing");
+        homePopoverMenu.setAttribute("hidden", "true");
+      }
+    }, 210);
+  };
+
+  if (dockHomeBtn && homePopoverMenu) {
+    dockHomeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (homePopoverMenu.classList.contains("open")) {
+        closePopoverMenu();
+      } else {
+        openPopoverMenu();
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (homePopoverMenu.classList.contains("open") && !homePopoverMenu.contains(e.target) && !dockHomeBtn.contains(e.target)) {
+        closePopoverMenu();
+      }
+    });
+  }
+
+  if (dockExportBtn) {
+    dockExportBtn.addEventListener("click", () => {
+      closePopoverMenu();
+      exportData();
+    });
+  }
+
+  const dockImportTriggerBtn = document.getElementById("dockImportTriggerBtn");
+  if (dockImportTriggerBtn && dockImportInput) {
+    dockImportTriggerBtn.addEventListener("click", () => {
+      closePopoverMenu();
+      dockImportInput.click();
+    });
+  }
+
+  if (dockImportInput) {
+    dockImportInput.addEventListener("change", (e) => {
+      closePopoverMenu();
+      importData(e);
+    });
+  }
+  if (dockSettingsBtn) {
+    dockSettingsBtn.addEventListener("click", () => {
+      closePopoverMenu();
+      openSettings();
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      routineActiveMonth = shiftMonthKey(routineActiveMonth, -1);
+      renderRoutineTracker();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      routineActiveMonth = shiftMonthKey(routineActiveMonth, 1);
+      renderRoutineTracker();
+    });
+  }
+
+  if (monthSelect) {
+    monthSelect.addEventListener("change", (e) => {
+      routineActiveMonth = e.target.value;
+      renderRoutineTracker();
+    });
+  }
+
+  if (addHabitBtn) {
+    addHabitBtn.addEventListener("click", () => {
+      openHabitModal(null);
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      if (confirm(`¿Vaciar todas las marcas registradas de este mes (${formatMonthKeyTitle(routineActiveMonth)})?`)) {
+        if (state.routineTracker && state.routineTracker.monthlyChecks) {
+          delete state.routineTracker.monthlyChecks[routineActiveMonth];
+          saveState();
+          renderRoutineTracker();
+          showToast("Marcas del mes vaciadas.");
+        }
+      }
+    });
+  }
+
+  // Habit Modal form listener
+  const habitForm = document.getElementById("habitForm");
+  const habitCloseBtn = document.getElementById("habitEntryCloseBtn");
+  const habitDeleteBtn = document.getElementById("habitDeleteBtn");
+  const backdrop = document.querySelector("[data-close-habit]");
+
+  if (habitForm) {
+    habitForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const emoji = document.getElementById("habitEmojiInput").value.trim() || "⭐";
+      const name = document.getElementById("habitNameInput").value.trim() || "Nuevo Hábito";
+      const goal = Number(document.getElementById("habitGoalInput").value) || 30;
+
+      if (!state.routineTracker) {
+        state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {} };
+      }
+
+      if (editingHabitTarget) {
+        const habit = state.routineTracker.habits.find(h => h.id === editingHabitTarget);
+        if (habit) {
+          habit.emoji = emoji;
+          habit.name = name;
+          habit.goal = goal;
+        }
+      } else {
+        const newHabit = {
+          id: "h_" + Date.now().toString(36),
+          name: name,
+          emoji: emoji,
+          goal: goal
+        };
+        state.routineTracker.habits.push(newHabit);
+      }
+
+      saveState();
+      closeHabitModal();
+      renderRoutineTracker();
+      showToast(editingHabitTarget ? "Hábito actualizado." : "Hábito añadido.");
+    });
+  }
+
+  if (habitCloseBtn) habitCloseBtn.addEventListener("click", closeHabitModal);
+  if (backdrop) backdrop.addEventListener("click", closeHabitModal);
+
+  if (habitDeleteBtn) {
+    habitDeleteBtn.addEventListener("click", () => {
+      if (editingHabitTarget && confirm("¿Eliminar este hábito de la lista?")) {
+        state.routineTracker.habits = state.routineTracker.habits.filter(h => h.id !== editingHabitTarget);
+        saveState();
+        closeHabitModal();
+        renderRoutineTracker();
+        showToast("Hábito eliminado.");
+      }
+    });
+  }
+}
+
+function openHabitModal(habitId) {
+  const modal = document.getElementById("habitEntryModal");
+  const title = document.getElementById("habitEntryTitle");
+  const emojiInput = document.getElementById("habitEmojiInput");
+  const nameInput = document.getElementById("habitNameInput");
+  const goalInput = document.getElementById("habitGoalInput");
+  const deleteBtn = document.getElementById("habitDeleteBtn");
+
+  if (!modal) return;
+
+  editingHabitTarget = habitId;
+
+  if (habitId) {
+    const habit = (state.routineTracker && state.routineTracker.habits) ? state.routineTracker.habits.find(h => h.id === habitId) : null;
+    if (habit) {
+      title.textContent = "Editar Hábito";
+      emojiInput.value = habit.emoji || "⭐";
+      nameInput.value = habit.name || "";
+      goalInput.value = habit.goal || 30;
+      if (deleteBtn) deleteBtn.style.display = "inline-block";
+    }
+  } else {
+    title.textContent = "Añadir Hábito";
+    emojiInput.value = "⭐";
+    nameInput.value = "";
+    goalInput.value = 30;
+    if (deleteBtn) deleteBtn.style.display = "none";
+  }
+
+  modal.hidden = false;
+}
+
+function closeHabitModal() {
+  const modal = document.getElementById("habitEntryModal");
+  if (modal) modal.hidden = true;
+  editingHabitTarget = null;
+}
+
+function shiftMonthKey(key, delta) {
+  const [y, m] = key.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  const newY = d.getFullYear();
+  const newM = String(d.getMonth() + 1).padStart(2, "0");
+  return `${newY}-${newM}`;
+}
+
+function formatMonthKeyTitle(key) {
+  const [y, m] = key.split("-").map(Number);
+  const date = new Date(y, m - 1, 1);
+  return date.toLocaleDateString("es-ES", { month: "long", year: "numeric" }).toUpperCase();
+}
+
+function renderRoutineTracker() {
+  if (!state.routineTracker || !Array.isArray(state.routineTracker.habits)) {
+    state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {} };
+  }
+
+  const habits = state.routineTracker.habits;
+  const [year, month] = routineActiveMonth.split("-").map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const checksMap = (state.routineTracker.monthlyChecks && state.routineTracker.monthlyChecks[routineActiveMonth]) || {};
+
+  // Header Title
+  const titleEl = document.getElementById("routineMonthTitle");
+  if (titleEl) titleEl.textContent = formatMonthKeyTitle(routineActiveMonth);
+
+  // Month Selector Options
+  const selectEl = document.getElementById("routineMonthSelect");
+  if (selectEl) {
+    selectEl.innerHTML = "";
+    for (let m = 1; m <= 12; m++) {
+      const mKey = `${year}-${String(m).padStart(2, "0")}`;
+      const opt = document.createElement("option");
+      opt.value = mKey;
+      opt.textContent = formatMonthKeyTitle(mKey);
+      if (mKey === routineActiveMonth) opt.selected = true;
+      selectEl.appendChild(opt);
+    }
+  }
+
+  // Calculate Metrics
+  const donePerDay = {};
+  for (let d = 1; d <= daysInMonth; d++) {
+    donePerDay[d] = 0;
+    habits.forEach(h => {
+      if (checksMap[h.id] && checksMap[h.id][d]) {
+        donePerDay[d]++;
+      }
+    });
+  }
+
+  const donePerHabit = {};
+  habits.forEach(h => {
+    donePerHabit[h.id] = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (checksMap[h.id] && checksMap[h.id][d]) {
+        donePerHabit[h.id]++;
+      }
+    }
+  });
+
+  let grandDone = 0;
+  let grandGoal = 0;
+  habits.forEach(h => {
+    const goal = h.goal || daysInMonth;
+    grandDone += donePerHabit[h.id];
+    grandGoal += goal;
+  });
+
+  const globalPct = grandGoal > 0 ? ((grandDone / grandGoal) * 100).toFixed(1) : "0.0";
+
+  // Summary Badge
+  const summaryBadge = document.getElementById("trendMonthSummaryBadge");
+  if (summaryBadge) summaryBadge.textContent = `${globalPct}% Cumplido`;
+
+  // Render Sub-components
+  renderRoutineTrendChart(daysInMonth, donePerDay, habits.length);
+  renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap);
+  renderRoutineWeeklyAnalysis(daysInMonth, habits.length, donePerDay);
+  renderRoutineOverview(grandDone, grandGoal, globalPct, habits, donePerHabit, daysInMonth);
+  renderRoutineRanking(habits, donePerHabit, daysInMonth);
+}
+
+function renderRoutineTrendChart(daysInMonth, donePerDay, totalHabits) {
+  const container = document.getElementById("trendChartWrapper");
+  if (!container) return;
+
+  if (totalHabits === 0) {
+    container.innerHTML = `<div style="text-align:center; color:var(--muted); padding:40px;">Añade hábitos para ver la gráfica de tendencia</div>`;
+    return;
+  }
+
+  const width = 800;
+  const height = 140;
+  const paddingX = 30;
+  const paddingY = 20;
+  const chartW = width - paddingX * 2;
+  const chartH = height - paddingY * 2;
+
+  const points = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const pct = totalHabits > 0 ? donePerDay[d] / totalHabits : 0;
+    const x = paddingX + ((d - 1) / Math.max(1, daysInMonth - 1)) * chartW;
+    const y = height - paddingY - pct * chartH;
+    points.push({ day: d, pct: Math.round(pct * 100), count: donePerDay[d], x, y });
+  }
+
+  let dPath = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const pPrev = points[i - 1];
+    const pCurr = points[i];
+    const cpX1 = pPrev.x + (pCurr.x - pPrev.x) / 2;
+    const cpY1 = pPrev.y;
+    const cpX2 = pPrev.x + (pCurr.x - pPrev.x) / 2;
+    const cpY2 = pCurr.y;
+    dPath += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${pCurr.x} ${pCurr.y}`;
+  }
+
+  const areaPath = `${dPath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+
+  let gridSvg = "";
+  [0, 0.25, 0.5, 0.75, 1].forEach(ratio => {
+    const yPos = height - paddingY - ratio * chartH;
+    gridSvg += `<line x1="${paddingX}" y1="${yPos}" x2="${width - paddingX}" y2="${yPos}" stroke="var(--line)" stroke-dasharray="3,3" stroke-width="1"/>`;
+    gridSvg += `<text x="${paddingX - 6}" y="${yPos + 4}" fill="var(--muted)" font-size="10" text-anchor="end">${Math.round(ratio * 100)}%</text>`;
+  });
+
+  let circlesSvg = points.map(p => `
+    <circle cx="${p.x}" cy="${p.y}" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2">
+      <title>Día ${p.day}: ${p.count}/${totalHabits} hábitos (${p.pct}%)</title>
+    </circle>
+  `).join("");
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" class="trend-svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="themeGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      ${gridSvg}
+      <path d="${areaPath}" fill="url(#themeGradient)"/>
+      <path d="${dPath}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+      ${circlesSvg}
+    </svg>
+  `;
+}
+
+function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
+  const table = document.getElementById("routineMatrixTable");
+  if (!table) return;
+
+  const weeks = [
+    { num: 1, name: "SEMANA 1", start: 1, end: Math.min(7, daysInMonth), cls: "week-header-1" },
+    { num: 2, name: "SEMANA 2", start: 8, end: Math.min(14, daysInMonth), cls: "week-header-2" },
+    { num: 3, name: "SEMANA 3", start: 15, end: Math.min(21, daysInMonth), cls: "week-header-3" },
+    { num: 4, name: "SEMANA 4", start: 22, end: Math.min(28, daysInMonth), cls: "week-header-4" }
+  ];
+  if (daysInMonth > 28) {
+    weeks.push({ num: 5, name: "SEMANA 5", start: 29, end: daysInMonth, cls: "week-header-5" });
+  }
+
+  let headerHtml = `
+    <thead>
+      <tr>
+        <th class="routine-name-td">RUTINAS Y HÁBITOS</th>
+        <th class="goal-td" title="Días objetivo al mes">OBJETIVO</th>
+  `;
+
+  weeks.forEach(w => {
+    const colSpan = w.end - w.start + 1;
+    headerHtml += `<th colspan="${colSpan}" class="${w.cls}">${w.name}</th>`;
+  });
+  headerHtml += `</tr><tr><th class="routine-name-td"></th><th class="goal-td"></th>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(year, month - 1, d);
+    const dayName = dateObj.toLocaleDateString("es-ES", { weekday: "short" }).toUpperCase();
+    headerHtml += `<th class="day-th">${dayName}<br><span style="font-size:0.85rem; color:var(--ink);">${d}</span></th>`;
+  }
+  headerHtml += `</tr></thead>`;
+
+  let bodyHtml = `<tbody>`;
+
+  if (habits.length === 0) {
+    bodyHtml += `<tr><td colspan="${daysInMonth + 2}" style="padding: 30px; color: var(--muted);">No hay hábitos definidos. Pulsa <strong>+ Añadir Hábito</strong> para comenzar.</td></tr>`;
+  } else {
+    habits.forEach(h => {
+      const goal = h.goal || daysInMonth;
+      bodyHtml += `
+        <tr>
+          <td class="routine-name-td">
+            <div class="routine-name-inner">
+              <span class="habit-title-text" title="${escapeHtml(h.name)}">
+                <span>${h.emoji || "⭐"}</span>
+                <span>${escapeHtml(h.name)}</span>
+              </span>
+              <span class="habit-edit-icon" onclick="openHabitModal('${h.id}')" title="Editar hábito">✏️</span>
+            </div>
+          </td>
+          <td class="goal-td" title="Cambiar días objetivo">
+            <input type="number"
+                   class="goal-inline-input"
+                   min="1"
+                   max="31"
+                   value="${goal}"
+                   data-habit-id="${h.id}"
+                   onchange="updateHabitGoalInline('${h.id}', this.value)"
+            />
+          </td>
+      `;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        let weekNum = 1;
+        if (d >= 8 && d <= 14) weekNum = 2;
+        else if (d >= 15 && d <= 21) weekNum = 3;
+        else if (d >= 22 && d <= 28) weekNum = 4;
+        else if (d >= 29) weekNum = 5;
+
+        const isChecked = !!(checksMap[h.id] && checksMap[h.id][d]);
+        bodyHtml += `
+          <td class="check-td">
+            <input type="checkbox"
+                   class="routine-checkbox week-${weekNum}"
+                   ${isChecked ? "checked" : ""}
+                   data-habit-id="${h.id}"
+                   data-day="${d}"
+                   onchange="toggleHabitCheck('${h.id}', ${d})"
+            />
+          </td>
+        `;
+      }
+      bodyHtml += `</tr>`;
+    });
+  }
+
+  bodyHtml += `</tbody>`;
+  table.innerHTML = headerHtml + bodyHtml;
+}
+
+function toggleHabitCheck(habitId, dayNum) {
+  if (!state.routineTracker) {
+    state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {} };
+  }
+  if (!state.routineTracker.monthlyChecks) {
+    state.routineTracker.monthlyChecks = {};
+  }
+  if (!state.routineTracker.monthlyChecks[routineActiveMonth]) {
+    state.routineTracker.monthlyChecks[routineActiveMonth] = {};
+  }
+  if (!state.routineTracker.monthlyChecks[routineActiveMonth][habitId]) {
+    state.routineTracker.monthlyChecks[routineActiveMonth][habitId] = {};
+  }
+
+  const current = !!state.routineTracker.monthlyChecks[routineActiveMonth][habitId][dayNum];
+  state.routineTracker.monthlyChecks[routineActiveMonth][habitId][dayNum] = !current;
+
+  saveState();
+  renderRoutineTracker();
+}
+
+function updateHabitGoalInline(habitId, newGoalValue) {
+  const val = Math.max(1, Math.min(31, Number(newGoalValue) || 30));
+  if (!state.routineTracker || !Array.isArray(state.routineTracker.habits)) return;
+  const habit = state.routineTracker.habits.find(h => h.id === habitId);
+  if (habit) {
+    habit.goal = val;
+    saveState();
+    renderRoutineTracker();
+    showToast(`Objetivo de "${habit.name}" actualizado a ${val} días`);
+  }
+}
+
+function renderRoutineWeeklyAnalysis(daysInMonth, totalHabits, donePerDay) {
+  const barsContainer = document.getElementById("dailyBarsContainer");
+  const statsSummary = document.getElementById("weeklyStatsSummary");
+  if (!barsContainer || !statsSummary) return;
+
+  let barsHtml = "";
+  for (let d = 1; d <= daysInMonth; d++) {
+    let weekNum = 1;
+    if (d >= 8 && d <= 14) weekNum = 2;
+    else if (d >= 15 && d <= 21) weekNum = 3;
+    else if (d >= 22 && d <= 28) weekNum = 4;
+    else if (d >= 29) weekNum = 5;
+
+    const count = donePerDay[d] || 0;
+    const heightPct = totalHabits > 0 ? (count / totalHabits) * 100 : 0;
+
+    barsHtml += `
+      <div class="bar-column" title="Día ${d}: ${count}/${totalHabits} hábitos">
+        <div class="bar-fill week-${weekNum}" style="height: ${Math.max(2, heightPct)}%;"></div>
+      </div>
+    `;
+  }
+  barsContainer.innerHTML = barsHtml;
+
+  const weeks = [
+    { num: 1, name: "Semana 1", start: 1, end: Math.min(7, daysInMonth) },
+    { num: 2, name: "Semana 2", start: 8, end: Math.min(14, daysInMonth) },
+    { num: 3, name: "Semana 3", start: 15, end: Math.min(21, daysInMonth) },
+    { num: 4, name: "Semana 4", start: 22, end: Math.min(28, daysInMonth) }
+  ];
+  if (daysInMonth > 28) {
+    weeks.push({ num: 5, name: "Semana 5", start: 29, end: daysInMonth });
+  }
+
+  let cardsHtml = `<div class="weekly-progress-grid">`;
+  weeks.forEach(w => {
+    let weekDone = 0;
+    const daysInWeek = w.end - w.start + 1;
+    const weekGoal = daysInWeek * totalHabits;
+
+    for (let d = w.start; d <= w.end; d++) {
+      weekDone += (donePerDay[d] || 0);
+    }
+
+    const pct = weekGoal > 0 ? Math.round((weekDone / weekGoal) * 100) : 0;
+
+    cardsHtml += `
+      <div class="weekly-card">
+        <div class="weekly-card-title">
+          <span>SEMANA ${w.num}</span>
+          <span style="color:var(--accent-dark);">${pct}%</span>
+        </div>
+        <div class="weekly-card-val">${weekDone}/${weekGoal}</div>
+        <div class="weekly-card-bar">
+          <div class="weekly-card-fill week-${w.num}" style="width: ${pct}%;"></div>
+        </div>
+      </div>
+    `;
+  });
+  cardsHtml += `</div>`;
+
+  statsSummary.innerHTML = cardsHtml;
+}
+
+function renderRoutineOverview(grandDone, grandGoal, globalPct, habits, donePerHabit, daysInMonth) {
+  const donutWrapper = document.getElementById("donutSvgWrapper");
+  const pctEl = document.getElementById("donutGlobalPct");
+  const subEl = document.getElementById("donutGlobalSub");
+  const overviewList = document.getElementById("habitOverviewList");
+
+  if (pctEl) pctEl.textContent = `${globalPct}%`;
+  if (subEl) subEl.textContent = `${grandDone} de ${grandGoal} completados`;
+
+  if (donutWrapper) {
+    const size = 110;
+    const strokeWidth = 10;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const numPct = Number(globalPct) || 0;
+    const offset = circumference - (numPct / 100) * circumference;
+
+    donutWrapper.innerHTML = `
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${size/2}" cy="${size/2}" r="${radius}" fill="none" stroke="var(--line)" stroke-width="${strokeWidth}"/>
+        <circle cx="${size/2}" cy="${size/2}" r="${radius}" fill="none" stroke="var(--accent)" stroke-width="${strokeWidth}"
+                stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round"
+                transform="rotate(-90 ${size/2} ${size/2})" style="transition: stroke-dashoffset 0.5s ease;"/>
+      </svg>
+    `;
+  }
+
+  if (overviewList) {
+    let listHtml = "";
+    habits.forEach(h => {
+      const goal = h.goal || daysInMonth;
+      const done = donePerHabit[h.id] || 0;
+      const open = Math.max(0, goal - done);
+      const pct = goal > 0 ? Math.round((done / goal) * 100) : 0;
+
+      listHtml += `
+        <div class="habit-overview-item">
+          <span class="habit-info-name">
+            <span>${h.emoji || "⭐"}</span>
+            <span>${escapeHtml(h.name)}</span>
+          </span>
+          <div class="habit-info-stats">
+            <span class="habit-stat-badge" title="Completados / Pendientes">${done} / ${open}</span>
+            <span style="font-size:0.75rem; font-weight:800; color:var(--accent-dark); width:34px; text-align:right;">${pct}%</span>
+            <div class="habit-inline-bar">
+              <div class="habit-inline-fill" style="width: ${pct}%;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    overviewList.innerHTML = listHtml;
+  }
+}
+
+function renderRoutineRanking(habits, donePerHabit, daysInMonth) {
+  const rankingList = document.getElementById("rankingList");
+  if (!rankingList) return;
+
+  const sorted = habits.map(h => {
+    const goal = h.goal || daysInMonth;
+    const done = donePerHabit[h.id] || 0;
+    const pct = goal > 0 ? (done / goal) * 100 : 0;
+    return { ...h, done, goal, pct };
+  }).sort((a, b) => b.pct - a.pct);
+
+  let html = "";
+  sorted.forEach((h, index) => {
+    const rank = index + 1;
+    let rankClass = "rank-other";
+    if (rank === 1) rankClass = "rank-1";
+    else if (rank === 2) rankClass = "rank-2";
+    else if (rank === 3) rankClass = "rank-3";
+
+    html += `
+      <div class="ranking-item">
+        <div class="ranking-left">
+          <span class="rank-number ${rankClass}">${rank}</span>
+          <span class="ranking-name">${h.emoji || "⭐"} ${escapeHtml(h.name)}</span>
+        </div>
+        <span class="ranking-pct-pill">${h.pct.toFixed(0)}%</span>
+      </div>
+    `;
+  });
+  rankingList.innerHTML = html;
+}
+
 // --- Controladores y Renderizadores de Checklist (Tareas) ---
 
 function switchView(viewName) {
@@ -2978,25 +4275,51 @@ function switchView(viewName) {
     
     if (paneCalendar) paneCalendar.hidden = true;
     if (paneCalendarDayDetails) paneCalendarDayDetails.hidden = true;
-    if (paneChecklistSelectedDay) paneChecklistSelectedDay.hidden = false;
+    if (paneChecklistSelectedDay) paneChecklistSelectedDay.hidden = true;
     if (paneChecklistMain) paneChecklistMain.hidden = false;
     
     if (workspaceEl) {
       workspaceEl.classList.add("checklist-active");
     }
     
-    // Inicializar mes visible en la vista previa del calendario
-    previewVisibleMonth = parseKey(selectedDate);
-    
-    renderChecklistFilters();
-    renderChecklistInlineLinkOptions();
-    renderChecklistSelectedDay();
-    if (typeof renderChecklistCalendarPreview === "function") {
-      renderChecklistCalendarPreview();
-    }
-    renderChecklist();
-    renderChecklistStats();
+    renderRoutineTracker();
   }
+}
+
+function getGroupedSubjectsAndTracks() {
+  const groups = [];
+  
+  for (const period of academicPeriods) {
+    const periodSubjects = subjects.filter(s => period.subjects.includes(s.name));
+    if (periodSubjects.length > 0) {
+      groups.push({
+        label: period.name,
+        type: "subject",
+        items: periodSubjects
+      });
+    }
+  }
+  
+  const assignedSubjectNames = new Set(academicPeriods.flatMap(p => p.subjects));
+  const unassignedSubjects = subjects.filter(s => !assignedSubjectNames.has(s.name));
+  if (unassignedSubjects.length > 0) {
+    const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+    groups.push({
+      label: academicPeriods.length > 0 ? `${subPlural} (sin curso)` : subPlural,
+      type: "subject",
+      items: unassignedSubjects
+    });
+  }
+  
+  if (EXTRA_TRACKS.length > 0) {
+    groups.push({
+      label: state.settings.hobbiesLabelPlural || "Hobbies",
+      type: "track",
+      items: EXTRA_TRACKS
+    });
+  }
+  
+  return groups;
 }
 
 function renderChecklistFilters() {
@@ -3004,27 +4327,23 @@ function renderChecklistFilters() {
   const currentFilterValue = filterSubjectEl.value;
   filterSubjectEl.innerHTML = '<option value="all">Todos los items</option>';
   
-  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
-  const subGroup = document.createElement("optgroup");
-  subGroup.label = subPlural;
-  for (const subject of subjects) {
-    const opt = document.createElement("option");
-    opt.value = `subject:${subject.name}`;
-    opt.textContent = subject.name;
-    subGroup.appendChild(opt);
+  const groups = getGroupedSubjectsAndTracks();
+  for (const group of groups) {
+    const optGroup = document.createElement("optgroup");
+    optGroup.label = group.label;
+    for (const item of group.items) {
+      const opt = document.createElement("option");
+      if (group.type === "subject") {
+        opt.value = `subject:${item.name}`;
+        opt.textContent = item.name;
+      } else {
+        opt.value = `track:${item.key}`;
+        opt.textContent = item.label;
+      }
+      optGroup.appendChild(opt);
+    }
+    filterSubjectEl.appendChild(optGroup);
   }
-  filterSubjectEl.appendChild(subGroup);
-
-  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
-  const hobGroup = document.createElement("optgroup");
-  hobGroup.label = hobPlural;
-  for (const track of EXTRA_TRACKS) {
-    const opt = document.createElement("option");
-    opt.value = `track:${track.key}`;
-    opt.textContent = track.label;
-    hobGroup.appendChild(opt);
-  }
-  filterSubjectEl.appendChild(hobGroup);
   
   if (Array.from(filterSubjectEl.options).some(o => o.value === currentFilterValue)) {
     filterSubjectEl.value = currentFilterValue;
@@ -3037,27 +4356,23 @@ function renderTaskLinkOptions(selectedValue = "") {
   if (!taskLinkEl) return;
   taskLinkEl.innerHTML = '<option value="">Ninguno (sin vincular)</option>';
   
-  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
-  const subGroup = document.createElement("optgroup");
-  subGroup.label = subPlural;
-  for (const subject of subjects) {
-    const opt = document.createElement("option");
-    opt.value = `subject:${subject.name}`;
-    opt.textContent = subject.name;
-    subGroup.appendChild(opt);
+  const groups = getGroupedSubjectsAndTracks();
+  for (const group of groups) {
+    const optGroup = document.createElement("optgroup");
+    optGroup.label = group.label;
+    for (const item of group.items) {
+      const opt = document.createElement("option");
+      if (group.type === "subject") {
+        opt.value = `subject:${item.name}`;
+        opt.textContent = item.name;
+      } else {
+        opt.value = `track:${item.key}`;
+        opt.textContent = item.label;
+      }
+      optGroup.appendChild(opt);
+    }
+    taskLinkEl.appendChild(optGroup);
   }
-  taskLinkEl.appendChild(subGroup);
-
-  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
-  const hobGroup = document.createElement("optgroup");
-  hobGroup.label = hobPlural;
-  for (const track of EXTRA_TRACKS) {
-    const opt = document.createElement("option");
-    opt.value = `track:${track.key}`;
-    opt.textContent = track.label;
-    hobGroup.appendChild(opt);
-  }
-  taskLinkEl.appendChild(hobGroup);
   
   taskLinkEl.value = selectedValue;
 }
@@ -3683,27 +4998,23 @@ function renderChecklistInlineLinkOptions() {
   if (!checklistTaskLinkEl) return;
   checklistTaskLinkEl.innerHTML = '<option value="">Ninguno (sin vincular)</option>';
   
-  const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
-  const subGroup = document.createElement("optgroup");
-  subGroup.label = subPlural;
-  for (const subject of subjects) {
-    const opt = document.createElement("option");
-    opt.value = `subject:${subject.name}`;
-    opt.textContent = subject.name;
-    subGroup.appendChild(opt);
+  const groups = getGroupedSubjectsAndTracks();
+  for (const group of groups) {
+    const optGroup = document.createElement("optgroup");
+    optGroup.label = group.label;
+    for (const item of group.items) {
+      const opt = document.createElement("option");
+      if (group.type === "subject") {
+        opt.value = `subject:${item.name}`;
+        opt.textContent = item.name;
+      } else {
+        opt.value = `track:${item.key}`;
+        opt.textContent = item.label;
+      }
+      optGroup.appendChild(opt);
+    }
+    checklistTaskLinkEl.appendChild(optGroup);
   }
-  checklistTaskLinkEl.appendChild(subGroup);
-
-  const hobPlural = state.settings.hobbiesLabelPlural || "Hobbies";
-  const hobGroup = document.createElement("optgroup");
-  hobGroup.label = hobPlural;
-  for (const track of EXTRA_TRACKS) {
-    const opt = document.createElement("option");
-    opt.value = `track:${track.key}`;
-    opt.textContent = track.label;
-    hobGroup.appendChild(opt);
-  }
-  checklistTaskLinkEl.appendChild(hobGroup);
 }
 
 function renderChecklistSelectedDay() {
@@ -3858,5 +5169,334 @@ function renderChecklistCalendarPreview() {
     });
     
     calendarPreviewGrid.appendChild(cell);
+  }
+}
+
+// ==========================================
+// INFORME AVANZADO INTERACTIVO DE PERIODO
+// ==========================================
+
+function openPeriodReportModal() {
+  if (!periodReportModalEl || !latestStats) return;
+  const { currentPeriod, isVacation } = getActiveStatsContext();
+  if (!currentPeriod || isVacation) return;
+  if (getTodayDateKey() < currentPeriod.endDate) {
+    showToast("El informe solo está disponible al finalizar el curso / periodo.");
+    return;
+  }
+
+  const titleEl = document.getElementById("periodReportTitle");
+  if (titleEl) titleEl.textContent = currentPeriod.name;
+
+  const { totalHours, totalStudy, totalTracks, activeDays, keys, averageRating, totalsBySubject, totalsByTrack } = latestStats;
+
+  document.getElementById("repTotalHours").textContent = `${formatNumber(totalHours)} h`;
+  document.getElementById("repStudyHours").textContent = `${formatNumber(totalStudy)} h`;
+  document.getElementById("repHobbyHours").textContent = `${formatNumber(totalTracks)} h`;
+  document.getElementById("repActiveDays").textContent = `${activeDays}`;
+
+  // Narrativa de Energía y Productividad
+  const narrativeEl = document.getElementById("repEnergyNarrative");
+  if (narrativeEl) {
+    if (totalHours === 0) {
+      narrativeEl.textContent = "Aún no hay actividad registrada en este periodo. ¡Empieza a añadir horas a tus asignaturas o hobbies para ver tu análisis de rendimiento!";
+    } else if (totalStudy === 0) {
+      narrativeEl.textContent = `Este periodo ha estado completamente enfocado en el descanso y desarrollo personal. Has dedicado el 100% de tu tiempo activo (${formatNumber(totalTracks)} h) a tus hobbies y pasiones. ¡Una excelente forma de recargar energía!`;
+    } else if (totalTracks === 0) {
+      narrativeEl.textContent = `Has mantenido un enfoque de estudio intensivo del 100% (${formatNumber(totalStudy)} h) sin registrar tiempo en hobbies. Recuerda que mantener un equilibrio con actividades recreativas ayuda a consolidar la memoria y evitar el burnout.`;
+    } else {
+      const studyRatio = Math.round((totalStudy / totalHours) * 100);
+      const trackRatio = 100 - studyRatio;
+      narrativeEl.textContent = `Has mantenido un balance del ${studyRatio}% en tus responsabilidades académicas y un ${trackRatio}% en tus hobbies. Esta distribución demuestra una gestión del tiempo saludable, permitiendo progreso continuo sin sacrificar tu bienestar personal.`;
+    }
+  }
+
+  // Tareas Completadas del Periodo
+  const activeSubjectNames = new Set((latestStats.activeSubjects || []).map(s => s.name));
+  const activeTrackKeys = new Set((latestStats.activeTracks || []).map(t => t.key));
+  const periodTasks = (state.checklistTasks || []).filter(t => {
+    if (t.linkType === "subject") return activeSubjectNames.has(t.linkKey);
+    if (t.linkType === "track") return activeTrackKeys.has(t.linkKey);
+    if (currentPeriod && currentPeriod.startDate && currentPeriod.endDate) {
+      return t.dueDate >= currentPeriod.startDate && t.dueDate <= currentPeriod.endDate;
+    }
+    return true;
+  });
+
+  const completedTasks = periodTasks.filter(t => t.completed).length;
+  const totalTasksCount = periodTasks.length;
+  const taskRatio = totalTasksCount > 0 ? (completedTasks / totalTasksCount) * 100 : 0;
+
+  document.getElementById("repTasksCompleted").textContent = completedTasks;
+  document.getElementById("repTasksTotal").textContent = `de ${totalTasksCount} tareas`;
+  document.getElementById("repTasksBar").style.width = `${taskRatio}%`;
+
+  // Estado de Ánimo
+  const fullStars = Math.round(averageRating || 0);
+  document.getElementById("repAvgRatingStars").textContent = `${"★".repeat(fullStars)}${"☆".repeat(5 - fullStars)}`;
+  document.getElementById("repAvgRatingText").textContent = `(${formatNumber(averageRating)})`;
+
+  const ratingDescEl = document.getElementById("repRatingDesc");
+  if (ratingDescEl) {
+    if (averageRating >= 4.5) ratingDescEl.textContent = "¡Un estado de ánimo excepcional! Has mantenido una motivación y energía altísimas.";
+    else if (averageRating >= 3.5) ratingDescEl.textContent = "Un periodo muy productivo y positivo en general.";
+    else if (averageRating >= 2.5) ratingDescEl.textContent = "Un balance normal con días de esfuerzo constante.";
+    else if (averageRating > 0) ratingDescEl.textContent = "Un periodo exigente. Recuerda priorizar el descanso.";
+    else ratingDescEl.textContent = "Sin valoraciones de ánimo registradas en este periodo.";
+  }
+
+  // Cargar componentes de las otras pestañas
+  renderReportSubjectsBreakdown("hours");
+  renderReportWeekdayChart(keys, currentPeriod);
+  renderReportMoodCorrelation(keys, currentPeriod);
+  renderReportBadges(currentPeriod);
+
+  switchReportTab("Summary");
+  periodReportModalEl.hidden = false;
+}
+
+function closePeriodReportModal() {
+  if (periodReportModalEl) periodReportModalEl.hidden = true;
+}
+
+function switchReportTab(tabName) {
+  const tabs = ["Summary", "Subjects", "Insights", "Badges"];
+  for (const t of tabs) {
+    const btn = document.getElementById(`tabReport${t}`);
+    const content = document.getElementById(`reportTabContent${t}`);
+    if (btn && content) {
+      if (t === tabName) {
+        btn.classList.add("active");
+        btn.style.background = "var(--accent)";
+        btn.style.color = "white";
+        btn.style.borderColor = "var(--accent)";
+        content.hidden = false;
+      } else {
+        btn.classList.remove("active");
+        btn.style.background = "var(--surface)";
+        btn.style.color = "var(--ink)";
+        btn.style.borderColor = "var(--line)";
+        content.hidden = true;
+      }
+    }
+  }
+}
+
+function renderReportSubjectsBreakdown(sortBy = "hours") {
+  const container = document.getElementById("repSubjectsBreakdownList");
+  if (!container || !latestStats) return;
+  container.innerHTML = "";
+
+  const { activeSubjects, activeTracks, totalsBySubject, totalsByTrack, totalHours } = latestStats;
+  const items = [
+    ...(activeSubjects || []).map(s => ({ name: s.name, total: totalsBySubject[s.name] || 0, color: s.color, type: "Asignatura" })),
+    ...(activeTracks || []).map(t => ({ name: t.label, total: totalsByTrack[t.key] || 0, color: t.color, type: "Hobby" }))
+  ];
+
+  if (sortBy === "hours") {
+    items.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "es-ES"));
+  } else {
+    items.sort((a, b) => a.name.localeCompare(b.name, "es-ES"));
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty-state">No hay elementos vinculados a este periodo.</div>`;
+    return;
+  }
+
+  const maxTotal = Math.max(1, ...items.map(i => i.total));
+
+  for (const item of items) {
+    const ratio = totalHours > 0 ? (item.total / totalHours) * 100 : 0;
+    const row = document.createElement("div");
+    row.style.border = "1px solid var(--line)";
+    row.style.borderRadius = "var(--radius)";
+    row.style.padding = "12px 16px";
+    row.style.background = "var(--surface)";
+    row.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="width: 12px; height: 12px; border-radius: 50%; background: ${item.color};"></span>
+          <strong style="font-size: 0.95rem; color: var(--ink);">${escapeHtml(item.name)}</strong>
+          <span style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(var(--accent-rgb), 0.08); color: var(--accent); font-weight: bold;">${item.type}</span>
+        </div>
+        <div style="font-size: 0.95rem; font-weight: 800; color: var(--ink);">
+          ${formatNumber(item.total)} h <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">(${formatNumber(ratio)}%)</span>
+        </div>
+      </div>
+      <div style="width: 100%; background: var(--line); height: 6px; border-radius: 3px; overflow: hidden;">
+        <div style="background: ${item.color}; height: 100%; width: ${(item.total / maxTotal) * 100}%;"></div>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function renderReportWeekdayChart(keys, currentPeriod) {
+  const container = document.getElementById("repWeekdayChart");
+  if (!container || !latestStats) return;
+  container.innerHTML = "";
+
+  const weekdays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const totals = [0, 0, 0, 0, 0, 0, 0];
+  const counts = [0, 0, 0, 0, 0, 0, 0];
+
+  const pSubjects = new Set((latestStats.activeSubjects || []).map(s => s.name));
+  const pTracks = new Set((latestStats.activeTracks || []).map(t => t.key));
+
+  for (const key of keys) {
+    const d = new Date(`${key}T12:00:00`);
+    const dayOfWeek = (d.getDay() + 6) % 7; 
+    const dayData = ensureDay(key);
+
+    let dayTotal = 0;
+    for (const sub of pSubjects) dayTotal += dayData.subjects[sub] || 0;
+    for (const trk of pTracks) dayTotal += dayData.extra[trk] || 0;
+
+    totals[dayOfWeek] += dayTotal;
+    counts[dayOfWeek]++;
+  }
+
+  const maxHours = Math.max(1, ...totals);
+
+  for (let i = 0; i < 7; i++) {
+    const avg = counts[i] > 0 ? totals[i] / counts[i] : 0;
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "12px";
+    row.innerHTML = `
+      <span style="width: 85px; font-size: 0.84rem; font-weight: 700; color: var(--muted);">${weekdays[i]}</span>
+      <div style="flex: 1; background: var(--line); height: 8px; border-radius: 4px; overflow: hidden;">
+        <div style="background: var(--accent); height: 100%; width: ${(totals[i] / maxHours) * 100}%;"></div>
+      </div>
+      <span style="width: 100px; text-align: right; font-size: 0.84rem; font-weight: 800; color: var(--ink);">
+        ${formatNumber(totals[i])} h <small style="color: var(--muted); font-weight: 600;">(${formatNumber(avg)}h/día)</small>
+      </span>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function renderReportMoodCorrelation(keys, currentPeriod) {
+  const container = document.getElementById("repMoodCorrelation");
+  if (!container || !latestStats) return;
+  container.innerHTML = "";
+
+  const pSubjects = new Set((latestStats.activeSubjects || []).map(s => s.name));
+  const pTracks = new Set((latestStats.activeTracks || []).map(t => t.key));
+
+  const moodData = { 1: { h: 0, c: 0 }, 2: { h: 0, c: 0 }, 3: { h: 0, c: 0 }, 4: { h: 0, c: 0 }, 5: { h: 0, c: 0 } };
+
+  for (const key of keys) {
+    const dayData = ensureDay(key);
+    const r = dayData.rating || 0;
+    if (r >= 1 && r <= 5) {
+      let dayTotal = 0;
+      for (const sub of pSubjects) dayTotal += dayData.subjects[sub] || 0;
+      for (const trk of pTracks) dayTotal += dayData.extra[trk] || 0;
+      moodData[r].h += dayTotal;
+      moodData[r].c++;
+    }
+  }
+
+  const colors = ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e"];
+  let hasRatings = false;
+
+  for (let i = 5; i >= 1; i--) {
+    if (moodData[i].c > 0) hasRatings = true;
+  }
+
+  if (!hasRatings) {
+    container.innerHTML = `<div class="empty-state">No has registrado estados de ánimo en este periodo.</div>`;
+    return;
+  }
+
+  for (let i = 5; i >= 1; i--) {
+    const { h, c } = moodData[i];
+    if (c === 0) continue;
+    const avg = h / c;
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.justifyContent = "space-between";
+    row.style.borderBottom = i > 1 ? "1px solid var(--line)" : "none";
+    row.style.paddingBottom = i > 1 ? "8px" : "0";
+    row.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: ${colors[i-1]}; font-size: 1.2rem;">${"★".repeat(i)}</span>
+        <span style="font-size: 0.86rem; color: var(--muted); font-weight: 700;">(${c} ${c === 1 ? 'día' : 'días'})</span>
+      </div>
+      <div style="font-size: 0.92rem; font-weight: 800; color: var(--ink);">
+        Media de ${formatNumber(avg)} h / día
+      </div>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function renderReportBadges(activePeriod) {
+  const container = document.getElementById("repBadgesGrid");
+  if (!container || !latestStats) return;
+  container.innerHTML = "";
+
+  const { totalHours, totalStudy, totalTracks, currentStreak, best, topSubject, topTrack } = latestStats;
+  const badges = [];
+
+  // Insignia de Racha
+  if (currentStreak >= 7) {
+    badges.push({ icon: "🔥", title: "Imparable", desc: `Racha activa de ${currentStreak} días consecutivos.` });
+  } else if (currentStreak >= 3) {
+    badges.push({ icon: "⚡", title: "En Racha", desc: `Racha activa de ${currentStreak} días consecutivos.` });
+  }
+
+  // Insignia de Mejor Día
+  if (best && best.total >= 8) {
+    badges.push({ icon: "👑", title: "Día Titánico", desc: `Lograste ${formatNumber(best.total)} horas en un solo día (${formatShortDate(best.key)}).` });
+  } else if (best && best.total >= 4) {
+    badges.push({ icon: "⭐", title: "Día Excelente", desc: `Tu récord diario fue de ${formatNumber(best.total)} horas (${formatShortDate(best.key)}).` });
+  }
+
+  // Insignias de Enfoque
+  if (topSubject && topSubject.total >= 20) {
+    badges.push({ icon: "📚", title: "Enfoque Láser", desc: `Dedicación máxima a ${topSubject.name} (${formatNumber(topSubject.total)} h).` });
+  }
+  if (topTrack && topTrack.total >= 15) {
+    badges.push({ icon: "🎨", title: "Pasión Desatada", desc: `Invertiste ${formatNumber(topTrack.total)} horas en ${topTrack.label}.` });
+  }
+
+  // Insignia de Vacaciones / Desconexión
+  if (activePeriod.subjects.length === 0 && totalTracks > 0) {
+    badges.push({ icon: "🌴", title: "Maestro del Zen", desc: `Desconexión académica total con ${formatNumber(totalTracks)} h dedicadas a ti.` });
+  }
+
+  if (totalHours >= 50) {
+    badges.push({ icon: "💎", title: "Leyenda del Log", desc: `Más de 50 horas totales registradas en este periodo.` });
+  }
+
+  if (badges.length === 0) {
+    badges.push({ icon: "🌱", title: "Semilla del Éxito", desc: "Has iniciado tu registro en este periodo. ¡Sigue así para desbloquear más insignias!" });
+  }
+
+  for (const b of badges) {
+    const card = document.createElement("div");
+    card.style.border = "1px solid var(--line)";
+    card.style.borderRadius = "var(--radius)";
+    card.style.padding = "16px";
+    card.style.background = "var(--surface)";
+    card.style.display = "flex";
+    card.style.alignItems = "center";
+    card.style.gap = "14px";
+    card.style.boxShadow = "0 2px 6px rgba(0,0,0,0.02)";
+    card.innerHTML = `
+      <div style="font-size: 2.2rem; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: rgba(var(--accent-rgb), 0.08); border-radius: 12px;">
+        ${b.icon}
+      </div>
+      <div>
+        <h4 style="margin: 0 0 4px 0; font-size: 0.98rem; color: var(--ink); font-weight: 800;">${escapeHtml(b.title)}</h4>
+        <p style="margin: 0; font-size: 0.82rem; color: var(--muted); line-height: 1.35;">${escapeHtml(b.desc)}</p>
+      </div>
+    `;
+    container.appendChild(card);
   }
 }
