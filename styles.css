@@ -19,6 +19,581 @@
   --radius: 8px;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111116;
+  --surface: #1a1a22;
+  --ink: #e2e2ee;
+  --muted: #8888a4;
+  --line: #2a2a38;
+  --warn: #f59e0b;
+  --holiday: #ef4444;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Body ─────────────────────────────────────────────────── */
+[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.06), transparent 34rem),
+    linear-gradient(180deg, #0c0c12 0%, var(--bg) 38%, #0c0c12 100%);
+}
+
+/* ── Calendar day cells ───────────────────────────────────── */
+[data-theme="dark"] .day-cell {
+  background: var(--surface);
+  border-color: var(--line);
+}
+[data-theme="dark"] .day-cell:hover {
+  border-color: rgba(var(--accent-rgb), 0.65);
+}
+[data-theme="dark"] .day-cell.selected {
+  border-color: var(--accent);
+}
+[data-theme="dark"] .day-cell.weekend {
+  background-image: linear-gradient(135deg, rgba(136, 136, 164, 0.06), transparent 52%);
+}
+[data-theme="dark"] .day-hours {
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+}
+[data-theme="dark"] .note-dot {
+  background: rgba(200, 200, 220, 0.5);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Notice banners (events, holidays, etc.) ──────────────── */
+[data-theme="dark"] .notice              { background: rgba(var(--accent-rgb), 0.1); color: var(--ink); }
+[data-theme="dark"] .notice.holiday-note { background: rgba(239, 68, 68, 0.12); color: #fca5a5; }
+[data-theme="dark"] .notice.academic-note{ background: rgba(245, 158, 11, 0.12); color: #fcd34d; }
+[data-theme="dark"] .notice.exam-note    { background: rgba(220, 38, 38, 0.12); color: #fca5a5; }
+[data-theme="dark"] .notice.deadline-note{ background: rgba(124, 58, 237, 0.12); color: #c4b5fd; }
+[data-theme="dark"] .notice.review-note  { background: rgba(8, 145, 178, 0.12); color: #67e8f9; }
+[data-theme="dark"] .notice.personal-note{ background: rgba(37, 99, 235, 0.12); color: #93c5fd; }
+
+/* ── General cards / panels ───────────────────────────────── */
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .advanced-card,
+[data-theme="dark"] .tracker-card,
+[data-theme="dark"] .overview-card,
+[data-theme="dark"] .rank-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+
+/* ── Stat metrics & bar charts ────────────────────────────── */
+[data-theme="dark"] .metric-grid article,
+[data-theme="dark"] .stat-metric,
+[data-theme="dark"] .stat-highlight {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .metric-more button {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .metric-more button:hover {
+  background: rgba(var(--accent-rgb), 0.12) !important;
+  border-color: rgba(var(--accent-rgb), 0.3) !important;
+}
+[data-theme="dark"] .bar-label {
+  color: var(--ink);
+}
+[data-theme="dark"] .bar-track {
+  background: var(--line);
+}
+
+/* ── Stats panels with gradients ──────────────────────────── */
+[data-theme="dark"] .stats-header,
+[data-theme="dark"] .period-card {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .stats-section {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .stats-section article {
+  background: var(--bg);
+  border-color: var(--line);
+}
+
+/* ── Detail / side panel ──────────────────────────────────── */
+[data-theme="dark"] .detail-panel,
+[data-theme="dark"] .task-details-panel {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* ── Notes / textarea ─────────────────────────────────────── */
+[data-theme="dark"] .notes-textarea {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+/* ── Stars (rating) ───────────────────────────────────────── */
+[data-theme="dark"] .star { color: #444455; }
+[data-theme="dark"] .star.active { color: #f59e0b; }
+[data-theme="dark"] .star.hover { color: #fbbf24; }
+
+/* ── Modals & dialogs ─────────────────────────────────────── */
+[data-theme="dark"] .settings-dialog,
+[data-theme="dark"] .entry-dialog {
+  background: var(--surface);
+  border-color: var(--line);
+}
+[data-theme="dark"] .settings-backdrop,
+[data-theme="dark"] .entry-backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+[data-theme="dark"] .settings-section {
+  background: var(--bg);
+  border-color: var(--line);
+}
+
+/* Danger zone */
+[data-theme="dark"] .danger-zone {
+  background: #1a0f0f !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+}
+[data-theme="dark"] .danger-zone h3 { color: #f87171 !important; }
+[data-theme="dark"] .danger-zone .settings-help { color: #fca5a5 !important; }
+
+/* ── Form inputs ──────────────────────────────────────────── */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="url"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+/* Restore focus/hover visual feedback in dark mode */
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2) !important;
+}
+[data-theme="dark"] input:hover,
+[data-theme="dark"] textarea:hover,
+[data-theme="dark"] select:hover {
+  border-color: rgba(var(--accent-rgb), 0.4) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--muted) !important;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+[data-theme="dark"] .ghost-button {
+  border-color: var(--line);
+  color: var(--ink);
+}
+[data-theme="dark"] .ghost-button:hover {
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+/* ── Dock & popover ───────────────────────────────────────── */
+[data-theme="dark"] .liquid-glass-dock {
+  background: rgba(18, 18, 26, 0.92) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .home-popover-menu {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .dock-tab:hover,
+[data-theme="dark"] .dock-tab.active {
+  background: rgba(var(--accent-rgb), 0.15);
+}
+
+/* ── Subject / track / event cards & chips ─────────────────── */
+[data-theme="dark"] .subject-chip,
+[data-theme="dark"] .track-chip,
+[data-theme="dark"] .event-chip {
+  background: rgba(var(--accent-rgb), 0.1) !important;
+  border-color: rgba(var(--accent-rgb), 0.2) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .event-type-earned,
+[data-theme="dark"] .subject-tag,
+[data-theme="dark"] .track-tag,
+[data-theme="dark"] .settings-list-item {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+}
+
+/* Subject/track stat cards in stats panel */
+[data-theme="dark"] .subject-stat-card,
+[data-theme="dark"] .track-stat-card,
+[data-theme="dark"] .subject-bar-wrapper {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+}
+
+/* Subject/track colored cards — override hardcoded gradients */
+[data-theme="dark"] [style*="color-mix(in srgb"] {
+  background: var(--bg) !important;
+}
+
+/* ── Checklist / task items ───────────────────────────────── */
+[data-theme="dark"] .checklist-item,
+[data-theme="dark"] .task-item {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* Task status pills */
+[data-theme="dark"] .task-status-pending { background: rgba(99, 102, 241, 0.15) !important; color: #a5b4fc !important; }
+[data-theme="dark"] .task-status-completed { background: rgba(16, 185, 129, 0.15) !important; color: #6ee7b7 !important; }
+[data-theme="dark"] .task-status-overdue { background: rgba(239, 68, 68, 0.15) !important; color: #fca5a5 !important; }
+
+/* ── Tracker matrix table ─────────────────────────────────── */
+[data-theme="dark"] .routine-matrix-table,
+[data-theme="dark"] .routine-matrix-table th,
+[data-theme="dark"] .routine-matrix-table td {
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .routine-name-td {
+  background: var(--surface) !important;
+}
+[data-theme="dark"] .goal-td {
+  background: var(--surface) !important;
+}
+[data-theme="dark"] .routine-matrix-table thead th {
+  background: var(--bg) !important;
+}
+
+/* Tracker checkboxes — unchecked only */
+[data-theme="dark"] .routine-checkbox:not(:checked) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--line) !important;
+}
+/* Checked — keep original week colors, just fix border */
+[data-theme="dark"] .routine-checkbox:checked {
+  border-color: rgba(0, 0, 0, 0.3) !important;
+}
+/* Hover glow */
+[data-theme="dark"] .routine-checkbox:hover {
+  border-color: rgba(var(--accent-rgb), 0.5) !important;
+  box-shadow: 0 0 0 2.5px rgba(var(--accent-rgb), 0.3) !important;
+}
+
+/* ── Habit overview list (sidebar) ────────────────────────── */
+[data-theme="dark"] .habit-overview-item {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+}
+
+/* ── Weekly progress cards ────────────────────────────────── */
+[data-theme="dark"] .weekly-card {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+}
+
+/* ── Ranking items ────────────────────────────────────────── */
+[data-theme="dark"] .ranking-item {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .ranking-item:hover {
+  border-color: var(--accent) !important;
+}
+
+/* ── Progress bar tracks ──────────────────────────────────── */
+[data-theme="dark"] .habit-inline-bar,
+[data-theme="dark"] .weekly-card-bar,
+[data-theme="dark"] .bar-bg {
+  background: var(--line) !important;
+}
+
+/* ── Donut chart text ─────────────────────────────────────── */
+[data-theme="dark"] .donut-sub {
+  color: var(--muted) !important;
+}
+
+/* ── Badge cells (like earned/unearned badges) ────────────── */
+[data-theme="dark"] .badge-earned { background: rgba(var(--accent-rgb), 0.12) !important; }
+[data-theme="dark"] .badge-unearned { background: var(--bg) !important; }
+
+/* ── Toast notifications ──────────────────────────────────── */
+[data-theme="dark"] .toast {
+  background: #1a1a24 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--bg); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3a3a4a; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #4a4a5a; }
+
+/* ── Inline-style hardcoded background overrides ──────────── */
+[data-theme="dark"] [style*="background: #fff5f5"],
+[data-theme="dark"] [style*="background: #f9fafb"],
+[data-theme="dark"] [style*="background: #fbfcfe"],
+[data-theme="dark"] [style*="background: #f1f5f9"],
+[data-theme="dark"] [style*="background: #f8fafc"],
+[data-theme="dark"] [style*="background: #eef2f7"] {
+  background: var(--bg) !important;
+}
+[data-theme="dark"] [style*="color: #374151"],
+[data-theme="dark"] [style*="color: #7f1d1d"] {
+  color: var(--muted) !important;
+}
+
+/* ── Checklist day pane (white glass background) ──────────── */
+[data-theme="dark"] .checklist-day-pane {
+  background: rgba(26, 26, 34, 0.92) !important;
+  border-color: var(--line) !important;
+}
+
+/* ── Danger / delete buttons (red inline styles) ──────────── */
+[data-theme="dark"] [style*="color: #dc2626"] {
+  color: #f87171 !important;
+}
+[data-theme="dark"] #resetDataBtn,
+[data-theme="dark"] #taskDetailsDeleteBtn,
+[data-theme="dark"] #habitDeleteBtn {
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* ── Report green metrics ─────────────────────────────────── */
+[data-theme="dark"] [style*="color: #16a34a"] {
+  color: #4ade80 !important;
+}
+[data-theme="dark"] [style*="background: #16a34a"] {
+  background: #22c55e !important;
+}
+
+/* ── Amber star ratings (fine on dark, but lighten slightly) ─ */
+[data-theme="dark"] [style*="color: #eab308"] {
+  color: #fbbf24 !important;
+}
+
+/* ── Main layout panels (white glass backgrounds) ─────────── */
+[data-theme="dark"] .calendar-pane,
+[data-theme="dark"] .day-panel,
+[data-theme="dark"] .stats-section,
+[data-theme="dark"] .chart-panel {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .checklist-pane,
+[data-theme="dark"] .checklist-stats-pane {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .month {
+  border-color: var(--line) !important;
+}
+
+/* ── View switcher ────────────────────────────────────────── */
+[data-theme="dark"] .view-switcher {
+  background: rgba(18, 18, 26, 0.92) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+[data-theme="dark"] .view-switcher:hover {
+  background: rgba(24, 24, 34, 0.95) !important;
+}
+[data-theme="dark"] .view-tab:hover {
+  background: rgba(var(--accent-rgb), 0.15) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .view-tab.active {
+  background: rgba(var(--accent-rgb), 0.2) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ── Dock hover & active states ───────────────────────────── */
+[data-theme="dark"] .liquid-glass-dock:hover {
+  background: rgba(24, 24, 34, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="dark"] .dock-divider {
+  background: linear-gradient(180deg, transparent 0%, var(--line) 50%, transparent 100%) !important;
+}
+[data-theme="dark"] .dock-tab:hover {
+  border-color: rgba(var(--accent-rgb), 0.3) !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .dock-tab.active {
+  background: rgba(var(--accent-rgb), 0.2) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.25) !important;
+}
+
+/* ── Task cards & day tasks ───────────────────────────────── */
+[data-theme="dark"] .task-card,
+[data-theme="dark"] .day-task-item {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .task-card.completed,
+[data-theme="dark"] .day-task-item.completed {
+  background: var(--bg) !important;
+  border-left-color: var(--line) !important;
+}
+[data-theme="dark"] .task-text,
+[data-theme="dark"] .day-task-text {
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .task-tag,
+[data-theme="dark"] .task-date-tag {
+  background: var(--bg) !important;
+  color: var(--muted) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .task-date-tag.overdue {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ── Focus tracks ─────────────────────────────────────────── */
+[data-theme="dark"] .focus-track,
+[data-theme="dark"] .track-projects,
+[data-theme="dark"] .track-sport,
+[data-theme="dark"] .track-community {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .focus-track h3,
+[data-theme="dark"] .track-projects h3,
+[data-theme="dark"] .track-sport h3,
+[data-theme="dark"] .track-community h3 {
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .notice.project-note  { background: rgba(217, 119, 6, 0.12) !important; color: #fdba74 !important; }
+[data-theme="dark"] .notice.sport-note    { background: rgba(2, 132, 199, 0.12) !important; color: #7dd3fc !important; }
+[data-theme="dark"] .notice.community-note{ background: rgba(126, 34, 206, 0.12) !important; color: #d8b4fe !important; }
+[data-theme="dark"] .projects-chip { color: #fdba74 !important; }
+[data-theme="dark"] .sport-chip    { color: #7dd3fc !important; }
+[data-theme="dark"] .community-chip{ color: #d8b4fe !important; }
+
+/* ── Day split badges ─────────────────────────────────────── */
+[data-theme="dark"] .selected-day .day-split span {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+/* ── Dark text resets (labels, settings, stats) ───────────── */
+[data-theme="dark"] .month-nav-strip strong,
+[data-theme="dark"] .event-subject-fields label,
+[data-theme="dark"] .subject-name,
+[data-theme="dark"] .notes-label,
+[data-theme="dark"] .settings-form label,
+[data-theme="dark"] .settings-item strong,
+[data-theme="dark"] .balance-label,
+[data-theme="dark"] .advanced-card p,
+[data-theme="dark"] .advanced-card li,
+[data-theme="dark"] .stat-pill.secondary span {
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .bar-label {
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .bar-label small {
+  background: var(--line) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .balance-track {
+  background: var(--line) !important;
+}
+[data-theme="dark"] .settings-item {
+  border-color: var(--line) !important;
+}
+[data-theme="dark"] .subject-dots span {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .settings-color {
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--line) !important;
+}
+
+/* ── Stats wider card gradient ────────────────────────────── */
+[data-theme="dark"] .advanced-wide {
+  background: var(--surface) !important;
+}
+
+/* ── Delete action buttons (JS-generated) ─────────────────── */
+[data-theme="dark"] .notice-action[style*="color: #dc2626"] {
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+
+/* Dark Mode Toggle Switch */
+.theme-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+
+.theme-toggle-row span {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.toggle-switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--line);
+  border-radius: 26px;
+  transition: background 0.25s ease;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--surface);
+  border-radius: 50%;
+  transition: transform 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -89,6 +664,7 @@ h2 {
   margin-bottom: 6px;
   font-size: 1.3rem;
 }
+
 
 h3 {
   margin-bottom: 14px;
@@ -995,19 +1571,22 @@ textarea {
 
 .toast {
   position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 30;
-  max-width: 340px;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483647 !important;
+  max-width: 380px;
   border-radius: var(--radius);
   background: #14213d;
   color: white;
-  padding: 12px 14px;
-  box-shadow: 0 18px 42px rgba(20, 33, 61, 0.22);
+  padding: 12px 18px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.38), 0 4px 14px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   opacity: 0;
   pointer-events: none;
   transform: translateY(12px);
   transition: opacity 180ms ease, transform 180ms ease;
+  font-weight: 600;
+  font-size: 0.88rem;
 }
 
 .toast.show {
@@ -1603,6 +2182,118 @@ textarea {
 }
 
 .community-chip {
+  background: rgba(126, 34, 206, 0.15);
+  color: #6b21a8;
+}
+
+.stat-pill-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.stat-pill.secondary span {
+  color: #0f172a;
+  font-size: 1.52rem;
+}
+
+.charts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.bar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 860;
+  padding: 1px 6px;
+}
+
+.bar-label small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.64rem;
+  font-weight: 850;
+  padding: 1px 5px;
+}
+
+.balance-panel {
+  grid-column: auto;
+}
+
+.balance-chart {
+  display: grid;
+  gap: 14px;
+}
+
+.balance-row {
+  display: grid;
+  gap: 6px;
+}
+
+.balance-label {
+  font-weight: 790;
+  color: #334155;
+  font-size: 0.86rem;
+}
+
+.balance-track {
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.balance-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 500ms ease;
+}
+
+.balance-value {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 760;
+}
+
+@media (max-width: 1400px) {
+  .charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .balance-panel {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1120px) {
+  .charts {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-panel {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
   background: rgba(126, 34, 206, 0.15);
   color: #6b21a8;
 }
@@ -2702,13 +3393,16 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 140px;
+  min-width: 0;
+  flex: 1;
 }
 
 .habit-info-stats {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .habit-stat-badge {
@@ -2793,6 +3487,10 @@ textarea {
   padding: 2px 8px;
   border-radius: 12px;
 }
+
+/* ==========================================================================
+   DOCK FLOTANTE APPLE LIQUID GLASS
+   ========================================================================== */
 
 /* ==========================================================================
    DOCK FLOTANTE APPLE LIQUID GLASS & POPOVER
@@ -3035,3 +3733,5 @@ textarea {
   background: var(--line);
   margin: 4px 6px;
 }
+
+

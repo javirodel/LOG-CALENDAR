@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Log Calendar</title>
     <link rel="stylesheet" href="styles.css">
+    <script>
+      // Prevent flash of light theme
+      if (localStorage.getItem("LOG-calendar-dark-mode") === "1") {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    </script>
   </head>
   <body>
     <div class="app-shell">
@@ -202,6 +208,8 @@
             </div>
 
             <div class="notice-list" id="noticeList"></div>
+ 
+
 
             <div class="event-form">
               <label class="notes-label">Evento importante</label>
@@ -210,6 +218,7 @@
 
             <div class="subjects-header">
               <label class="notes-label" id="subjectsHeaderLabel" style="cursor: pointer;">Asignaturas</label>
+              <button class="ghost-button" id="openSubjectModalFromDayBtn" type="button" style="min-height: 28px; padding: 2px 10px; font-size: 0.78rem; border-radius: 6px;" title="Añadir asignatura">+ Añadir</button>
             </div>
             <form class="subject-form" id="subjectForm"></form>
 
@@ -364,6 +373,13 @@
             <form class="settings-form" id="profileForm">
               <label>Título<input id="profileTitle" type="text" maxlength="70"></label>
               <label>Color principal<input id="profileAccent" type="color"></label>
+              <div class="theme-toggle-row">
+                <span>🌙 Modo Oscuro</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="darkModeToggleSettings" onchange="toggleDarkMode(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
               <div class="settings-two">
                 <label>Nombre de asignaturas (Plural)<input id="profileSubjectsPlural" type="text" maxlength="30" placeholder="Asignaturas"></label>
                 <label>Nombre de asignatura (Singular)<input id="profileSubjectsSingular" type="text" maxlength="30" placeholder="Asignatura"></label>
@@ -410,7 +426,7 @@
           </article>
         </div>
         <div class="settings-footer" style="display: flex; justify-content: flex-end; align-items: center; margin-top: 18px; font-size: 0.82rem; color: var(--muted); font-weight: bold;">
-          <span id="settingsVersionIndicator">LOG of growth • Versión 1.2.0</span>
+          <span id="settingsVersionIndicator">LOG of growth • Versión 3.0.0</span>
         </div>
       </section>
     </div>
@@ -427,7 +443,7 @@
         </div>
         <form class="settings-form" id="subjectSettingsForm">
           <input id="newSubjectName" type="text" maxlength="42" placeholder="Nombre de la asignatura" required>
-          <input id="newSubjectDescription" type="text" maxlength="90" placeholder="Descripción" required>
+          <input id="newSubjectDescription" type="text" maxlength="90" placeholder="Descripción (opcional)">
           <input id="newSubjectColor" type="color" value="#0f766e" aria-label="Color de la asignatura">
           <input id="newSubjectDifficulty" type="number" min="1" max="5" step="1" placeholder="Añadir dificultad de asignatura" aria-label="Dificultad de la asignatura">
           <button class="primary-button" type="submit">Añadir asignatura</button>
@@ -838,6 +854,20 @@
               <span class="popover-sub">Restaurar desde archivo</span>
             </div>
           </button>
+
+          <div class="popover-divider"></div>
+
+          <div class="popover-item" style="cursor: default;">
+            <span class="popover-icon">🌙</span>
+            <div class="popover-text" style="flex: 1;">
+              <span class="popover-title">Modo Oscuro</span>
+              <span class="popover-sub">Cambiar tema de la interfaz</span>
+            </div>
+            <label class="toggle-switch" style="margin-left: auto;">
+              <input type="checkbox" id="darkModeTogglePopover" onchange="toggleDarkMode(this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
 
           <div class="popover-divider"></div>
 

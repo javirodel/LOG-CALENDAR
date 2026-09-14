@@ -1,4 +1,4 @@
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "3.0.0";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -50,7 +50,18 @@ let state = loadState();
 
 // Default clean configuration for new users
 function getDefaultRoutineHabits() {
-  return [];
+  return [
+    { id: "h_default_01", name: "Despiértate temprano", emoji: "", goal: 30 },
+    { id: "h_default_02", name: "Gimnasio", emoji: "", goal: 30 },
+    { id: "h_default_03", name: "Ducha fría", emoji: "", goal: 30 },
+    { id: "h_default_04", name: "Trabajo profundo", emoji: "", goal: 30 },
+    { id: "h_default_05", name: "Tiempo con Dios", emoji: "", goal: 30 },
+    { id: "h_default_06", name: "Lectura/Meditación", emoji: "", goal: 30 },
+    { id: "h_default_07", name: "Seguimiento del presupuesto", emoji: "", goal: 30 },
+    { id: "h_default_08", name: "Seguimiento de objetivos", emoji: "", goal: 30 },
+    { id: "h_default_09", name: "Sin alcohol", emoji: "", goal: 30 },
+    { id: "h_default_10", name: "Sin pornografía", emoji: "", goal: 30 }
+  ];
 }
 
 if (!localStorage.getItem(STORAGE_KEY)) {
@@ -133,9 +144,12 @@ const settingsBtn = document.getElementById("settingsBtn");
 const settingsModalEl = document.getElementById("settingsModal");
 const settingsCloseBtn = document.getElementById("settingsCloseBtn");
 const openSubjectModalBtn = document.getElementById("openSubjectModalBtn");
+const openSubjectModalFromDayBtn = document.getElementById("openSubjectModalFromDayBtn");
 const openTrackModalBtn = document.getElementById("openTrackModalBtn");
 const subjectEntryModalEl = document.getElementById("subjectEntryModal");
+const subjectEntryTitleEl = document.getElementById("subjectEntryTitle");
 const trackEntryModalEl = document.getElementById("trackEntryModal");
+const trackEntryTitleEl = document.getElementById("trackEntryTitle");
 const rangeEntryModalEl = document.getElementById("rangeEntryModal");
 const subjectEntryCloseBtn = document.getElementById("subjectEntryCloseBtn");
 const trackEntryCloseBtn = document.getElementById("trackEntryCloseBtn");
@@ -292,6 +306,11 @@ if (settingsVersionIndicatorEl) {
 renderEventTypeOptions();
 renderEventSubjectOptions();
 updateEventEntryFields();
+// Apply dark mode BEFORE applyProfile so colors calculate correctly
+(function earlyDarkModeInit() {
+  const saved = localStorage.getItem("LOG-calendar-dark-mode");
+  if (saved === "1") document.documentElement.setAttribute("data-theme", "dark");
+})();
 applyProfile();
 renderSubjectInputs();
 renderTrackInputs();
@@ -331,7 +350,7 @@ if (taskDetailsCheckboxEl) {
       if (updatedTask) {
         taskDetailsCheckboxEl.checked = updatedTask.completed;
         taskDetailsStatusTextEl.textContent = updatedTask.completed ? "Completada" : "Pendiente";
-        taskDetailsStatusTextEl.style.color = updatedTask.completed ? "#16a34a" : "var(--muted)";
+        taskDetailsStatusTextEl.style.color = updatedTask.completed ? (isDarkMode() ? "#4ade80" : "#16a34a") : "var(--muted)";
       }
     }
   });
@@ -397,6 +416,7 @@ settingsModalEl.addEventListener("click", (event) => {
   if (event.target.hasAttribute("data-close-settings")) closeSettings();
 });
 openSubjectModalBtn.addEventListener("click", openSubjectEntry);
+if (openSubjectModalFromDayBtn) openSubjectModalFromDayBtn.addEventListener("click", openSubjectEntry);
 openTrackModalBtn.addEventListener("click", openTrackEntry);
 if (openPeriodModalBtn) openPeriodModalBtn.addEventListener("click", () => openPeriodEntry());
 openEventModalBtn.addEventListener("click", () => openEventEntry());
@@ -709,6 +729,7 @@ function updateDynamicLabels() {
 
   const openSubjectModalBtnEl = document.getElementById("openSubjectModalBtn");
   if (openSubjectModalBtnEl) openSubjectModalBtnEl.textContent = `Añadir ${subSingular.toLowerCase()}`;
+  if (openSubjectModalFromDayBtn) openSubjectModalFromDayBtn.title = `Añadir ${subSingular.toLowerCase()}`;
 
   const openTrackModalBtnEl = document.getElementById("openTrackModalBtn");
   if (openTrackModalBtnEl) openTrackModalBtnEl.textContent = `Añadir ${hobSingular.toLowerCase()}`;
@@ -775,7 +796,18 @@ function loadState() {
 }
 
 function getDefaultRoutineHabits() {
-  return [];
+  return [
+    { id: "h_default_01", name: "Despiértate temprano", emoji: "", goal: 30 },
+    { id: "h_default_02", name: "Gimnasio", emoji: "", goal: 30 },
+    { id: "h_default_03", name: "Ducha fría", emoji: "", goal: 30 },
+    { id: "h_default_04", name: "Trabajo profundo", emoji: "", goal: 30 },
+    { id: "h_default_05", name: "Tiempo con Dios", emoji: "", goal: 30 },
+    { id: "h_default_06", name: "Lectura/Meditación", emoji: "", goal: 30 },
+    { id: "h_default_07", name: "Seguimiento del presupuesto", emoji: "", goal: 30 },
+    { id: "h_default_08", name: "Seguimiento de objetivos", emoji: "", goal: 30 },
+    { id: "h_default_09", name: "Sin alcohol", emoji: "", goal: 30 },
+    { id: "h_default_10", name: "Sin pornografía", emoji: "", goal: 30 }
+  ];
 }
 
 function createFallbackState() {
@@ -1131,10 +1163,12 @@ function getEventCategory(type) {
 function applyProfile() {
   const profile = state.settings.profile;
   const rgb = hexToRgb(profile.accentColor);
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   document.documentElement.style.setProperty("--accent", profile.accentColor);
-  document.documentElement.style.setProperty("--accent-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-  document.documentElement.style.setProperty("--accent-dark", darkenColor(profile.accentColor, 0.22));
-  document.documentElement.style.setProperty("--accent-soft", hexToSoftBackground(profile.accentColor));
+  if (rgb) document.documentElement.style.setProperty("--accent-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+  // In dark mode, lighten the accent; in light mode, darken it
+  document.documentElement.style.setProperty("--accent-dark", isDark ? lightenColor(profile.accentColor, 0.35) : darkenColor(profile.accentColor, 0.22));
+  document.documentElement.style.setProperty("--accent-soft", isDark && rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)` : hexToSoftBackground(profile.accentColor));
   document.documentElement.style.setProperty("--level-1", getIntensityColor(profile.intensityLevels[0]));
   document.documentElement.style.setProperty("--level-2", getIntensityColor(profile.intensityLevels[1]));
   document.documentElement.style.setProperty("--level-3", getIntensityColor(profile.intensityLevels[2]));
@@ -1147,7 +1181,16 @@ function applyProfile() {
 function renderSubjectInputs() {
   subjectFormEl.innerHTML = "";
   if (!subjects.length) {
-    subjectFormEl.innerHTML = `<div class="empty-state">Sin asignaturas configuradas.</div>`;
+    const subPlural = state.settings.subjectsLabelPlural || "Asignaturas";
+    const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
+    subjectFormEl.innerHTML = `
+      <div class="empty-state" style="padding: 10px 0; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <span>Sin ${subPlural.toLowerCase()} configuradas.</span>
+        <button type="button" id="emptyStateAddSubjectBtn" class="ghost-button" style="min-height: 28px; padding: 2px 12px; font-size: 0.78rem; border-radius: 6px;">+ Añadir ${subSingular.toLowerCase()}</button>
+      </div>
+    `;
+    const emptyBtn = document.getElementById("emptyStateAddSubjectBtn");
+    if (emptyBtn) emptyBtn.addEventListener("click", openSubjectEntry);
     return;
   }
 
@@ -1493,7 +1536,7 @@ function renderNotices() {
     if (category.color) {
       item.style.borderLeftColor = category.color;
       item.style.background = hexToSoftBackground(category.color);
-      item.style.color = category.color;
+      item.style.color = readableColor(category.color);
     }
     const text = document.createElement("span");
     const subjectSuffix = ev.subjectName ? ` · ${ev.subjectName}` : "";
@@ -1639,9 +1682,9 @@ function resolveEventSubjectForSubmit(type) {
   }
 
   const name = eventNewSubjectNameEl.value.trim();
-  const description = eventNewSubjectDescriptionEl.value.trim();
-  if (!name || !description) {
-    showToast(`Para crear una ${state.settings.subjectsLabelSingular.toLowerCase()}, escribe su nombre y descripción.`);
+  const description = eventNewSubjectDescriptionEl ? eventNewSubjectDescriptionEl.value.trim() : "";
+  if (!name) {
+    showToast(`Para crear una ${state.settings.subjectsLabelSingular.toLowerCase()}, escribe su nombre.`);
     eventNewSubjectNameEl.focus();
     return "";
   }
@@ -2459,38 +2502,42 @@ function closeSettings() {
 
 function openSubjectEntry() {
   editingSubjectTarget = null;
-  subjectSettingsFormEl.reset();
-  newSubjectColorEl.value = "#0f766e";
+  if (subjectSettingsFormEl) subjectSettingsFormEl.reset();
+  if (newSubjectColorEl) newSubjectColorEl.value = "#0f766e";
   
   const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
-  subjectEntryTitleEl.textContent = `Añadir ${subSingular.toLowerCase()}`;
-  subjectSettingsFormEl.querySelector('button[type="submit"]').textContent = `Añadir ${subSingular.toLowerCase()}`;
+  const titleEl = subjectEntryTitleEl || document.getElementById("subjectEntryTitle");
+  if (titleEl) titleEl.textContent = `Añadir ${subSingular.toLowerCase()}`;
+  const submitBtn = subjectSettingsFormEl ? subjectSettingsFormEl.querySelector('button[type="submit"]') : null;
+  if (submitBtn) submitBtn.textContent = `Añadir ${subSingular.toLowerCase()}`;
   
-  subjectEntryModalEl.hidden = false;
-  newSubjectNameEl.focus();
+  if (subjectEntryModalEl) subjectEntryModalEl.hidden = false;
+  if (newSubjectNameEl) newSubjectNameEl.focus();
 }
 
 function closeSubjectEntry() {
   editingSubjectTarget = null;
-  subjectEntryModalEl.hidden = true;
+  if (subjectEntryModalEl) subjectEntryModalEl.hidden = true;
 }
 
 function openTrackEntry() {
   editingTrackTarget = null;
-  trackSettingsFormEl.reset();
-  newTrackColorEl.value = "#d97706";
+  if (trackSettingsFormEl) trackSettingsFormEl.reset();
+  if (newTrackColorEl) newTrackColorEl.value = "#d97706";
   
   const hobSingular = state.settings.hobbiesLabelSingular || "Hobby";
-  trackEntryTitleEl.textContent = `Añadir ${hobSingular.toLowerCase()}`;
-  trackSettingsFormEl.querySelector('button[type="submit"]').textContent = `Añadir ${hobSingular.toLowerCase()}`;
+  const titleEl = trackEntryTitleEl || document.getElementById("trackEntryTitle");
+  if (titleEl) titleEl.textContent = `Añadir ${hobSingular.toLowerCase()}`;
+  const submitBtn = trackSettingsFormEl ? trackSettingsFormEl.querySelector('button[type="submit"]') : null;
+  if (submitBtn) submitBtn.textContent = `Añadir ${hobSingular.toLowerCase()}`;
   
-  trackEntryModalEl.hidden = false;
-  newTrackNameEl.focus();
+  if (trackEntryModalEl) trackEntryModalEl.hidden = false;
+  if (newTrackNameEl) newTrackNameEl.focus();
 }
 
 function closeTrackEntry() {
   editingTrackTarget = null;
-  trackEntryModalEl.hidden = true;
+  if (trackEntryModalEl) trackEntryModalEl.hidden = true;
 }
 
 function openRangeEntry(direction) {
@@ -2858,8 +2905,8 @@ function saveProfileSettings(event) {
 function addSubjectFromSettings(event) {
   event.preventDefault();
   const name = newSubjectNameEl.value.trim();
-  const description = newSubjectDescriptionEl.value.trim();
-  if (!name || !description) return;
+  const description = newSubjectDescriptionEl ? newSubjectDescriptionEl.value.trim() : "";
+  if (!name) return;
 
   const subSingular = state.settings.subjectsLabelSingular || "Asignatura";
 
@@ -3101,6 +3148,7 @@ function exportData() {
   URL.revokeObjectURL(url);
   showToast("Copia exportada.");
 }
+
 
 function importData(event) {
   const file = event.target.files?.[0];
@@ -3400,11 +3448,13 @@ function getIntensityClass(total) {
 function getIntensityColor(total) {
   const [l1, l2, l3, l4] = state.settings.profile.intensityLevels;
   const accent = state.settings.profile.accentColor;
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const mixBase = isDark ? "#1a1a22" : "#ffffff";
   if (total >= l4) return accent;
-  if (total >= l3) return mixColor(accent, "#ffffff", 0.38);
-  if (total >= l2) return mixColor(accent, "#ffffff", 0.68);
-  if (total >= l1) return mixColor(accent, "#ffffff", 0.86);
-  return "#f9fafb";
+  if (total >= l3) return mixColor(accent, mixBase, 0.38);
+  if (total >= l2) return mixColor(accent, mixBase, 0.68);
+  if (total >= l1) return mixColor(accent, mixBase, 0.86);
+  return isDark ? "#1a1a22" : "#f9fafb";
 }
 
 function parseKey(key) {
@@ -3477,7 +3527,8 @@ function hexToSoftBackground(hex) {
   const r = Number.parseInt(normalized.slice(0, 2), 16);
   const g = Number.parseInt(normalized.slice(2, 4), 16);
   const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, 0.1)`;
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  return `rgba(${r}, ${g}, ${b}, ${isDark ? 0.18 : 0.1})`;
 }
 
 function mixColor(hex, targetHex, targetRatio) {
@@ -3489,6 +3540,20 @@ function mixColor(hex, targetHex, targetRatio) {
 
 function darkenColor(hex, ratio) {
   return mixColor(hex, "#000000", ratio);
+}
+
+function lightenColor(hex, ratio) {
+  return mixColor(hex, "#ffffff", ratio);
+}
+
+function isDarkMode() {
+  return document.documentElement.getAttribute("data-theme") === "dark";
+}
+
+// Returns a color readable on the current theme background
+function readableColor(hex) {
+  if (!isDarkMode()) return hex;
+  return lightenColor(hex, 0.4);
 }
 
 function needsLightText(hex) {
@@ -3902,7 +3967,7 @@ function renderRoutineTracker() {
   // Render Sub-components
   renderRoutineTrendChart(daysInMonth, donePerDay, habits.length);
   renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap);
-  renderRoutineWeeklyAnalysis(daysInMonth, habits.length, donePerDay);
+  renderRoutineWeeklyAnalysis(year, month, daysInMonth, habits.length, donePerDay);
   renderRoutineOverview(grandDone, grandGoal, globalPct, habits, donePerHabit, daysInMonth);
   renderRoutineRanking(habits, donePerHabit, daysInMonth);
 }
@@ -3916,7 +3981,8 @@ function renderRoutineTrendChart(daysInMonth, donePerDay, totalHabits) {
     return;
   }
 
-  const width = 800;
+  const containerRect = container.getBoundingClientRect();
+  const width = Math.max(Math.round(containerRect.width), 400);
   const height = 140;
   const paddingX = 30;
   const paddingY = 20;
@@ -3973,19 +4039,50 @@ function renderRoutineTrendChart(daysInMonth, donePerDay, totalHabits) {
   `;
 }
 
+function getRoutineMonthWeeks(year, month, daysInMonth) {
+  const weeks = [];
+  const firstDow = new Date(year, month - 1, 1).getDay(); // 0=Sun..6=Sat
+  // Find the first Monday on or after day 1 (ISO weeks start on Monday)
+  // dow: 0=Sun,1=Mon,...,6=Sat → daysUntilFirstMon: Sun→1, Mon→0, Tue→6, Wed→5, Thu→4, Fri→3, Sat→2
+  const daysUntilFirstMon = firstDow === 0 ? 1 : (firstDow === 1 ? 0 : 8 - firstDow);
+  let weekNum = 1;
+
+  // If the month doesn't start on Monday, the first partial week
+  if (daysUntilFirstMon > 0) {
+    weeks.push({
+      num: weekNum,
+      name: `SEMANA ${weekNum}`,
+      start: 1,
+      end: Math.min(daysUntilFirstMon, daysInMonth),
+      cls: `week-header-${Math.min(weekNum, 5)}`
+    });
+    weekNum++;
+  }
+
+  // Full and remaining weeks starting from the first Monday
+  let monDay = daysUntilFirstMon + 1;
+  if (daysUntilFirstMon === 0) monDay = 1;
+  while (monDay <= daysInMonth) {
+    const sunDay = Math.min(monDay + 6, daysInMonth);
+    weeks.push({
+      num: weekNum,
+      name: `SEMANA ${weekNum}`,
+      start: monDay,
+      end: sunDay,
+      cls: `week-header-${Math.min(weekNum, 5)}`
+    });
+    weekNum++;
+    monDay = sunDay + 1;
+  }
+  return weeks;
+}
+
 function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
   const table = document.getElementById("routineMatrixTable");
   if (!table) return;
 
-  const weeks = [
-    { num: 1, name: "SEMANA 1", start: 1, end: Math.min(7, daysInMonth), cls: "week-header-1" },
-    { num: 2, name: "SEMANA 2", start: 8, end: Math.min(14, daysInMonth), cls: "week-header-2" },
-    { num: 3, name: "SEMANA 3", start: 15, end: Math.min(21, daysInMonth), cls: "week-header-3" },
-    { num: 4, name: "SEMANA 4", start: 22, end: Math.min(28, daysInMonth), cls: "week-header-4" }
-  ];
-  if (daysInMonth > 28) {
-    weeks.push({ num: 5, name: "SEMANA 5", start: 29, end: daysInMonth, cls: "week-header-5" });
-  }
+  // Calculate real Mon-Sun weeks for this month
+  const weeks = getRoutineMonthWeeks(year, month, daysInMonth);
 
   let headerHtml = `
     <thead>
@@ -4038,11 +4135,8 @@ function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
       `;
 
       for (let d = 1; d <= daysInMonth; d++) {
-        let weekNum = 1;
-        if (d >= 8 && d <= 14) weekNum = 2;
-        else if (d >= 15 && d <= 21) weekNum = 3;
-        else if (d >= 22 && d <= 28) weekNum = 4;
-        else if (d >= 29) weekNum = 5;
+        let weekIdx = weeks.findIndex(w => d >= w.start && d <= w.end);
+        const weekNum = weekIdx >= 0 ? Math.min(weeks[weekIdx].num, 5) : 1;
 
         const isChecked = !!(checksMap[h.id] && checksMap[h.id][d]);
         bodyHtml += `
@@ -4098,39 +4192,31 @@ function updateHabitGoalInline(habitId, newGoalValue) {
   }
 }
 
-function renderRoutineWeeklyAnalysis(daysInMonth, totalHabits, donePerDay) {
+function renderRoutineWeeklyAnalysis(year, month, daysInMonth, totalHabits, donePerDay) {
   const barsContainer = document.getElementById("dailyBarsContainer");
   const statsSummary = document.getElementById("weeklyStatsSummary");
   if (!barsContainer || !statsSummary) return;
 
+  const weeks = getRoutineMonthWeeks(year, month, daysInMonth);
+
   let barsHtml = "";
   for (let d = 1; d <= daysInMonth; d++) {
-    let weekNum = 1;
-    if (d >= 8 && d <= 14) weekNum = 2;
-    else if (d >= 15 && d <= 21) weekNum = 3;
-    else if (d >= 22 && d <= 28) weekNum = 4;
-    else if (d >= 29) weekNum = 5;
+    const weekIdx = weeks.findIndex(w => d >= w.start && d <= w.end);
+    const weekNum = weekIdx >= 0 ? Math.min(weeks[weekIdx].num, 5) : 1;
 
     const count = donePerDay[d] || 0;
     const heightPct = totalHabits > 0 ? (count / totalHabits) * 100 : 0;
 
+    const dateObj = new Date(year, month - 1, d);
+    const dayName = dateObj.toLocaleDateString("es-ES", { weekday: "short" });
+
     barsHtml += `
-      <div class="bar-column" title="Día ${d}: ${count}/${totalHabits} hábitos">
+      <div class="bar-column" title="${dayName} ${d} (Semana ${weekNum}): ${count}/${totalHabits} hábitos">
         <div class="bar-fill week-${weekNum}" style="height: ${Math.max(2, heightPct)}%;"></div>
       </div>
     `;
   }
   barsContainer.innerHTML = barsHtml;
-
-  const weeks = [
-    { num: 1, name: "Semana 1", start: 1, end: Math.min(7, daysInMonth) },
-    { num: 2, name: "Semana 2", start: 8, end: Math.min(14, daysInMonth) },
-    { num: 3, name: "Semana 3", start: 15, end: Math.min(21, daysInMonth) },
-    { num: 4, name: "Semana 4", start: 22, end: Math.min(28, daysInMonth) }
-  ];
-  if (daysInMonth > 28) {
-    weeks.push({ num: 5, name: "Semana 5", start: 29, end: daysInMonth });
-  }
 
   let cardsHtml = `<div class="weekly-progress-grid">`;
   weeks.forEach(w => {
@@ -4152,7 +4238,7 @@ function renderRoutineWeeklyAnalysis(daysInMonth, totalHabits, donePerDay) {
         </div>
         <div class="weekly-card-val">${weekDone}/${weekGoal}</div>
         <div class="weekly-card-bar">
-          <div class="weekly-card-fill week-${w.num}" style="width: ${pct}%;"></div>
+          <div class="weekly-card-fill week-${Math.min(w.num, 5)}" style="width: ${pct}%;"></div>
         </div>
       </div>
     `;
@@ -4637,7 +4723,7 @@ function renderChecklist() {
       dateHtml = `<span class="task-date-tag ${isOverdue ? "overdue" : ""}">📅 ${dateLabel}${isOverdue ? " (atrasada)" : ""}</span>`;
     }
     
-    const tagHtml = linkLabel ? `<span class="task-tag" style="background:${hexToSoftBackground(taskColor)}; color:${taskColor};">${escapeHtml(linkLabel)}</span>` : "";
+    const tagHtml = linkLabel ? `<span class="task-tag" style="background:${hexToSoftBackground(taskColor)}; color:${readableColor(taskColor)};">${escapeHtml(linkLabel)}</span>` : "";
     const starsHtml = `<span class="task-difficulty-stars">${"★".repeat(task.difficulty)}${"☆".repeat(5 - task.difficulty)}</span>`;
     
     item.innerHTML = `
@@ -4907,7 +4993,7 @@ function openTaskDetailsModal(task) {
   }
   if (taskDetailsLinkEl) {
     taskDetailsLinkEl.innerHTML = linkLabel !== "Ninguno (sin vincular)"
-      ? `<span class="task-tag" style="background:${hexToSoftBackground(taskColor)}; color:${taskColor};">${escapeHtml(linkLabel)}</span>`
+      ? `<span class="task-tag" style="background:${hexToSoftBackground(taskColor)}; color:${readableColor(taskColor)};">${escapeHtml(linkLabel)}</span>`
       : `<span style="color: var(--muted); font-style: italic;">Sin vincular</span>`;
   }
   
@@ -4921,7 +5007,7 @@ function openTaskDetailsModal(task) {
       const isOverdue = !task.completed && task.dueDate < todayKey;
       const dateLabel = formatDateLong(task.dueDate);
       taskDetailsDueDateEl.innerHTML = isOverdue
-        ? `<span style="color: #dc2626; font-weight: bold;">📅 ${dateLabel} (atrasada)</span>`
+        ? `<span style="color: ${isDarkMode() ? '#f87171' : '#dc2626'}; font-weight: bold;">📅 ${dateLabel} (atrasada)</span>`
         : `<span>📅 ${dateLabel}</span>`;
     } else {
       taskDetailsDueDateEl.innerHTML = `<span style="color: var(--muted); font-style: italic;">Sin fecha</span>`;
@@ -4931,7 +5017,7 @@ function openTaskDetailsModal(task) {
   if (taskDetailsCheckboxEl) taskDetailsCheckboxEl.checked = task.completed;
   if (taskDetailsStatusTextEl) {
     taskDetailsStatusTextEl.textContent = task.completed ? "Completada" : "Pendiente";
-    taskDetailsStatusTextEl.style.color = task.completed ? "#16a34a" : "var(--muted)";
+    taskDetailsStatusTextEl.style.color = task.completed ? (isDarkMode() ? "#4ade80" : "#16a34a") : "var(--muted)";
   }
   
   if (taskDetailsModalEl) taskDetailsModalEl.hidden = false;
@@ -5500,3 +5586,35 @@ function renderReportBadges(activePeriod) {
     container.appendChild(card);
   }
 }
+
+// ─── Dark Mode ───────────────────────────────────────────────
+const DARK_MODE_KEY = "LOG-calendar-dark-mode";
+
+function toggleDarkMode(enabled) {
+  document.documentElement.setAttribute("data-theme", enabled ? "dark" : "light");
+  localStorage.setItem(DARK_MODE_KEY, enabled ? "1" : "0");
+  syncDarkModeToggles(enabled);
+  // Re-apply accent/intensity colors and re-render for the new theme
+  applyProfile();
+  renderCalendar();
+  renderStats();
+  if (typeof renderRoutineTracker === "function") renderRoutineTracker();
+}
+
+function syncDarkModeToggles(enabled) {
+  const popoverToggle = document.getElementById("darkModeTogglePopover");
+  const settingsToggle = document.getElementById("darkModeToggleSettings");
+  if (popoverToggle) popoverToggle.checked = enabled;
+  if (settingsToggle) settingsToggle.checked = enabled;
+}
+
+function initDarkMode() {
+  const saved = localStorage.getItem(DARK_MODE_KEY);
+  const enabled = saved === "1";
+  if (enabled) {
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
+  syncDarkModeToggles(enabled);
+}
+
+initDarkMode();

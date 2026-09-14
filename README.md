@@ -20,11 +20,13 @@ Es intencionalmente simple. No intenta reemplazar Notion, Google Calendar, un ge
   - Edición directa de días objetivo desde la columna **OBJETIVO** de la propia tabla, sin necesidad de entrar a editar el hábito.
   - Gráfico de tendencia diaria en curva fluida y análisis semanal por barras.
   - Gráfico de dona (Donut Chart) con el porcentaje de cumplimiento mensual global y ranking Top 10 de rutinas.
-- **Barra de navegación flotante**:
+- **Barra de navegación flotante (*Apple Liquid Glass Dock*)**:
+  - Barra inferior flotante compacta con diseño translucido estilo cristal líquido (*liquid glass*).
   - Pestañas para cambiar instantáneamente entre **`📅 Calendario`**, **`📋 Tracker`** y el botón **`🏠 Inicio`**.
   - Menú desplegable (*popover*) animado para Exportar, Importar (abriendo el selector de archivos del SO en ventana aparte) y acceder a Ajustes.
 - **Gestor de tareas integrado (`Checklist`)**: Búsqueda avanzada, mini-calendario interactivo para filtrar vencimientos por fecha y análisis específicos de tareas.
 - **Estadísticas avanzadas**: Totales, promedios, patrones por día de la semana y cálculo de riesgo académico.
+- **Modo Oscuro integral (Dark Mode)**: Soporte completo para tema oscuro nativo con interruptores rápidos en el menú de Inicio y en Ajustes, sin parpadeos de carga y con contraste optimizado.
 - **Importación/exportación de una copia local en JSON**.
 
 ---
@@ -125,6 +127,8 @@ El botón de exportar (ubicado dentro de `🏠 Inicio` en la barra inferior) des
 - categorías de eventos personalizados.
 
 El botón de importación abre una ventana del explorador de archivos para seleccionar ese formato exportado y restaurar el estado local.
+
+> ⚠️ **No subas respaldos exportados a un repositorio público sin revisar su contenido.**
 
 ---
 
