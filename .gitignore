@@ -1,0 +1,43 @@
+# Archivos del sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Copias de seguridad de datos locales JSON (Protección de privacidad)
+*.json
+!package.json
+!manifest.json
+!package-lock.json
+!npm-shrinkwrap.json
+!yarn.lock
+!pnpm-lock.yaml
+
+# Secretos y variables de entorno
+.env
+.env.*
+!.env.example
+
+# Claves, certificados y credenciales
+*.pem
+*.key
+*.crt
+*.p12
+
+# Copias y archivos temporales
+*.bak
+*.backup
+*.local
+*.tmp
+
+# Archivos de entorno y configuración local de IDEs/Herramientas
+.vscode/
+.idea/
+.antigravitycli/
+*.log
+node_modules/
+tmp/
+temp/

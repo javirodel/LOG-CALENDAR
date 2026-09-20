@@ -1,4 +1,4 @@
-const APP_VERSION = "3.0.0";
+const APP_VERSION = "3.0.1";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -48,20 +48,20 @@ const RATING_LABELS = [
 
 let state = loadState();
 
-// Default clean configuration for new users
+/**
+ * Configuración predeterminada de hábitos y rutinas para nuevos usuarios.
+ * Modifica este array si deseas precargar hábitos al iniciar la aplicación.
+ *
+ * Ejemplo de hábitos:
+ * return [
+ *   { id: "h_agua", emoji: "💧", name: "Beber 2L de agua", goal: 30 },
+ *   { id: "h_lectura", emoji: "📖", name: "Lectura diaria (20 min)", goal: 25 },
+ *   { id: "h_deporte", emoji: "🏋️", name: "Entrenamiento / Deporte", goal: 20 },
+ *   { id: "h_meditar", emoji: "🧘", name: "Meditación / Desconexión", goal: 15 }
+ * ];
+ */
 function getDefaultRoutineHabits() {
-  return [
-    { id: "h_default_01", name: "Despiértate temprano", emoji: "", goal: 30 },
-    { id: "h_default_02", name: "Gimnasio", emoji: "", goal: 30 },
-    { id: "h_default_03", name: "Ducha fría", emoji: "", goal: 30 },
-    { id: "h_default_04", name: "Trabajo profundo", emoji: "", goal: 30 },
-    { id: "h_default_05", name: "Tiempo con Dios", emoji: "", goal: 30 },
-    { id: "h_default_06", name: "Lectura/Meditación", emoji: "", goal: 30 },
-    { id: "h_default_07", name: "Seguimiento del presupuesto", emoji: "", goal: 30 },
-    { id: "h_default_08", name: "Seguimiento de objetivos", emoji: "", goal: 30 },
-    { id: "h_default_09", name: "Sin alcohol", emoji: "", goal: 30 },
-    { id: "h_default_10", name: "Sin pornografía", emoji: "", goal: 30 }
-  ];
+  return [];
 }
 
 if (!localStorage.getItem(STORAGE_KEY)) {
@@ -297,6 +297,11 @@ const taskDetailsEditBtn = document.getElementById("taskDetailsEditBtn");
 const taskDetailsOkBtn = document.getElementById("taskDetailsOkBtn");
 
 let currentViewingTaskId = null;
+let horizontalViewSwipeDistance = 0;
+let horizontalViewSwipeLockedUntil = 0;
+
+const HORIZONTAL_VIEW_SWIPE_THRESHOLD = 80;
+const HORIZONTAL_VIEW_SWIPE_COOLDOWN = 700;
 
 // Mostrar versión en la esquina inferior derecha de los ajustes
 if (settingsVersionIndicatorEl) {
@@ -495,6 +500,9 @@ if (periodsSettingsListEl) periodsSettingsListEl.addEventListener("click", handl
 if (tabCalendar && tabChecklist) {
   tabCalendar.addEventListener("click", () => switchView("calendar"));
   tabChecklist.addEventListener("click", () => switchView("checklist"));
+}
+if (workspaceEl) {
+  workspaceEl.addEventListener("wheel", handleHorizontalViewSwipe, { passive: false });
 }
 if (addNewTaskBtn) addNewTaskBtn.addEventListener("click", () => openTaskEntry());
 if (addDayTaskBtn) addDayTaskBtn.addEventListener("click", () => openTaskEntry(null, selectedDate));
@@ -793,21 +801,6 @@ function loadState() {
   } catch {
     return fallback;
   }
-}
-
-function getDefaultRoutineHabits() {
-  return [
-    { id: "h_default_01", name: "Despiértate temprano", emoji: "", goal: 30 },
-    { id: "h_default_02", name: "Gimnasio", emoji: "", goal: 30 },
-    { id: "h_default_03", name: "Ducha fría", emoji: "", goal: 30 },
-    { id: "h_default_04", name: "Trabajo profundo", emoji: "", goal: 30 },
-    { id: "h_default_05", name: "Tiempo con Dios", emoji: "", goal: 30 },
-    { id: "h_default_06", name: "Lectura/Meditación", emoji: "", goal: 30 },
-    { id: "h_default_07", name: "Seguimiento del presupuesto", emoji: "", goal: 30 },
-    { id: "h_default_08", name: "Seguimiento de objetivos", emoji: "", goal: 30 },
-    { id: "h_default_09", name: "Sin alcohol", emoji: "", goal: 30 },
-    { id: "h_default_10", name: "Sin pornografía", emoji: "", goal: 30 }
-  ];
 }
 
 function createFallbackState() {
@@ -2046,7 +2039,7 @@ function renderHobbyFrequencyChart(keys, activeTracks, totalsByTrack) {
     row.innerHTML = `
       <span class="bar-label">
         <span class="bar-rank">#${index + 1}</span>
-        <span>${escapeHtml(track.label)}</span>
+        <span class="bar-item-name">${escapeHtml(track.label)}</span>
         <small>Media ${formatNumber(track.avgPerActiveDay)}h/día</small>
       </span>
       <span class="bar-track">
@@ -2071,7 +2064,7 @@ function renderSubjectChart(totalsBySubject, activeSubjects = subjects) {
       const row = document.createElement("div");
       row.className = "bar-row";
       row.innerHTML = `
-      <span class="bar-label"><span class="bar-rank">#${index + 1}</span><span>${subject.name}</span><small>Dif. ${difficulty}</small></span>
+      <span class="bar-label"><span class="bar-rank">#${index + 1}</span><span class="bar-item-name">${escapeHtml(subject.name)}</span><small>Dif. ${difficulty}</small></span>
       <span class="bar-track"><span class="bar-fill" style="background:${subject.color}; width:${(total / max) * 100}%"></span></span>
       <span class="bar-value">${formatNumber(total)} h</span>
     `;
@@ -2198,7 +2191,7 @@ function renderAdvancedStats() {
   const weightedSubjectRanking = subjectRanking
     .map((item) => ({ ...item, weighted: item.total * item.difficulty }))
     .sort((a, b) => b.weighted - a.weighted || b.total - a.total);
-  const riskRanking = buildSubjectRiskRanking(subjectRanking);
+  const riskRanking = buildSubjectRiskRanking(subjectRanking, stats.keys);
   const highestRisk = riskRanking[0];
   const bestCovered = riskRanking
     .slice()
@@ -2207,6 +2200,14 @@ function renderAdvancedStats() {
   const neglectedSubjects = subjectRanking.filter((item) => item.total === 0).length;
   const studiedSubjects = subjectRanking.filter((item) => item.total > 0).length;
   const usefulRatedDays = stats.ratedDays ? `${stats.ratedDays} días (${formatNumber((stats.ratedDays / Math.max(1, stats.activeDays)) * 100)}% de los activos)` : "sin valoraciones";
+  const overdueTasks = riskRanking.reduce((total, item) => total + item.overdueTasks, 0);
+  const pendingLinkedTasks = riskRanking.reduce((total, item) => total + item.pendingTasks, 0);
+  const leastRecentSubject = riskRanking
+    .filter((item) => item.daysSinceLastStudy !== null)
+    .sort((a, b) => b.daysSinceLastStudy - a.daysSinceLastStudy)[0];
+  const averageCoverage = riskRanking.length
+    ? riskRanking.reduce((total, item) => total + Math.min(100, item.coverage), 0) / riskRanking.length
+    : 0;
 
   advancedStatsContentEl.innerHTML = `
     <div class="advanced-grid">
@@ -2236,9 +2237,19 @@ function renderAdvancedStats() {
         `Valoraciones registradas: ${usefulRatedDays}.`
       ])}
       ${renderAdvancedCard("Riesgos", [
-        highestRisk ? `Mayor riesgo: ${escapeHtml(highestRisk.name)} (${formatNumber(highestRisk.score)}/100), ${highestRisk.examText}.` : `No hay ${subPlural.toLowerCase()} para evaluar.`,
+        highestRisk ? `Mayor riesgo: ${escapeHtml(highestRisk.name)} (${formatNumber(highestRisk.score)}/100), ${highestRisk.riskReason}.` : `No hay ${subPlural.toLowerCase()} para evaluar.`,
         bestCovered ? `Mejor cubierta: ${escapeHtml(bestCovered.name)} (${formatNumber(bestCovered.coverage)}% del objetivo estimado).` : `${subPlural} sin tocar: ${neglectedSubjects}.`,
-        `${highRiskCount} ${subPlural.toLowerCase()} en riesgo alto; ${neglectedSubjects} ${subPlural.toLowerCase()} sin tocar.`
+        `${highRiskCount} ${subPlural.toLowerCase()} en riesgo alto; ${overdueTasks} tareas atrasadas vinculadas.`
+      ])}
+      ${renderAdvancedCard("Preparación real", [
+        `${formatNumber(averageCoverage)}% de cobertura media frente al objetivo estimado de horas.`,
+        `${pendingLinkedTasks} tareas pendientes están vinculadas a una ${subSingular.toLowerCase()}; ${overdueTasks} ya van atrasadas.`,
+        leastRecentSubject ? `Más tiempo sin tocar: ${escapeHtml(leastRecentSubject.name)} (${formatDaysSinceStudy(leastRecentSubject.daysSinceLastStudy)}).` : "Todavía no hay historial suficiente de estudio."
+      ])}
+      ${renderAdvancedCard("Señales para actuar", [
+        highestRisk ? `Prioridad recomendada: ${escapeHtml(highestRisk.name)} — ${escapeHtml(getRiskActionText(highestRisk))}.` : `Registra horas o eventos para obtener recomendaciones.`,
+        highestRisk?.recentHours > 0 ? `${escapeHtml(highestRisk.name)} acumula ${formatNumber(highestRisk.recentHours)} h en los últimos 14 días.` : "Ninguna asignatura tiene actividad reciente registrada.",
+        `La puntuación combina urgencia, cobertura, tareas, inactividad y dificultad; no es solo un contador de horas.`
       ])}
     </div>
     <div class="advanced-lists">
@@ -2265,7 +2276,7 @@ function renderAdvancedStats() {
         })))}
       ${renderRankingList(`Riesgo de ${subPlural.toLowerCase()}`, riskRanking.map((item) => ({
         label: item.name,
-        meta: `Dif. ${item.difficulty} · ${item.examText} · ${formatNumber(item.total)} h`,
+        meta: `${item.riskReason} · ${formatNumber(item.total)} h/${formatNumber(item.targetHours)} h · ${item.pendingTasks} pendientes`,
         value: `${formatNumber(item.score)}/100`
       })))}
     </div>
@@ -2309,7 +2320,7 @@ function getMostConsistentTrackText(trackRanking) {
   return `${escapeHtml(best.label)} (${best.activeDays} días)`;
 }
 
-function buildSubjectRiskRanking(subjectRanking) {
+function buildSubjectRiskRanking(subjectRanking, statsKeys = []) {
   const todayKey = getTodayDateKey();
   return subjectRanking
     .map((subject) => {
@@ -2341,23 +2352,101 @@ function buildSubjectRiskRanking(subjectRanking) {
       const coverage = Math.min(140, (subject.total / targetHours) * 100);
       const missingRatio = Math.max(0, 1 - subject.total / targetHours);
       const dedicationScore = missingRatio * 100;
+      const subjectTasks = (state.checklistTasks || []).filter((task) => (
+        task.linkType === "subject" && normalizeSearchText(task.linkKey) === normalizeSearchText(subject.name)
+      ));
+      const pendingSubjectTasks = subjectTasks.filter((task) => !task.completed);
+      const overdueSubjectTasks = pendingSubjectTasks.filter((task) => task.dueDate && task.dueDate < todayKey);
+      const dueSoonSubjectTasks = pendingSubjectTasks.filter((task) => {
+        if (!task.dueDate || task.dueDate < todayKey) return false;
+        const daysUntil = Math.round((parseKey(task.dueDate) - parseKey(todayKey)) / 86400000);
+        return daysUntil <= 7;
+      });
+      const taskPressure = Math.min(100, pendingSubjectTasks.reduce((total, task) => total + (task.difficulty || 3) * 10, 0) + overdueSubjectTasks.length * 15);
+      const studyHistory = getSubjectStudyHistory(subject.name, statsKeys, todayKey);
+      const inactivityScore = studyHistory.daysSinceLastStudy === null
+        ? 100
+        : Math.min(100, studyHistory.daysSinceLastStudy * 8);
+      const recentActivityScore = studyHistory.recentHours > 0 ? 0 : 35;
 
-      const score = Math.min(100, Math.max(0, urgency * 0.40 + difficultyScore * 0.25 + dedicationScore * 0.35));
+      // La urgencia pesa más cuando hay un evento próximo; la cobertura y las tareas
+      // evitan que una asignatura parezca segura solo por acumular muchas horas antiguas.
+      const score = Math.min(100, Math.max(0,
+        urgency * 0.32 +
+        dedicationScore * 0.25 +
+        taskPressure * 0.20 +
+        inactivityScore * 0.13 +
+        difficultyScore * 0.07 +
+        recentActivityScore * 0.03
+      ));
 
-      return {
+      const riskData = {
         ...subject,
         score,
         targetHours,
         coverage,
         exam: closestEvent,
-        examText: formatRiskEventText(closestEvent)
+        examText: formatRiskEventText(closestEvent),
+        pendingTasks: pendingSubjectTasks.length,
+        overdueTasks: overdueSubjectTasks.length,
+        dueSoonTasks: dueSoonSubjectTasks.length,
+        taskPressure,
+        studyDays: studyHistory.studyDays,
+        recentHours: studyHistory.recentHours,
+        daysSinceLastStudy: studyHistory.daysSinceLastStudy
       };
+      riskData.riskReason = getSubjectRiskReason(riskData);
+
+      return riskData;
     })
     .sort((a, b) => {
       const aDays = a.exam ? a.exam.daysUntil : Number.POSITIVE_INFINITY;
       const bDays = b.exam ? b.exam.daysUntil : Number.POSITIVE_INFINITY;
       return b.score - a.score || aDays - bDays || b.difficulty - a.difficulty;
     });
+}
+
+function getSubjectStudyHistory(subjectName, statsKeys, todayKey) {
+  const keys = Array.isArray(statsKeys) ? statsKeys : [];
+  const studyDays = keys.filter((key) => Number(state.days[key]?.subjects?.[subjectName]) > 0);
+  const recentStart = new Date(parseKey(todayKey).getTime() - 13 * 86400000);
+  const recentHours = keys.reduce((total, key) => {
+    if (parseKey(key) < recentStart) return total;
+    return total + Number(state.days[key]?.subjects?.[subjectName] || 0);
+  }, 0);
+  const lastStudyKey = studyDays[studyDays.length - 1] || null;
+  const daysSinceLastStudy = lastStudyKey
+    ? Math.max(0, Math.round((parseKey(todayKey) - parseKey(lastStudyKey)) / 86400000))
+    : null;
+
+  return {
+    studyDays: studyDays.length,
+    recentHours,
+    daysSinceLastStudy
+  };
+}
+
+function getSubjectRiskReason(item) {
+  if (item.exam && item.exam.daysUntil <= 7) return `${item.examText}; ${formatNumber(item.coverage)}% cubierto`;
+  if (item.overdueTasks > 0) return `${item.overdueTasks} tarea${item.overdueTasks === 1 ? "" : "s"} atrasada${item.overdueTasks === 1 ? "" : "s"}`;
+  if (item.coverage < 50) return `${formatNumber(item.coverage)}% del objetivo de horas`;
+  if (item.daysSinceLastStudy !== null && item.daysSinceLastStudy >= 7) return `${formatDaysSinceStudy(item.daysSinceLastStudy)} sin estudiar`;
+  if (item.pendingTasks > 0) return `${item.pendingTasks} tarea${item.pendingTasks === 1 ? "" : "s"} pendiente${item.pendingTasks === 1 ? "" : "s"}`;
+  return `${item.examText}; dificultad ${item.difficulty}/5`;
+}
+
+function formatDaysSinceStudy(days) {
+  if (days === 0) return "estudiada hoy";
+  if (days === 1) return "1 día sin estudiar";
+  return `${days} días sin estudiar`;
+}
+
+function getRiskActionText(item) {
+  if (item.exam && item.exam.daysUntil <= 7) return `prioriza una sesión antes de su ${item.examText}`;
+  if (item.overdueTasks > 0) return `resuelve primero sus ${item.overdueTasks} tareas atrasadas`;
+  if (item.coverage < 50) return `acerca sus horas al objetivo de ${formatNumber(item.targetHours)} h`;
+  if (item.daysSinceLastStudy !== null && item.daysSinceLastStudy >= 7) return `retoma una sesión para romper la pausa`;
+  return "mantén una sesión breve y revisa sus tareas pendientes";
 }
 
 function getUpcomingLinkedEvents(subjectName, fromKey = getTodayDateKey()) {
@@ -3792,6 +3881,33 @@ function initRoutineTrackerEvents() {
     });
   }
 
+  // Delegación de eventos para la matriz mensual de hábitos
+  const matrixTable = document.getElementById("routineMatrixTable");
+  if (matrixTable) {
+    matrixTable.addEventListener("click", (e) => {
+      const editIcon = e.target.closest(".habit-edit-icon");
+      if (editIcon && editIcon.dataset.habitId) {
+        openHabitModal(editIcon.dataset.habitId);
+      }
+    });
+
+    matrixTable.addEventListener("change", (e) => {
+      const target = e.target;
+      if (target.classList.contains("routine-checkbox")) {
+        const habitId = target.dataset.habitId;
+        const day = Number(target.dataset.day);
+        if (habitId && day) {
+          toggleHabitCheck(habitId, day);
+        }
+      } else if (target.classList.contains("goal-inline-input")) {
+        const habitId = target.dataset.habitId;
+        if (habitId) {
+          updateHabitGoalInline(habitId, target.value);
+        }
+      }
+    });
+  }
+
   // Habit Modal form listener
   const habitForm = document.getElementById("habitForm");
   const habitCloseBtn = document.getElementById("habitEntryCloseBtn");
@@ -4119,7 +4235,7 @@ function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
                 <span>${h.emoji || "⭐"}</span>
                 <span>${escapeHtml(h.name)}</span>
               </span>
-              <span class="habit-edit-icon" onclick="openHabitModal('${h.id}')" title="Editar hábito">✏️</span>
+              <span class="habit-edit-icon" data-habit-id="${h.id}" onclick="openHabitModal('${h.id}')" title="Editar hábito">✏️</span>
             </div>
           </td>
           <td class="goal-td" title="Cambiar días objetivo">
@@ -4337,8 +4453,49 @@ function renderRoutineRanking(habits, donePerHabit, daysInMonth) {
 
 // --- Controladores y Renderizadores de Checklist (Tareas) ---
 
+function handleHorizontalViewSwipe(event) {
+  const horizontalDistance = event.deltaX;
+  const verticalDistance = event.deltaY;
+  const eventTarget = event.target;
+
+  if (!horizontalDistance || Math.abs(horizontalDistance) <= Math.abs(verticalDistance)) {
+    horizontalViewSwipeDistance = 0;
+    return;
+  }
+
+  if (eventTarget instanceof Element && eventTarget.closest(".table-scroll-container")) {
+    horizontalViewSwipeDistance = 0;
+    return;
+  }
+
+  const now = performance.now();
+  if (now < horizontalViewSwipeLockedUntil) return;
+
+  horizontalViewSwipeDistance += horizontalDistance;
+  event.preventDefault();
+
+  if (Math.abs(horizontalViewSwipeDistance) < HORIZONTAL_VIEW_SWIPE_THRESHOLD) return;
+
+  const nextView = horizontalViewSwipeDistance > 0 ? "checklist" : "calendar";
+  const currentView = tabChecklist.classList.contains("active") ? "checklist" : "calendar";
+  horizontalViewSwipeDistance = 0;
+  horizontalViewSwipeLockedUntil = now + HORIZONTAL_VIEW_SWIPE_COOLDOWN;
+
+  if (nextView !== currentView) switchView(nextView);
+}
+
+function animateViewTransition(direction) {
+  if (!workspaceEl) return;
+
+  workspaceEl.classList.remove("view-transition-forward", "view-transition-back");
+  void workspaceEl.offsetWidth;
+  workspaceEl.classList.add(direction === "forward" ? "view-transition-forward" : "view-transition-back");
+}
+
 function switchView(viewName) {
-  if (viewName === "calendar") {
+  const isCalendarView = viewName === "calendar";
+
+  if (isCalendarView) {
     tabCalendar.classList.add("active");
     tabCalendar.setAttribute("aria-selected", "true");
     tabChecklist.classList.remove("active");
@@ -4352,6 +4509,7 @@ function switchView(viewName) {
     if (workspaceEl) {
       workspaceEl.classList.remove("checklist-active");
     }
+    animateViewTransition("back");
     renderCalendar();
   } else {
     tabChecklist.classList.add("active");
@@ -4367,6 +4525,7 @@ function switchView(viewName) {
     if (workspaceEl) {
       workspaceEl.classList.add("checklist-active");
     }
+    animateViewTransition("forward");
     
     renderRoutineTracker();
   }
@@ -5615,6 +5774,15 @@ function initDarkMode() {
     document.documentElement.setAttribute("data-theme", "dark");
   }
   syncDarkModeToggles(enabled);
+
+  const popoverToggle = document.getElementById("darkModeTogglePopover");
+  const settingsToggle = document.getElementById("darkModeToggleSettings");
+  if (popoverToggle) {
+    popoverToggle.addEventListener("change", (e) => toggleDarkMode(e.target.checked));
+  }
+  if (settingsToggle) {
+    settingsToggle.addEventListener("change", (e) => toggleDarkMode(e.target.checked));
+  }
 }
 
 initDarkMode();

@@ -263,7 +263,7 @@
                 </div>
                 <div class="tracker-actions">
                   <select id="routineMonthSelect" class="tracker-select" aria-label="Seleccionar mes"></select>
-                  <button id="addHabitBtn" class="tracker-btn primary" type="button" onclick="openHabitModal(null)">+ Añadir Hábito</button>
+                  <button id="addHabitBtn" class="tracker-btn primary" type="button">+ Añadir Hábito</button>
                   <button id="resetMonthBtn" class="tracker-btn danger" type="button" title="Vaciar marcas de este mes">Restablecer Mes</button>
                 </div>
               </div>
@@ -364,7 +364,7 @@
             <p class="eyebrow">Configuración</p>
             <h2 id="settingsTitle">Ajustes del calendario</h2>
           </div>
-          <button class="icon-button" id="settingsCloseBtn" type="button" aria-label="Cerrar ajustes" onclick="closeSettings()">×</button>
+          <button class="icon-button" id="settingsCloseBtn" type="button" aria-label="Cerrar ajustes">×</button>
         </div>
 
         <div class="settings-grid">
@@ -376,7 +376,7 @@
               <div class="theme-toggle-row">
                 <span>🌙 Modo Oscuro</span>
                 <label class="toggle-switch">
-                  <input type="checkbox" id="darkModeToggleSettings" onchange="toggleDarkMode(this.checked)">
+                  <input type="checkbox" id="darkModeToggleSettings">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
@@ -426,7 +426,7 @@
           </article>
         </div>
         <div class="settings-footer" style="display: flex; justify-content: flex-end; align-items: center; margin-top: 18px; font-size: 0.82rem; color: var(--muted); font-weight: bold;">
-          <span id="settingsVersionIndicator">LOG of growth • Versión 3.0.0</span>
+          <span id="settingsVersionIndicator">LOG of growth • Versión 3.0.1</span>
         </div>
       </section>
     </div>
@@ -818,11 +818,11 @@
     <!-- DOCK FLOTANTE APPLE LIQUID GLASS -->
     <div class="liquid-glass-dock" role="navigation" aria-label="Navegación principal">
       <div class="dock-segment tabs-segment" role="tablist">
-        <button class="dock-tab active" id="tabCalendar" type="button" role="tab" aria-selected="true" aria-controls="paneCalendar" onclick="switchView('calendar')">
+        <button class="dock-tab active" id="tabCalendar" type="button" role="tab" aria-selected="true" aria-controls="paneCalendar">
           <span class="dock-icon">📅</span>
           <span class="dock-label">Calendario</span>
         </button>
-        <button class="dock-tab" id="tabChecklist" type="button" role="tab" aria-selected="false" aria-controls="paneChecklistMain" onclick="switchView('checklist')">
+        <button class="dock-tab" id="tabChecklist" type="button" role="tab" aria-selected="false" aria-controls="paneChecklistMain">
           <span class="dock-icon">📋</span>
           <span class="dock-label">Tracker</span>
         </button>
@@ -864,7 +864,7 @@
               <span class="popover-sub">Cambiar tema de la interfaz</span>
             </div>
             <label class="toggle-switch" style="margin-left: auto;">
-              <input type="checkbox" id="darkModeTogglePopover" onchange="toggleDarkMode(this.checked)">
+              <input type="checkbox" id="darkModeTogglePopover">
               <span class="toggle-slider"></span>
             </label>
           </div>

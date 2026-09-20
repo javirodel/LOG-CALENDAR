@@ -4,6 +4,31 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [3.0.1] - 2026-09-20
+
+### Added
+- **Navegación horizontal entre vistas**:
+  - Desplazamiento horizontal con dos dedos en el trackpad para cambiar entre Calendario y Tracker.
+  - El gesto respeta el scroll vertical y no interfiere con las tablas que tienen scroll horizontal propio.
+- **Análisis académico avanzado** en el desplegable “Más estadísticas” del Calendario:
+  - Riesgo por asignatura combinando eventos próximos, dificultad, cobertura de horas, tareas y actividad reciente.
+  - Detección de tareas pendientes y atrasadas vinculadas a cada asignatura.
+  - Días desde el último estudio, horas registradas en los últimos 14 días y cobertura frente al objetivo estimado.
+  - Motivos concretos de riesgo y recomendaciones accionables para priorizar el estudio.
+  - Tarjetas de preparación real y señales de actuación, además de los rankings existentes.
+
+### Changed
+- **Transición entre Calendario y Tracker**: cambio de vista con una animación lateral suave al superar el umbral del gesto horizontal.
+- **Gráficos de horas por asignatura**:
+  - Mejor distribución del espacio para nombres largos.
+  - La dificultad se muestra separada y sin solaparse con el nombre.
+  - Las barras y los valores de horas conservan una alineación estable.
+- **Resumen de hábitos del Tracker**: añadido espacio entre el nombre truncado y los contadores de completados, pendientes y porcentaje.
+
+### Fixed
+- Corregidas declaraciones CSS huérfanas que provocaban el error de sintaxis “se esperaba `{`”.
+- Corregidos solapamientos visuales en nombres largos de asignaturas, etiquetas de dificultad y estadísticas del Tracker.
+
 ## [3.0.0] - 2026-09-14
 
 ### Added

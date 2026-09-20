@@ -732,6 +732,43 @@ h3 {
   align-items: start;
 }
 
+.workspace.view-transition-forward {
+  animation: viewSlideFromRight 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.workspace.view-transition-back {
+  animation: viewSlideFromLeft 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes viewSlideFromRight {
+  from {
+    opacity: 0.5;
+    transform: translateX(42px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes viewSlideFromLeft {
+  from {
+    opacity: 0.5;
+    transform: translateX(-42px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace.view-transition-forward,
+  .workspace.view-transition-back {
+    animation: none;
+  }
+}
+
 .left-column {
   display: flex;
   flex-direction: column;
@@ -1531,16 +1568,26 @@ textarea {
 
 .bar-row {
   display: grid;
-  grid-template-columns: minmax(120px, 190px) 1fr 58px;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(90px, 1fr) 64px;
+  gap: 14px;
   align-items: center;
 }
 
 .bar-label {
-  overflow-wrap: anywhere;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  gap: 8px 10px;
   color: #364152;
   font-size: 0.88rem;
   font-weight: 750;
+}
+
+.bar-item-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
 }
 
 .bar-track {
@@ -2202,9 +2249,11 @@ textarea {
 }
 
 .bar-label {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px;
+  min-width: 0;
+  gap: 8px 10px;
 }
 
 .bar-rank {
@@ -2224,13 +2273,25 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
+  min-width: 48px;
+  flex: 0 0 auto;
   border-radius: 999px;
   background: #e2e8f0;
   color: #334155;
   font-size: 0.64rem;
   font-weight: 850;
   padding: 1px 5px;
+  white-space: nowrap;
+}
+
+/* El nombre necesita todo el ancho disponible; la dificultad queda debajo. */
+.bar-label {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.bar-label small {
+  grid-column: 2;
+  justify-self: start;
 }
 
 .balance-panel {
@@ -2294,8 +2355,10 @@ textarea {
 }
 
 @media (max-width: 760px) {
-  background: rgba(126, 34, 206, 0.15);
-  color: #6b21a8;
+  .community-chip {
+    background: rgba(126, 34, 206, 0.15);
+    color: #6b21a8;
+  }
 }
 
 .stat-pill-wrap {
@@ -2314,9 +2377,11 @@ textarea {
 }
 
 .bar-label {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
+  min-width: 0;
+  gap: 8px 10px;
 }
 
 .bar-rank {
@@ -2336,13 +2401,17 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
+  grid-column: 2;
+  justify-self: start;
+  min-width: 48px;
+  flex: 0 0 auto;
   border-radius: 999px;
   background: #e2e8f0;
   color: #334155;
   font-size: 0.64rem;
   font-weight: 850;
   padding: 1px 5px;
+  white-space: nowrap;
 }
 
 .balance-panel {
@@ -2454,6 +2523,7 @@ textarea {
   font-size: 0.9rem;
   font-weight: 750;
   border-radius: 26px;
+  white-space: nowrap;
   color: var(--muted);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -3377,6 +3447,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 18px;
   background: var(--bg);
   border: 1px solid var(--line);
   padding: 8px 10px;
