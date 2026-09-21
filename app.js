@@ -4262,7 +4262,6 @@ function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
                    ${isChecked ? "checked" : ""}
                    data-habit-id="${h.id}"
                    data-day="${d}"
-                   onchange="toggleHabitCheck('${h.id}', ${d})"
             />
           </td>
         `;
