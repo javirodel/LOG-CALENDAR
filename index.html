@@ -885,6 +885,8 @@
     <!-- Elemento oculto para la selección de archivo de importación -->
     <input id="dockImportInput" type="file" accept="application/json" style="display: none !important;">
 
-    <script src="app.js"></script>
+    <!-- The classic engine preserves file:// compatibility and legacy template handlers. -->
+    <script src="js/legacy/app-core.js"></script>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>
