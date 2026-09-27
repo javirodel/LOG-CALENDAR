@@ -1,4 +1,4 @@
-const APP_VERSION = "3.0.1";
+const APP_VERSION = "3.1.0";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -73,7 +73,7 @@ if (!localStorage.getItem(STORAGE_KEY)) {
     state.settings.tracks = [];
   }
   if (!state.routineTracker) {
-    state.routineTracker = { habits: [], monthlyChecks: {} };
+    state.routineTracker = { habits: [], monthlyChecks: {}, matrixScrollLeft: 0 };
   }
   saveState();
 }
@@ -101,6 +101,7 @@ function getTodayYearMonth() {
 
 let routineActiveMonth = getTodayYearMonth();
 let editingHabitTarget = null;
+let routineMatrixScrollSaveTimer = null;
 
 const eventLegendEl = document.getElementById("eventLegend");
 const monthsEl = document.getElementById("months");
@@ -575,7 +576,7 @@ subjectFormEl.addEventListener("input", (event) => {
   if (!(target instanceof HTMLInputElement)) return;
   if (!target.dataset.subject) return;
   const day = ensureDay(selectedDate);
-  day.subjects[target.dataset.subject] = normalizeHours(target.value);
+  day.subjects[target.dataset.subject] = parseTimeInput(target.value);
   onDayDataUpdated();
 });
 
@@ -584,7 +585,7 @@ focusTracksEl.addEventListener("input", (event) => {
   if (!(target instanceof HTMLInputElement)) return;
   if (!target.dataset.track) return;
   const day = ensureDay(selectedDate);
-  day.extra[target.dataset.track] = normalizeHours(target.value);
+  day.extra[target.dataset.track] = parseTimeInput(target.value);
   onDayDataUpdated();
 });
 
@@ -624,7 +625,7 @@ starsContainerEl.addEventListener("mouseleave", () => {
 
 function onDayDataUpdated() {
   selectedTotalEl.textContent = formatNumber(getDayTotal(selectedDate));
-  selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatNumber(getStudyTotal(selectedDate))} h`;
+  selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatTime(getStudyTotal(selectedDate))}`;
   renderDaySplit();
   saveState();
   flashAutoSave();
@@ -810,6 +811,7 @@ function createFallbackState() {
       subjectsLabelSingular: "Asignatura",
       hobbiesLabelPlural: "Hobbies",
       hobbiesLabelSingular: "Hobby",
+      timeEntryMode: "decimal",
       subjectDifficulty: getDefaultDifficultyMap(),
       profile: { ...DEFAULT_PROFILE },
       calendarRange: { start: INITIAL_START_DATE, end: INITIAL_END_DATE },
@@ -823,7 +825,8 @@ function createFallbackState() {
     checklistTasks: [],
     routineTracker: {
       habits: getDefaultRoutineHabits(),
-      monthlyChecks: {}
+      monthlyChecks: {},
+      matrixScrollLeft: 0
     }
   };
 }
@@ -844,6 +847,7 @@ function normalizeState(candidate) {
       subjectsLabelSingular: typeof candidate.settings.subjectsLabelSingular === "string" && candidate.settings.subjectsLabelSingular.trim() ? candidate.settings.subjectsLabelSingular.trim() : "Asignatura",
       hobbiesLabelPlural: typeof candidate.settings.hobbiesLabelPlural === "string" && candidate.settings.hobbiesLabelPlural.trim() ? candidate.settings.hobbiesLabelPlural.trim() : "Hobbies",
       hobbiesLabelSingular: typeof candidate.settings.hobbiesLabelSingular === "string" && candidate.settings.hobbiesLabelSingular.trim() ? candidate.settings.hobbiesLabelSingular.trim() : "Hobby",
+      timeEntryMode: candidate.settings.timeEntryMode === "hours-minutes" ? "hours-minutes" : "decimal",
       subjectDifficulty: {
         ...normalized.settings.subjectDifficulty,
         ...(candidate.settings.subjectDifficulty || {})
@@ -884,12 +888,16 @@ function normalizeState(candidate) {
         : getDefaultRoutineHabits(),
       monthlyChecks: (candidate.routineTracker.monthlyChecks && typeof candidate.routineTracker.monthlyChecks === "object")
         ? candidate.routineTracker.monthlyChecks
-        : {}
+        : {},
+      matrixScrollLeft: Number.isFinite(Number(candidate.routineTracker.matrixScrollLeft))
+        ? Math.max(0, Number(candidate.routineTracker.matrixScrollLeft))
+        : 0
     };
   } else {
     normalized.routineTracker = {
       habits: getDefaultRoutineHabits(),
-      monthlyChecks: {}
+      monthlyChecks: {},
+      matrixScrollLeft: 0
     };
   }
 
@@ -934,6 +942,7 @@ function syncConfigFromState() {
   if (!state.settings.subjectsLabelSingular) state.settings.subjectsLabelSingular = "Asignatura";
   if (!state.settings.hobbiesLabelPlural) state.settings.hobbiesLabelPlural = "Hobbies";
   if (!state.settings.hobbiesLabelSingular) state.settings.hobbiesLabelSingular = "Hobby";
+  if (state.settings.timeEntryMode !== "hours-minutes") state.settings.timeEntryMode = "decimal";
 
   for (const subject of subjects) {
     if (typeof state.settings.subjectDifficulty[subject.name] !== "number") {
@@ -1237,14 +1246,14 @@ function renderSubjectInputsWithList(list) {
         <span class="color-dot" style="background:${subject.color}"></span>
         <span>${escapeHtml(subject.name)}</span>
       </span>
-      <input type="number" min="0" max="24" step="0.25" inputmode="decimal" data-subject="${escapeHtml(subject.name)}" aria-label="Horas de ${escapeHtml(subject.name)}">
+      <input type="${getTimeInputType()}" ${getTimeInputAttributes()} data-subject="${escapeHtml(subject.name)}" aria-label="Tiempo de ${escapeHtml(subject.name)}">
     `;
     subjectFormEl.appendChild(row);
   }
 
   for (const input of subjectFormEl.querySelectorAll("input[data-subject]")) {
     const value = ensureDay(selectedDate).subjects[input.dataset.subject] || 0;
-    input.value = value ? String(value) : "";
+    input.value = value ? formatTimeInput(value) : "";
   }
 }
 
@@ -1405,11 +1414,11 @@ function renderTrackInputs() {
     article.innerHTML = `
       <h3>${escapeHtml(track.label)}</h3>
       <p>${escapeHtml(track.description || "Tiempo dedicado a este hobby.")}</p>
-      <label for="track-${escapeHtml(track.key)}">Horas del día</label>
-      <input id="track-${escapeHtml(track.key)}" type="number" min="0" max="24" step="0.25" inputmode="decimal" placeholder="0" data-track="${escapeHtml(track.key)}">
+      <label for="track-${escapeHtml(track.key)}">Tiempo del día</label>
+      <input id="track-${escapeHtml(track.key)}" type="${getTimeInputType()}" ${getTimeInputAttributes()} placeholder="${getTimeInputPlaceholder()}" data-track="${escapeHtml(track.key)}">
     `;
     const input = article.querySelector("input");
-    input.value = day.extra[track.key] ? String(day.extra[track.key]) : "";
+    input.value = day.extra[track.key] ? formatTimeInput(day.extra[track.key]) : "";
     focusTracksEl.appendChild(article);
   }
 }
@@ -1431,7 +1440,7 @@ function getDayCellMarkup(key) {
 
   const chips = EXTRA_TRACKS
     .filter((track) => day.extra[track.key] > 0)
-    .map((track) => `<span class="track-chip" style="--chip-color:${track.color}">${escapeHtml(track.shortLabel)} ${formatNumber(day.extra[track.key])}h</span>`)
+    .map((track) => `<span class="track-chip" style="--chip-color:${track.color}">${escapeHtml(track.shortLabel)} ${formatTime(day.extra[track.key])}</span>`)
     .join("");
   const noteDot = day.notes.trim() ? `<span class="note-dot" title="Tiene nota"></span>` : "";
   const hasPendingTasks = state.checklistTasks?.some(t => t.dueDate === key && !t.completed);
@@ -1443,7 +1452,7 @@ function getDayCellMarkup(key) {
       ${noteDot}${taskDot}
     </span>
     <span class="day-body">
-      <span class="day-hours">${formatNumber(total)} h</span>
+      <span class="day-hours">${formatTime(total)}</span>
     </span>
     <span class="subject-dots" aria-hidden="true">${dots}</span>
     <span class="track-chips" aria-hidden="true">${chips}</span>
@@ -1460,7 +1469,7 @@ function renderSelectedDay() {
   selectedWeekdayEl.textContent = formatWeekday(selectedDate);
   selectedDateEl.textContent = formatDateLong(selectedDate);
   selectedTotalEl.textContent = formatNumber(getDayTotal(selectedDate));
-  selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatNumber(getStudyTotal(selectedDate))} h`;
+  selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatTime(getStudyTotal(selectedDate))}`;
   renderDaySplit();
   dayNotesEl.value = day.notes || "";
   renderTrackInputs();
@@ -1485,7 +1494,7 @@ function renderDaySplit() {
   for (const track of EXTRA_TRACKS) {
     const item = document.createElement("span");
     item.dataset.trackSummary = track.key;
-    item.textContent = `${track.label}: ${formatNumber(day.extra[track.key])} h`;
+    item.textContent = `${track.label}: ${formatTime(day.extra[track.key])}`;
     daySplitEl.appendChild(item);
   }
 }
@@ -2671,10 +2680,12 @@ function renderSettings() {
   const subjectsSingularInput = document.getElementById("profileSubjectsSingular");
   const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
   const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
+  const timeEntryModeInput = document.getElementById("profileTimeEntryMode");
   if (subjectsPluralInput) subjectsPluralInput.value = state.settings.subjectsLabelPlural || "Asignaturas";
   if (subjectsSingularInput) subjectsSingularInput.value = state.settings.subjectsLabelSingular || "Asignatura";
   if (hobbiesPluralInput) hobbiesPluralInput.value = state.settings.hobbiesLabelPlural || "Hobbies";
   if (hobbiesSingularInput) hobbiesSingularInput.value = state.settings.hobbiesLabelSingular || "Hobby";
+  if (timeEntryModeInput) timeEntryModeInput.value = state.settings.timeEntryMode || "decimal";
 
   [profileLevel1El, profileLevel2El, profileLevel3El, profileLevel4El].forEach((input, index) => {
     input.value = profile.intensityLevels[index];
@@ -2972,11 +2983,13 @@ function saveProfileSettings(event) {
   const subjectsSingularInput = document.getElementById("profileSubjectsSingular");
   const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
   const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
+  const timeEntryModeInput = document.getElementById("profileTimeEntryMode");
 
   state.settings.subjectsLabelPlural = (subjectsPluralInput?.value || "Asignaturas").trim();
   state.settings.subjectsLabelSingular = (subjectsSingularInput?.value || "Asignatura").trim();
   state.settings.hobbiesLabelPlural = (hobbiesPluralInput?.value || "Hobbies").trim();
   state.settings.hobbiesLabelSingular = (hobbiesSingularInput?.value || "Hobby").trim();
+  state.settings.timeEntryMode = timeEntryModeInput?.value === "hours-minutes" ? "hours-minutes" : "decimal";
 
   state.settings.profile = normalizeProfile({
     title: profileTitleEl.value,
@@ -2986,6 +2999,8 @@ function saveProfileSettings(event) {
   syncConfigFromState();
   applyProfile();
   updateDynamicLabels();
+  renderSubjectInputs();
+  renderTrackInputs();
   persist();
   renderCalendar();
   showToast("Perfil guardado.");
@@ -3525,6 +3540,53 @@ function normalizeHours(value) {
   return Math.min(24, Math.round(n * 4) / 4);
 }
 
+function getTimeEntryMode() {
+  return state.settings.timeEntryMode === "hours-minutes" ? "hours-minutes" : "decimal";
+}
+
+function getTimeInputType() {
+  return getTimeEntryMode() === "hours-minutes" ? "text" : "number";
+}
+
+function getTimeInputAttributes() {
+  return getTimeEntryMode() === "hours-minutes"
+    ? 'inputmode="numeric" pattern="[0-9]{1,2}:[0-5][0-9]" title="Usa horas:minutos, por ejemplo 1:30"'
+    : 'min="0" max="24" step="0.25" inputmode="decimal"';
+}
+
+function getTimeInputPlaceholder() {
+  return getTimeEntryMode() === "hours-minutes" ? "0:00" : "0";
+}
+
+function parseTimeInput(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return 0;
+  if (getTimeEntryMode() !== "hours-minutes") return normalizeHours(raw);
+
+  const match = raw.match(/^(\d{1,2})\s*:\s*(\d{0,2})$/);
+  if (match) {
+    const hours = Number(match[1]);
+    const minutes = Number(match[2] || 0);
+    if (minutes < 60) return Math.min(24, Math.round((hours + minutes / 60) * 60) / 60);
+    return 0;
+  }
+  return normalizeHours(raw);
+}
+
+function formatTimeInput(hours) {
+  if (getTimeEntryMode() !== "hours-minutes") return String(hours);
+  const totalMinutes = Math.round((Number(hours) || 0) * 60);
+  return `${Math.floor(totalMinutes / 60)}:${String(totalMinutes % 60).padStart(2, "0")}`;
+}
+
+function formatTime(hours) {
+  if (getTimeEntryMode() !== "hours-minutes") return `${formatNumber(hours)} h`;
+  const totalMinutes = Math.round((Number(hours) || 0) * 60);
+  const wholeHours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes ? `${wholeHours} h ${minutes} min` : `${wholeHours} h`;
+}
+
 function getIntensityClass(total) {
   const [l1, l2, l3, l4] = state.settings.profile.intensityLevels;
   if (total >= l4) return "level-4";
@@ -3883,6 +3945,16 @@ function initRoutineTrackerEvents() {
 
   // Delegación de eventos para la matriz mensual de hábitos
   const matrixTable = document.getElementById("routineMatrixTable");
+  const matrixScrollContainer = matrixTable?.closest(".table-scroll-container");
+  if (matrixScrollContainer) {
+    matrixScrollContainer.addEventListener("scroll", () => {
+      clearTimeout(routineMatrixScrollSaveTimer);
+      routineMatrixScrollSaveTimer = setTimeout(() => {
+        state.routineTracker.matrixScrollLeft = matrixScrollContainer.scrollLeft;
+        saveState();
+      }, 150);
+    }, { passive: true });
+  }
   if (matrixTable) {
     matrixTable.addEventListener("click", (e) => {
       const editIcon = e.target.closest(".habit-edit-icon");
@@ -3922,7 +3994,7 @@ function initRoutineTrackerEvents() {
       const goal = Number(document.getElementById("habitGoalInput").value) || 30;
 
       if (!state.routineTracker) {
-        state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {} };
+        state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {}, matrixScrollLeft: 0 };
       }
 
       if (editingHabitTarget) {
@@ -4019,7 +4091,7 @@ function formatMonthKeyTitle(key) {
 
 function renderRoutineTracker() {
   if (!state.routineTracker || !Array.isArray(state.routineTracker.habits)) {
-    state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {} };
+    state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {}, matrixScrollLeft: 0 };
   }
 
   const habits = state.routineTracker.habits;
@@ -4196,6 +4268,7 @@ function getRoutineMonthWeeks(year, month, daysInMonth) {
 function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
   const table = document.getElementById("routineMatrixTable");
   if (!table) return;
+  const scrollContainer = table.closest(".table-scroll-container");
 
   // Calculate real Mon-Sun weeks for this month
   const weeks = getRoutineMonthWeeks(year, month, daysInMonth);
@@ -4272,11 +4345,17 @@ function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
 
   bodyHtml += `</tbody>`;
   table.innerHTML = headerHtml + bodyHtml;
+
+  if (scrollContainer) {
+    requestAnimationFrame(() => {
+      scrollContainer.scrollLeft = Math.max(0, Number(state.routineTracker?.matrixScrollLeft) || 0);
+    });
+  }
 }
 
 function toggleHabitCheck(habitId, dayNum) {
   if (!state.routineTracker) {
-    state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {} };
+    state.routineTracker = { habits: getDefaultRoutineHabits(), monthlyChecks: {}, matrixScrollLeft: 0 };
   }
   if (!state.routineTracker.monthlyChecks) {
     state.routineTracker.monthlyChecks = {};

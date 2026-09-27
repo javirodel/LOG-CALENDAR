@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.0.1";
+export const APP_VERSION = "3.1.0";
 export const STORAGE_KEY = "LOG-calendar-local-state-v1";
 export const DARK_MODE_KEY = "LOG-calendar-dark-mode";
 export const NEW_CATEGORY_VALUE = "__new__";

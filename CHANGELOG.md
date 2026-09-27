@@ -4,6 +4,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [3.1.0] - 2026-09-27
+
+### Added
+- **Formato de registro de tiempo configurable** en Ajustes > Perfil: horas decimales (`1,5`) u horas y minutos normales (`1:30`) para asignaturas y hobbies.
+
+### Changed
+- Los totales y chips del panel diario respetan el formato elegido sin alterar los datos ni cálculos ya guardados.
+
+### Fixed
+- La matriz del Tracker conserva su desplazamiento horizontal al volver a la vista, actualizar una marca o recargar la aplicación.
+
 ## [3.0.1] - 2026-09-20
 
 ### Added

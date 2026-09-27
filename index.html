@@ -1,4 +1,4 @@
-<!doctype html>
+    <!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8">
@@ -388,6 +388,12 @@
                 <label>Nombre de hobbies (Plural)<input id="profileHobbiesPlural" type="text" maxlength="30" placeholder="Hobbies"></label>
                 <label>Nombre de hobby (Singular)<input id="profileHobbiesSingular" type="text" maxlength="30" placeholder="Hobby"></label>
               </div>
+              <label>Registrar tiempo en
+                <select id="profileTimeEntryMode">
+                  <option value="decimal">Horas decimales (ej. 1,5)</option>
+                  <option value="hours-minutes">Horas y minutos (ej. 1:30)</option>
+                </select>
+              </label>
               <p class="settings-help">Los niveles indican desde cuántas horas de estudio se intensifica el color de cada día.</p>
               <div class="settings-two">
                 <label>Horas nivel 1<input id="profileLevel1" type="number" min="0.25" max="24" step="0.25"></label>
@@ -426,7 +432,7 @@
           </article>
         </div>
         <div class="settings-footer" style="display: flex; justify-content: flex-end; align-items: center; margin-top: 18px; font-size: 0.82rem; color: var(--muted); font-weight: bold;">
-          <span id="settingsVersionIndicator">LOG of growth • Versión 3.0.1</span>
+          <span id="settingsVersionIndicator">LOG of growth • Versión 3.1.0</span>
         </div>
       </section>
     </div>
