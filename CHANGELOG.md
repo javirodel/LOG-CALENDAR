@@ -4,6 +4,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [3.1.1] - 2026-09-29
+
+### Changed
+- **Formato compacto en el calendario**: las horas de cada día se muestran como `2h 20'` o `45'` cuando está activo el formato de horas y minutos.
+
+### Fixed
+- **Contador de horas totales del día**: mostraba el total en decimal crudo (ej. `4,92`) en lugar de respetar el formato legible (`4 h 55 min`). Ahora usa `formatTime` y el layout apila las horas arriba y la etiqueta debajo.
+- El tiempo de las asignaturas conserva el formato de entrada elegido (`hh:mm` o decimal) al actualizar el día seleccionado.
+
 ## [3.1.0] - 2026-09-27
 
 ### Added

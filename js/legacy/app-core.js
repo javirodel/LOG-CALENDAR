@@ -1,4 +1,4 @@
-const APP_VERSION = "3.1.0";
+const APP_VERSION = "3.1.1";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -624,7 +624,7 @@ starsContainerEl.addEventListener("mouseleave", () => {
 });
 
 function onDayDataUpdated() {
-  selectedTotalEl.textContent = formatNumber(getDayTotal(selectedDate));
+  selectedTotalEl.textContent = formatTime(getDayTotal(selectedDate));
   selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatTime(getStudyTotal(selectedDate))}`;
   renderDaySplit();
   saveState();
@@ -1452,7 +1452,7 @@ function getDayCellMarkup(key) {
       ${noteDot}${taskDot}
     </span>
     <span class="day-body">
-      <span class="day-hours">${formatTime(total)}</span>
+      <span class="day-hours">${formatShortTime(total)}</span>
     </span>
     <span class="subject-dots" aria-hidden="true">${dots}</span>
     <span class="track-chips" aria-hidden="true">${chips}</span>
@@ -1468,7 +1468,7 @@ function renderSelectedDay() {
   const day = ensureDay(selectedDate);
   selectedWeekdayEl.textContent = formatWeekday(selectedDate);
   selectedDateEl.textContent = formatDateLong(selectedDate);
-  selectedTotalEl.textContent = formatNumber(getDayTotal(selectedDate));
+  selectedTotalEl.textContent = formatTime(getDayTotal(selectedDate));
   selectedStudyEl.textContent = `${state.settings.subjectsLabelPlural || "Asignaturas"}: ${formatTime(getStudyTotal(selectedDate))}`;
   renderDaySplit();
   dayNotesEl.value = day.notes || "";
@@ -1477,7 +1477,7 @@ function renderSelectedDay() {
 
   for (const input of subjectFormEl.querySelectorAll("input[data-subject]")) {
     const value = day.subjects[input.dataset.subject] || 0;
-    input.value = value ? String(value) : "";
+    input.value = value ? formatTimeInput(value) : "";
   }
 
   renderNotices();
@@ -3585,6 +3585,16 @@ function formatTime(hours) {
   const wholeHours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return minutes ? `${wholeHours} h ${minutes} min` : `${wholeHours} h`;
+}
+
+function formatShortTime(hours) {
+  if (getTimeEntryMode() !== "hours-minutes") return `${formatNumber(hours)} h`;
+  const totalMinutes = Math.round((Number(hours) || 0) * 60);
+  const wholeHours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (!minutes) return `${wholeHours}h`;
+  if (!wholeHours) return `${minutes}'`;
+  return `${wholeHours}h ${minutes}'`;
 }
 
 function getIntensityClass(total) {
