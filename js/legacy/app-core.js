@@ -1,4 +1,4 @@
-const APP_VERSION = "3.1.1";
+const APP_VERSION = "3.2.1";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -73,7 +73,7 @@ if (!localStorage.getItem(STORAGE_KEY)) {
     state.settings.tracks = [];
   }
   if (!state.routineTracker) {
-    state.routineTracker = { habits: [], monthlyChecks: {}, matrixScrollLeft: 0 };
+    state.routineTracker = { habits: [], monthlyChecks: {}, matrixScrollLeft: 0, hiddenHistoryMonths: [] };
   }
   saveState();
 }
@@ -891,13 +891,17 @@ function normalizeState(candidate) {
         : {},
       matrixScrollLeft: Number.isFinite(Number(candidate.routineTracker.matrixScrollLeft))
         ? Math.max(0, Number(candidate.routineTracker.matrixScrollLeft))
-        : 0
+        : 0,
+      hiddenHistoryMonths: Array.isArray(candidate.routineTracker.hiddenHistoryMonths)
+        ? candidate.routineTracker.hiddenHistoryMonths.map(String)
+        : []
     };
   } else {
     normalized.routineTracker = {
       habits: getDefaultRoutineHabits(),
       monthlyChecks: {},
-      matrixScrollLeft: 0
+      matrixScrollLeft: 0,
+      hiddenHistoryMonths: []
     };
   }
 
@@ -1362,7 +1366,7 @@ function createDayCell(key, selected, noAnim) {
     cell.style.animationDelay = `${Math.min(date.getDate() * 16, 360)}ms`;
   }
 
-  cell.setAttribute("aria-label", `${formatDateLong(key)}, ${formatNumber(total)} horas de estudio`);
+  cell.setAttribute("aria-label", `${formatDateLong(key)}, ${formatTime(total)} de estudio`);
   cell.innerHTML = getDayCellMarkup(key);
 
   cell.addEventListener("click", () => {
@@ -1388,7 +1392,7 @@ function refreshDayCell(key) {
   cell.className = classNames.join(" ");
   cell.style.backgroundColor = getIntensityColor(total);
   applyEventColorToCell(cell, key);
-  cell.setAttribute("aria-label", `${formatDateLong(key)}, ${formatNumber(total)} horas de estudio`);
+  cell.setAttribute("aria-label", `${formatDateLong(key)}, ${formatTime(total)} de estudio`);
   cell.innerHTML = getDayCellMarkup(key);
 }
 
@@ -1915,10 +1919,10 @@ function renderStats() {
   const averageRating = ratedDays > 0 ? totalRating / ratedDays : 0;
   const elapsedDays = Math.max(1, keys.length);
 
-  grandTotalEl.textContent = `${formatNumber(totalHours)} h`;
-  avgPerDayEl.textContent = `${formatNumber(totalHours / elapsedDays)} h`;
-  avgActiveDayEl.textContent = activeDays ? `${formatNumber(totalHours / activeDays)} h` : "0 h";
-  bestDayEl.textContent = best.key ? `${formatShortDate(best.key)} (${formatNumber(best.total)} h)` : "-";
+  grandTotalEl.textContent = formatTime(totalHours);
+  avgPerDayEl.textContent = formatTime(totalHours / elapsedDays);
+  avgActiveDayEl.textContent = activeDays ? formatTime(totalHours / activeDays) : "0 h";
+  bestDayEl.textContent = best.key ? `${formatShortDate(best.key)} (${formatTime(best.total)})` : "-";
   streakEl.textContent = `${currentStreak} días`;
 
   let topSubject = null;
@@ -1944,8 +1948,8 @@ function renderStats() {
     const t1 = sortedTracks[0];
     const t2 = sortedTracks[1];
 
-    topSubjectEl.textContent = t1 && t1.total > 0 ? `${t1.label} (${formatNumber(t1.total)} h)` : "-";
-    topTrackEl.textContent = t2 && t2.total > 0 ? `${t2.label} (${formatNumber(t2.total)} h)` : "-";
+    topSubjectEl.textContent = t1 && t1.total > 0 ? `${t1.label} (${formatTime(t1.total)})` : "-";
+    topTrackEl.textContent = t2 && t2.total > 0 ? `${t2.label} (${formatTime(t2.total)})` : "-";
     
     studyFocusEl.textContent = totalHours && t1 ? `${formatNumber((t1.total / totalHours) * 100)}%` : "0%";
     hobbyFocusEl.textContent = totalHours && t2 ? `${formatNumber((t2.total / totalHours) * 100)}%` : "0%";
@@ -1955,7 +1959,7 @@ function renderStats() {
     // Periodo normal (estudio o mixto)
     if (grandTotalLabel) grandTotalLabel.textContent = "total global";
     if (weightedLoadLabel) weightedLoadLabel.textContent = "carga ponderada";
-    weightedLoadEl.textContent = `${formatNumber(weightedLoad)}`;
+    weightedLoadEl.textContent = getTimeEntryMode() === "hours-minutes" ? formatTime(weightedLoad) : `${formatNumber(weightedLoad)}`;
     if (avgPerDayLabel) avgPerDayLabel.textContent = "media diaria";
     if (avgActiveDayLabel) avgActiveDayLabel.textContent = "media en días activos";
     if (bestDayLabel) bestDayLabel.textContent = "mejor día académico";
@@ -1972,8 +1976,8 @@ function renderStats() {
       .map((track) => ({ label: track.label, total: totalsByTrack[track.key], activeDays: countActiveTrackDays(keys, track.key) }))
       .sort((a, b) => b.total - a.total || b.activeDays - a.activeDays)[0];
 
-    topSubjectEl.textContent = topSubject && topSubject.total > 0 ? `${topSubject.name} (${formatNumber(topSubject.total)} h)` : "-";
-    topTrackEl.textContent = topTrack && topTrack.total > 0 ? `${topTrack.label} (${formatNumber(topTrack.total)} h)` : "-";
+    topSubjectEl.textContent = topSubject && topSubject.total > 0 ? `${topSubject.name} (${formatTime(topSubject.total)})` : "-";
+    topTrackEl.textContent = topTrack && topTrack.total > 0 ? `${topTrack.label} (${formatTime(topTrack.total)})` : "-";
     studyFocusEl.textContent = totalHours ? `${formatNumber((totalStudy / totalHours) * 100)}%` : "0%";
     hobbyFocusEl.textContent = totalHours ? `${formatNumber((totalTracks / totalHours) * 100)}%` : "0%";
   }
@@ -2049,7 +2053,7 @@ function renderHobbyFrequencyChart(keys, activeTracks, totalsByTrack) {
       <span class="bar-label">
         <span class="bar-rank">#${index + 1}</span>
         <span class="bar-item-name">${escapeHtml(track.label)}</span>
-        <small>Media ${formatNumber(track.avgPerActiveDay)}h/día</small>
+        <small>Media ${formatTime(track.avgPerActiveDay)}/día</small>
       </span>
       <span class="bar-track">
         <span class="bar-fill" style="background:${track.color}; width:${(track.activeDays / maxDays) * 100}%"></span>
@@ -2075,7 +2079,7 @@ function renderSubjectChart(totalsBySubject, activeSubjects = subjects) {
       row.innerHTML = `
       <span class="bar-label"><span class="bar-rank">#${index + 1}</span><span class="bar-item-name">${escapeHtml(subject.name)}</span><small>Dif. ${difficulty}</small></span>
       <span class="bar-track"><span class="bar-fill" style="background:${subject.color}; width:${(total / max) * 100}%"></span></span>
-      <span class="bar-value">${formatNumber(total)} h</span>
+      <span class="bar-value">${formatTime(total)}</span>
     `;
     subjectChartEl.appendChild(row);
   }
@@ -2141,7 +2145,7 @@ function renderBalanceChart(totalStudy, totalsByTrack, totalHours, activeTracks 
     row.innerHTML = `
       <span class="balance-label">${part.label}</span>
       <span class="balance-track"><span class="balance-fill" style="width:${ratio}%; background:${part.color}"></span></span>
-      <span class="balance-value">${formatNumber(value)} h (${formatNumber(ratio)}%)</span>
+      <span class="balance-value">${formatTime(value)} (${formatNumber(ratio)}%)</span>
     `;
     balanceChartEl.appendChild(row);
   }
@@ -2221,27 +2225,27 @@ function renderAdvancedStats() {
   advancedStatsContentEl.innerHTML = `
     <div class="advanced-grid">
       ${renderAdvancedCard("Ritmo", [
-        `Has registrado ${formatNumber(stats.totalHours)} h en ${stats.activeDays} días activos.`,
-        `Media real: ${formatNumber(stats.totalHours / stats.elapsedDays)} h/día. Media cuando haces algo: ${stats.activeDays ? formatNumber(stats.totalHours / stats.activeDays) : "0"} h.`,
+        `Has registrado ${formatTime(stats.totalHours)} en ${stats.activeDays} días activos.`,
+        `Media real: ${formatTime(stats.totalHours / stats.elapsedDays)}/día. Media cuando haces algo: ${stats.activeDays ? formatTime(stats.totalHours / stats.activeDays) : "0 h"}.`,
         `Días sin actividad registrada: ${stats.inactiveDays}; racha de ${subPlural.toLowerCase()} actual: ${stats.currentStreak} días.`
       ])}
       ${renderAdvancedCard(`${subPlural} y ${hobPlural}`, [
-        `${subPlural}: ${formatNumber(stats.totalStudy)} h (${formatNumber(studyShare)}%).`,
-        `${hobPlural}: ${formatNumber(stats.totalTracks)} h (${formatNumber(trackShare)}%).`,
+        `${subPlural}: ${formatTime(stats.totalStudy)} (${formatNumber(studyShare)}%).`,
+        `${hobPlural}: ${formatTime(stats.totalTracks)} (${formatNumber(trackShare)}%).`,
         `Actividad en ${formatNumber(activeRatio)}% de los días transcurridos.`
       ])}
       ${renderAdvancedCard(subPlural, subjectRanking.length ? [
-        `Dominante: ${subjectRanking[0]?.total > 0 ? `${escapeHtml(subjectRanking[0].name)} con ${formatNumber(subjectRanking[0].total)} h` : "todavía sin horas"}.`,
+        `Dominante: ${subjectRanking[0]?.total > 0 ? `${escapeHtml(subjectRanking[0].name)} con ${formatTime(subjectRanking[0].total)}` : "todavía sin horas"}.`,
         `Concentración principal: ${formatNumber(topSubjectShare)}% del total; ${studiedSubjects}/${subjectRanking.length} ${subPlural.toLowerCase()} tocadas.`,
-        `Carga ponderada acumulada: ${formatNumber(stats.weightedLoad)}.`
+        `Carga ponderada acumulada: ${getTimeEntryMode() === "hours-minutes" ? formatTime(stats.weightedLoad) : formatNumber(stats.weightedLoad)}.`
       ] : [`No hay ${subPlural.toLowerCase()} configuradas.`])}
       ${renderAdvancedCard(hobPlural, trackRanking.length ? [
-        `${hobSingular} dominante: ${trackRanking[0]?.total > 0 ? `${escapeHtml(trackRanking[0].label)} con ${formatNumber(trackRanking[0].total)} h` : "todavía sin horas"}.`,
+        `${hobSingular} dominante: ${trackRanking[0]?.total > 0 ? `${escapeHtml(trackRanking[0].label)} con ${formatTime(trackRanking[0].total)}` : "todavía sin horas"}.`,
         `Mayor constancia: ${getMostConsistentTrackText(trackRanking)}.`,
         `${trackRanking.length} ${hobPlural.toLowerCase()} configurados.`
       ] : [`No hay ${hobPlural.toLowerCase()} configurados.`])}
       ${renderAdvancedCard("Semana", [
-        `Día con más horas: ${bestWeekday ? `${bestWeekday.label} (${formatNumber(bestWeekday.total)} h)` : "-"}.`,
+        `Día con más horas: ${bestWeekday ? `${bestWeekday.label} (${formatTime(bestWeekday.total)})` : "-"}.`,
         `Día más constante: ${mostActiveWeekday ? `${mostActiveWeekday.label} (${mostActiveWeekday.activeDays} días activos)` : "-"}.`,
         `Valoraciones registradas: ${usefulRatedDays}.`
       ])}
@@ -2257,7 +2261,7 @@ function renderAdvancedStats() {
       ])}
       ${renderAdvancedCard("Señales para actuar", [
         highestRisk ? `Prioridad recomendada: ${escapeHtml(highestRisk.name)} — ${escapeHtml(getRiskActionText(highestRisk))}.` : `Registra horas o eventos para obtener recomendaciones.`,
-        highestRisk?.recentHours > 0 ? `${escapeHtml(highestRisk.name)} acumula ${formatNumber(highestRisk.recentHours)} h en los últimos 14 días.` : "Ninguna asignatura tiene actividad reciente registrada.",
+        highestRisk?.recentHours > 0 ? `${escapeHtml(highestRisk.name)} acumula ${formatTime(highestRisk.recentHours)} en los últimos 14 días.` : "Ninguna asignatura tiene actividad reciente registrada.",
         `La puntuación combina urgencia, cobertura, tareas, inactividad y dificultad; no es solo un contador de horas.`
       ])}
     </div>
@@ -2265,27 +2269,27 @@ function renderAdvancedStats() {
       ${renderRankingList(`Ranking de ${subPlural.toLowerCase()}`, subjectRanking.map((item) => ({
         label: item.name,
         meta: `Dif. ${item.difficulty}`,
-        value: `${formatNumber(item.total)} h`
+        value: formatTime(item.total)
       })))}
       ${renderRankingList(`Ranking de ${hobPlural.toLowerCase()}`, trackRanking.map((item) => ({
         label: item.label,
         meta: `${item.activeDays} días`,
-        value: `${formatNumber(item.total)} h`
+        value: formatTime(item.total)
       })))}
       ${renderRankingList("Días de la semana", weekdayStudyRanking.map((item) => ({
         label: item.label,
         meta: `${item.studyActiveDays} con ${subPlural.toLowerCase()}`,
-        value: `${formatNumber(item.total)} h`
+        value: formatTime(item.total)
       })))}
       ${renderRankingList(`${subPlural} por carga ponderada`, weightedSubjectRanking
         .map((item) => ({
           label: item.name,
           meta: `Dif. ${item.difficulty}`,
-          value: `${formatNumber(item.weighted)} carga`
+          value: getTimeEntryMode() === "hours-minutes" ? formatTime(item.weighted) : `${formatNumber(item.weighted)} carga`
         })))}
       ${renderRankingList(`Riesgo de ${subPlural.toLowerCase()}`, riskRanking.map((item) => ({
         label: item.name,
-        meta: `${item.riskReason} · ${formatNumber(item.total)} h/${formatNumber(item.targetHours)} h · ${item.pendingTasks} pendientes`,
+        meta: `${item.riskReason} · ${formatTime(item.total)}/${formatTime(item.targetHours)} · ${item.pendingTasks} pendientes`,
         value: `${formatNumber(item.score)}/100`
       })))}
     </div>
@@ -2453,7 +2457,7 @@ function formatDaysSinceStudy(days) {
 function getRiskActionText(item) {
   if (item.exam && item.exam.daysUntil <= 7) return `prioriza una sesión antes de su ${item.examText}`;
   if (item.overdueTasks > 0) return `resuelve primero sus ${item.overdueTasks} tareas atrasadas`;
-  if (item.coverage < 50) return `acerca sus horas al objetivo de ${formatNumber(item.targetHours)} h`;
+  if (item.coverage < 50) return `acerca sus horas al objetivo de ${formatTime(item.targetHours)}`;
   if (item.daysSinceLastStudy !== null && item.daysSinceLastStudy >= 7) return `retoma una sesión para romper la pausa`;
   return "mantén una sesión breve y revisa sus tareas pendientes";
 }
@@ -3001,6 +3005,7 @@ function saveProfileSettings(event) {
   updateDynamicLabels();
   renderSubjectInputs();
   renderTrackInputs();
+  renderSelectedDay();
   persist();
   renderCalendar();
   showToast("Perfil guardado.");
@@ -3953,6 +3958,34 @@ function initRoutineTrackerEvents() {
     });
   }
 
+  // Controles de navegación y desplazamiento para el histórico de meses anteriores
+  const historyPrevBtn = document.getElementById("historySidePrevBtn");
+  const historyNextBtn = document.getElementById("historySideNextBtn");
+  const historyScrollContainer = document.getElementById("routineHistoryScrollContainer");
+
+  if (historyPrevBtn && historyScrollContainer) {
+    historyPrevBtn.addEventListener("click", () => {
+      historyScrollContainer.scrollBy({ left: -240, behavior: "smooth" });
+    });
+  }
+
+  if (historyNextBtn && historyScrollContainer) {
+    historyNextBtn.addEventListener("click", () => {
+      historyScrollContainer.scrollBy({ left: 240, behavior: "smooth" });
+    });
+  }
+
+  if (historyScrollContainer) {
+    historyScrollContainer.addEventListener("scroll", updateHistoryArrowStates, { passive: true });
+    historyScrollContainer.addEventListener("wheel", (e) => {
+      // Si el usuario usa rueda vertical convencional, convertirla suavemente a scroll horizontal
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && e.deltaY !== 0) {
+        historyScrollContainer.scrollLeft += e.deltaY * 0.9;
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+
   // Delegación de eventos para la matriz mensual de hábitos
   const matrixTable = document.getElementById("routineMatrixTable");
   const matrixScrollContainer = matrixTable?.closest(".table-scroll-container");
@@ -4168,6 +4201,7 @@ function renderRoutineTracker() {
   renderRoutineWeeklyAnalysis(year, month, daysInMonth, habits.length, donePerDay);
   renderRoutineOverview(grandDone, grandGoal, globalPct, habits, donePerHabit, daysInMonth);
   renderRoutineRanking(habits, donePerHabit, daysInMonth);
+  renderRoutineHistory(habits);
 }
 
 function renderRoutineTrendChart(daysInMonth, donePerDay, totalHabits) {
@@ -4539,6 +4573,422 @@ function renderRoutineRanking(habits, donePerHabit, daysInMonth) {
   rankingList.innerHTML = html;
 }
 
+function hasMonthHabitChecks(mKey) {
+  const checks = state.routineTracker?.monthlyChecks?.[mKey];
+  if (!checks || typeof checks !== "object") return false;
+  return Object.values(checks).some(habitDays => 
+    habitDays && typeof habitDays === "object" && Object.values(habitDays).some(val => !!val)
+  );
+}
+
+function getRoutineMonthStats(mKey, habits) {
+  const [y, m] = mKey.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const checksMap = (state.routineTracker?.monthlyChecks && state.routineTracker.monthlyChecks[mKey]) || {};
+
+  let grandDone = 0;
+  let grandGoal = 0;
+  const activeDaysSet = new Set();
+  const donePerDay = {};
+  for (let d = 1; d <= daysInMonth; d++) donePerDay[d] = 0;
+
+  const habitPerformances = [];
+
+  habits.forEach(h => {
+    let done = 0;
+    const hChecks = checksMap[h.id] || {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (hChecks[d]) {
+        done++;
+        activeDaysSet.add(d);
+        donePerDay[d]++;
+      }
+    }
+    const goal = h.goal || daysInMonth;
+    grandDone += done;
+    grandGoal += goal;
+    const pct = goal > 0 ? (done / goal) * 100 : 0;
+    habitPerformances.push({ habit: h, done, goal, pct });
+  });
+
+  const globalPct = grandGoal > 0 ? (grandDone / grandGoal) * 100 : 0;
+  habitPerformances.sort((a, b) => b.pct - a.pct || b.done - a.done);
+
+  // Mejor día del mes
+  let bestDayNum = null;
+  let maxDoneInDay = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    if (donePerDay[d] > maxDoneInDay) {
+      maxDoneInDay = donePerDay[d];
+      bestDayNum = d;
+    }
+  }
+
+  // Hábitos con 100% de cumplimiento
+  const completedHabitsCount = habitPerformances.filter(h => h.done >= h.goal).length;
+
+  return {
+    monthKey: mKey,
+    title: formatMonthKeyTitle(mKey),
+    year: y,
+    month: m,
+    daysInMonth,
+    grandDone,
+    grandGoal,
+    globalPct,
+    activeDays: activeDaysSet.size,
+    topHabit: habitPerformances.length > 0 && habitPerformances[0].done > 0 ? habitPerformances[0] : null,
+    topHabits: habitPerformances.filter(h => h.done > 0).slice(0, 3),
+    bestDay: bestDayNum ? { day: bestDayNum, count: maxDoneInDay } : null,
+    completedHabitsCount,
+    hasData: grandDone > 0
+  };
+}
+
+function getPreviousMonthsList(activeKey, maxMonths = 12) {
+  const result = [];
+  const calendarStart = typeof getCalendarStart === "function" ? getCalendarStart() : "2026-01-01";
+  const startMonthKey = calendarStart.slice(0, 7);
+
+  for (let i = 1; i <= maxMonths; i++) {
+    const prevKey = shiftMonthKey(activeKey, -i);
+    const hasData = hasMonthHabitChecks(prevKey);
+    if (prevKey >= startMonthKey || hasData) {
+      result.push(prevKey);
+    }
+  }
+  return result;
+}
+
+function updateHistoryArrowStates() {
+  const scrollContainer = document.getElementById("routineHistoryScrollContainer");
+  const prevBtn = document.getElementById("historySidePrevBtn");
+  const nextBtn = document.getElementById("historySideNextBtn");
+  if (!scrollContainer || !prevBtn || !nextBtn) return;
+
+  const hasScroll = scrollContainer.scrollWidth > scrollContainer.clientWidth + 4;
+  if (!hasScroll) {
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    prevBtn.style.visibility = "hidden";
+    nextBtn.style.visibility = "hidden";
+    return;
+  }
+  prevBtn.style.visibility = "visible";
+  nextBtn.style.visibility = "visible";
+
+  const atStart = scrollContainer.scrollLeft <= 3;
+  const atEnd = scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 4;
+  prevBtn.disabled = atStart;
+  nextBtn.disabled = atEnd;
+}
+
+function renderRoutineHistory(habits) {
+  const container = document.getElementById("routineHistoryGrid");
+  const scrollContainer = document.getElementById("routineHistoryScrollContainer");
+  const prevBtn = document.getElementById("historySidePrevBtn");
+  const nextBtn = document.getElementById("historySideNextBtn");
+  const restoreBtn = document.getElementById("historyRestoreBtn");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const hiddenMonths = Array.isArray(state.routineTracker?.hiddenHistoryMonths)
+    ? state.routineTracker.hiddenHistoryMonths
+    : [];
+  const hiddenSet = new Set(hiddenMonths);
+
+  const prevMonths = getPreviousMonthsList(routineActiveMonth, 12);
+  const visibleMonths = prevMonths.filter(m => !hiddenSet.has(m));
+
+  // Botón restaurar en cabecera
+  if (restoreBtn) {
+    if (hiddenSet.size > 0 && prevMonths.length > 0) {
+      restoreBtn.style.display = "inline-flex";
+      restoreBtn.textContent = `Restaurar (${hiddenSet.size})`;
+      restoreBtn.onclick = () => {
+        state.routineTracker.hiddenHistoryMonths = [];
+        saveState();
+        renderRoutineTracker();
+        showToast("Meses ocultos restaurados.");
+      };
+    } else {
+      restoreBtn.style.display = "none";
+    }
+  }
+
+  if (!prevMonths || prevMonths.length === 0) {
+    if (prevBtn) prevBtn.style.visibility = "hidden";
+    if (nextBtn) nextBtn.style.visibility = "hidden";
+    container.innerHTML = `
+      <div class="history-empty-state">
+        <span class="history-empty-icon">📅</span>
+        <div class="history-empty-text">
+          <strong>Sin meses anteriores registrados</strong>
+          <span>Estás en el inicio del periodo o no hay registros previos. Conforme completes hábitos cada mes, aquí podrás consultar tu evolución y hábitos destacados.</span>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (visibleMonths.length === 0) {
+    if (prevBtn) prevBtn.style.visibility = "hidden";
+    if (nextBtn) nextBtn.style.visibility = "hidden";
+    container.innerHTML = `
+      <div class="history-empty-state">
+        <span class="history-empty-icon">👁️</span>
+        <div class="history-empty-text">
+          <strong>Todos los meses anteriores están ocultos</strong>
+          <span>Has ocultado todos los meses previos del resumen. Puedes restablecerlos para volver a verlos.</span>
+          <div style="margin-top: 8px;">
+            <button type="button" class="history-restore-btn" id="historyRestoreAllBtn">Restaurar todos los meses (${hiddenSet.size})</button>
+          </div>
+        </div>
+      </div>
+    `;
+    const restoreAllBtn = document.getElementById("historyRestoreAllBtn");
+    if (restoreAllBtn) {
+      restoreAllBtn.onclick = () => {
+        state.routineTracker.hiddenHistoryMonths = [];
+        saveState();
+        renderRoutineTracker();
+        showToast("Meses ocultos restaurados.");
+      };
+    }
+    return;
+  }
+
+  // Orden cronológico: de más antiguo a más reciente
+  const sortedMonths = visibleMonths.slice().reverse();
+  const visibleCount = sortedMonths.length;
+  container.dataset.count = visibleCount === 1 ? "1" : (visibleCount === 2 ? "2" : "multi");
+
+  // Si hay 1 o 2 tarjetas visibles, llenan todo el ancho y no se necesita scroll lateral
+  if (visibleCount <= 2) {
+    if (prevBtn) prevBtn.style.visibility = "hidden";
+    if (nextBtn) nextBtn.style.visibility = "hidden";
+  }
+
+  sortedMonths.forEach(mKey => {
+    const stats = getRoutineMonthStats(mKey, habits);
+    const priorKey = shiftMonthKey(mKey, -1);
+    const priorStats = getRoutineMonthStats(priorKey, habits);
+
+    let trendHtml = "";
+    if (stats.hasData && priorStats.hasData) {
+      const diff = stats.globalPct - priorStats.globalPct;
+      if (diff > 0.05) {
+        trendHtml = `<span class="history-month-trend up" title="Comparado con el mes anterior">↑ +${diff.toFixed(1)}%</span>`;
+      } else if (diff < -0.05) {
+        trendHtml = `<span class="history-month-trend down" title="Comparado con el mes anterior">↓ ${diff.toFixed(1)}%</span>`;
+      } else {
+        trendHtml = `<span class="history-month-trend neutral" title="Comparado con el mes anterior">= 0%</span>`;
+      }
+    } else if (stats.hasData && !priorStats.hasData) {
+      trendHtml = `<span class="history-month-trend up" title="Inicio de registro">★ Activo</span>`;
+    } else {
+      trendHtml = `<span class="history-month-trend neutral">—</span>`;
+    }
+
+    const pctFormatted = stats.globalPct.toFixed(1);
+    const activeDaysPct = stats.daysInMonth > 0 ? Math.round((stats.activeDays / stats.daysInMonth) * 100) : 0;
+
+    const card = document.createElement("div");
+    card.className = "history-month-card";
+    card.dataset.month = mKey;
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("title", `Haz clic para navegar a ${stats.title}`);
+
+    const hideBtnHtml = `
+      <button type="button" class="history-hide-btn" data-hide-month="${mKey}" title="Ocultar ${stats.title} del resumen" aria-label="Ocultar mes">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    `;
+
+    if (visibleCount === 1) {
+      // 1 SOLO MES VISIBLE: Layout enriquecido a pantalla completa
+      card.innerHTML = `
+        <div class="history-month-header">
+          <div class="history-header-left">
+            <span class="history-month-title">${stats.title}</span>
+            ${trendHtml}
+          </div>
+          <div class="history-header-right">
+            ${hideBtnHtml}
+          </div>
+        </div>
+
+        <div class="history-expanded-grid">
+          <div class="history-expanded-left">
+            <div class="history-month-main">
+              <span class="history-month-pct">${pctFormatted}%</span>
+              <span class="history-month-checks">${stats.grandDone} / ${stats.grandGoal} completados</span>
+            </div>
+            <div class="history-month-bar-wrap">
+              <div class="history-month-bar-fill" style="width: ${Math.min(100, Math.max(0, stats.globalPct))}%;"></div>
+            </div>
+            <div class="history-pills-row">
+              <span class="history-kpi-pill">📅 <strong>${stats.activeDays}/${stats.daysInMonth} d</strong> activos (${activeDaysPct}%)</span>
+              ${stats.bestDay ? `<span class="history-kpi-pill">⚡ Mejor día: <strong>día ${stats.bestDay.day}</strong> (${stats.bestDay.count})</span>` : ""}
+              ${stats.completedHabitsCount > 0 ? `<span class="history-kpi-pill">🏆 <strong>${stats.completedHabitsCount}</strong> al 100%</span>` : ""}
+            </div>
+          </div>
+
+          <div class="history-expanded-right">
+            <span class="history-expanded-right-title">Hábitos más destacados</span>
+            <div class="history-top-habits-list">
+              ${stats.topHabits.length > 0 ? stats.topHabits.map((th, i) => `
+                <div class="history-top-habit-item">
+                  <span class="history-top-habit-name">
+                    <span style="color:var(--muted); font-size:0.7rem;">#${i+1}</span> ${escapeHtml(th.habit.emoji || "⭐")} ${escapeHtml(th.habit.name)}
+                  </span>
+                  <div class="history-top-habit-right">
+                    <div class="history-mini-bar">
+                      <div class="history-mini-bar-fill" style="width: ${Math.min(100, th.pct)}%;"></div>
+                    </div>
+                    <span class="history-top-habit-pct">${th.pct.toFixed(0)}%</span>
+                  </div>
+                </div>
+              `).join("") : `<span style="font-size:0.75rem; color:var(--muted)">Sin hábitos completados en este mes</span>`}
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (visibleCount === 2) {
+      // 2 MESES VISIBLES: Layout ampliado al 50% con top hábitos y mejores marcas
+      card.innerHTML = `
+        <div class="history-month-header">
+          <div class="history-header-left">
+            <span class="history-month-title">${stats.title}</span>
+            ${trendHtml}
+          </div>
+          <div class="history-header-right">
+            ${hideBtnHtml}
+          </div>
+        </div>
+
+        <div class="history-month-main">
+          <span class="history-month-pct">${pctFormatted}%</span>
+          <span class="history-month-checks">${stats.grandDone} / ${stats.grandGoal}</span>
+        </div>
+
+        <div class="history-month-bar-wrap">
+          <div class="history-month-bar-fill" style="width: ${Math.min(100, Math.max(0, stats.globalPct))}%;"></div>
+        </div>
+
+        <div class="history-month-meta">
+          <div class="history-meta-row">
+            <span class="history-meta-label">Días activos</span>
+            <span class="history-meta-value">${stats.activeDays}/${stats.daysInMonth} d (${activeDaysPct}%)</span>
+          </div>
+          ${stats.bestDay ? `
+            <div class="history-meta-row">
+              <span class="history-meta-label">Mejor día</span>
+              <span class="history-meta-value">Día ${stats.bestDay.day} (${stats.bestDay.count} hábitos)</span>
+            </div>
+          ` : ""}
+          <div class="history-top-habits-list" style="margin-top:2px;">
+            ${stats.topHabits.slice(0, 2).map((th, i) => `
+              <div class="history-top-habit-item">
+                <span class="history-top-habit-name">
+                  ${escapeHtml(th.habit.emoji || "⭐")} ${escapeHtml(th.habit.name)}
+                </span>
+                <div class="history-top-habit-right">
+                  <div class="history-mini-bar" style="width: 36px;">
+                    <div class="history-mini-bar-fill" style="width: ${Math.min(100, th.pct)}%;"></div>
+                  </div>
+                  <span class="history-top-habit-pct">${th.pct.toFixed(0)}%</span>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    } else {
+      // 3 O MÁS MESES: Modo carrusel compacto
+      const topHabitDisplay = stats.topHabit 
+        ? `${escapeHtml(stats.topHabit.habit.emoji || "⭐")} ${escapeHtml(stats.topHabit.habit.name)} (${stats.topHabit.pct.toFixed(0)}%)`
+        : `<span style="color:var(--muted)">Sin hábitos</span>`;
+
+      card.innerHTML = `
+        <div class="history-month-header">
+          <div class="history-header-left">
+            <span class="history-month-title">${stats.title}</span>
+            ${trendHtml}
+          </div>
+          <div class="history-header-right">
+            ${hideBtnHtml}
+          </div>
+        </div>
+
+        <div class="history-month-main">
+          <span class="history-month-pct">${pctFormatted}%</span>
+          <span class="history-month-checks">${stats.grandDone} / ${stats.grandGoal}</span>
+        </div>
+
+        <div class="history-month-bar-wrap">
+          <div class="history-month-bar-fill" style="width: ${Math.min(100, Math.max(0, stats.globalPct))}%;"></div>
+        </div>
+
+        <div class="history-month-meta">
+          <div class="history-meta-row">
+            <span class="history-meta-label">Días activos</span>
+            <span class="history-meta-value">${stats.activeDays} / ${stats.daysInMonth} d (${activeDaysPct}%)</span>
+          </div>
+          <div class="history-meta-row">
+            <span class="history-meta-label">Top hábito</span>
+            <span class="history-meta-value" title="${stats.topHabit ? escapeHtml(stats.topHabit.habit.name) : ''}">${topHabitDisplay}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Evento para el botón de ocultar
+    const hideBtn = card.querySelector(`[data-hide-month="${mKey}"]`);
+    if (hideBtn) {
+      hideBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!Array.isArray(state.routineTracker.hiddenHistoryMonths)) {
+          state.routineTracker.hiddenHistoryMonths = [];
+        }
+        if (!state.routineTracker.hiddenHistoryMonths.includes(mKey)) {
+          state.routineTracker.hiddenHistoryMonths.push(mKey);
+        }
+        saveState();
+        renderRoutineTracker();
+        showToast(`Mes ${stats.title} ocultado del resumen.`);
+      });
+    }
+
+    // Clic en la tarjeta para navegar a ese mes
+    card.addEventListener("click", () => {
+      routineActiveMonth = mKey;
+      renderRoutineTracker();
+    });
+
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        routineActiveMonth = mKey;
+        renderRoutineTracker();
+      }
+    });
+
+    container.appendChild(card);
+  });
+
+  if (scrollContainer && visibleCount > 2) {
+    requestAnimationFrame(() => {
+      if (scrollContainer.dataset.lastActiveMonth !== routineActiveMonth) {
+        scrollContainer.dataset.lastActiveMonth = routineActiveMonth;
+        scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+      }
+      updateHistoryArrowStates();
+    });
+  }
+}
+
 // --- Controladores y Renderizadores de Checklist (Tareas) ---
 
 function handleHorizontalViewSwipe(event) {
@@ -4551,7 +5001,7 @@ function handleHorizontalViewSwipe(event) {
     return;
   }
 
-  if (eventTarget instanceof Element && eventTarget.closest(".table-scroll-container")) {
+  if (eventTarget instanceof Element && (eventTarget.closest(".table-scroll-container") || eventTarget.closest(".routine-history-card"))) {
     horizontalViewSwipeDistance = 0;
     return;
   }
@@ -5523,9 +5973,9 @@ function openPeriodReportModal() {
 
   const { totalHours, totalStudy, totalTracks, activeDays, keys, averageRating, totalsBySubject, totalsByTrack } = latestStats;
 
-  document.getElementById("repTotalHours").textContent = `${formatNumber(totalHours)} h`;
-  document.getElementById("repStudyHours").textContent = `${formatNumber(totalStudy)} h`;
-  document.getElementById("repHobbyHours").textContent = `${formatNumber(totalTracks)} h`;
+  document.getElementById("repTotalHours").textContent = formatTime(totalHours);
+  document.getElementById("repStudyHours").textContent = formatTime(totalStudy);
+  document.getElementById("repHobbyHours").textContent = formatTime(totalTracks);
   document.getElementById("repActiveDays").textContent = `${activeDays}`;
 
   // Narrativa de Energía y Productividad
@@ -5534,9 +5984,9 @@ function openPeriodReportModal() {
     if (totalHours === 0) {
       narrativeEl.textContent = "Aún no hay actividad registrada en este periodo. ¡Empieza a añadir horas a tus asignaturas o hobbies para ver tu análisis de rendimiento!";
     } else if (totalStudy === 0) {
-      narrativeEl.textContent = `Este periodo ha estado completamente enfocado en el descanso y desarrollo personal. Has dedicado el 100% de tu tiempo activo (${formatNumber(totalTracks)} h) a tus hobbies y pasiones. ¡Una excelente forma de recargar energía!`;
+      narrativeEl.textContent = `Este periodo ha estado completamente enfocado en el descanso y desarrollo personal. Has dedicado el 100% de tu tiempo activo (${formatTime(totalTracks)}) a tus hobbies y pasiones. ¡Una excelente forma de recargar energía!`;
     } else if (totalTracks === 0) {
-      narrativeEl.textContent = `Has mantenido un enfoque de estudio intensivo del 100% (${formatNumber(totalStudy)} h) sin registrar tiempo en hobbies. Recuerda que mantener un equilibrio con actividades recreativas ayuda a consolidar la memoria y evitar el burnout.`;
+      narrativeEl.textContent = `Has mantenido un enfoque de estudio intensivo del 100% (${formatTime(totalStudy)}) sin registrar tiempo en hobbies. Recuerda que mantener un equilibrio con actividades recreativas ayuda a consolidar la memoria y evitar el burnout.`;
     } else {
       const studyRatio = Math.round((totalStudy / totalHours) * 100);
       const trackRatio = 100 - studyRatio;
@@ -5654,7 +6104,7 @@ function renderReportSubjectsBreakdown(sortBy = "hours") {
           <span style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(var(--accent-rgb), 0.08); color: var(--accent); font-weight: bold;">${item.type}</span>
         </div>
         <div style="font-size: 0.95rem; font-weight: 800; color: var(--ink);">
-          ${formatNumber(item.total)} h <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">(${formatNumber(ratio)}%)</span>
+          ${formatTime(item.total)} <span style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">(${formatNumber(ratio)}%)</span>
         </div>
       </div>
       <div style="width: 100%; background: var(--line); height: 6px; border-radius: 3px; overflow: hidden;">
@@ -5704,7 +6154,7 @@ function renderReportWeekdayChart(keys, currentPeriod) {
         <div style="background: var(--accent); height: 100%; width: ${(totals[i] / maxHours) * 100}%;"></div>
       </div>
       <span style="width: 100px; text-align: right; font-size: 0.84rem; font-weight: 800; color: var(--ink);">
-        ${formatNumber(totals[i])} h <small style="color: var(--muted); font-weight: 600;">(${formatNumber(avg)}h/día)</small>
+        ${formatTime(totals[i])} <small style="color: var(--muted); font-weight: 600;">(${formatTime(avg)}/día)</small>
       </span>
     `;
     container.appendChild(row);
@@ -5761,7 +6211,7 @@ function renderReportMoodCorrelation(keys, currentPeriod) {
         <span style="font-size: 0.86rem; color: var(--muted); font-weight: 700;">(${c} ${c === 1 ? 'día' : 'días'})</span>
       </div>
       <div style="font-size: 0.92rem; font-weight: 800; color: var(--ink);">
-        Media de ${formatNumber(avg)} h / día
+        Media de ${formatTime(avg)} / día
       </div>
     `;
     container.appendChild(row);
@@ -5785,22 +6235,22 @@ function renderReportBadges(activePeriod) {
 
   // Insignia de Mejor Día
   if (best && best.total >= 8) {
-    badges.push({ icon: "👑", title: "Día Titánico", desc: `Lograste ${formatNumber(best.total)} horas en un solo día (${formatShortDate(best.key)}).` });
+    badges.push({ icon: "👑", title: "Día Titánico", desc: `Lograste ${formatTime(best.total)} en un solo día (${formatShortDate(best.key)}).` });
   } else if (best && best.total >= 4) {
-    badges.push({ icon: "⭐", title: "Día Excelente", desc: `Tu récord diario fue de ${formatNumber(best.total)} horas (${formatShortDate(best.key)}).` });
+    badges.push({ icon: "⭐", title: "Día Excelente", desc: `Tu récord diario fue de ${formatTime(best.total)} (${formatShortDate(best.key)}).` });
   }
 
   // Insignias de Enfoque
   if (topSubject && topSubject.total >= 20) {
-    badges.push({ icon: "📚", title: "Enfoque Láser", desc: `Dedicación máxima a ${topSubject.name} (${formatNumber(topSubject.total)} h).` });
+    badges.push({ icon: "📚", title: "Enfoque Láser", desc: `Dedicación máxima a ${topSubject.name} (${formatTime(topSubject.total)}).` });
   }
   if (topTrack && topTrack.total >= 15) {
-    badges.push({ icon: "🎨", title: "Pasión Desatada", desc: `Invertiste ${formatNumber(topTrack.total)} horas en ${topTrack.label}.` });
+    badges.push({ icon: "🎨", title: "Pasión Desatada", desc: `Invertiste ${formatTime(topTrack.total)} en ${topTrack.label}.` });
   }
 
   // Insignia de Vacaciones / Desconexión
   if (activePeriod.subjects.length === 0 && totalTracks > 0) {
-    badges.push({ icon: "🌴", title: "Maestro del Zen", desc: `Desconexión académica total con ${formatNumber(totalTracks)} h dedicadas a ti.` });
+    badges.push({ icon: "🌴", title: "Maestro del Zen", desc: `Desconexión académica total con ${formatTime(totalTracks)} dedicadas a ti.` });
   }
 
   if (totalHours >= 50) {

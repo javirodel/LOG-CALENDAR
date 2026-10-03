@@ -284,33 +284,59 @@
 
               <!-- DISPOSICIÓN PRINCIPAL DE DASHBOARD: MATRIZ Y SIDEBAR -->
               <div class="tracker-grid-layout">
-                <!-- MATRIZ DE CHECKBOXES (RUTINAS DIARIAS) -->
-                <div class="tracker-card matrix-card">
-                  <div class="card-header flex-between">
-                    <div>
-                      <h3>RUTINAS Y HÁBITOS DIARIOS</h3>
-                      <span id="matrixSubtitle" class="card-subtitle">Haz clic en las casillas para registrar el progreso diario</span>
+                <!-- COLUMNA PRINCIPAL IZQUIERDA -->
+                <div class="tracker-main-col">
+                  <!-- MATRIZ DE CHECKBOXES (RUTINAS DIARIAS) -->
+                  <div class="tracker-card matrix-card">
+                    <div class="card-header flex-between">
+                      <div>
+                        <h3>RUTINAS Y HÁBITOS DIARIOS</h3>
+                        <span id="matrixSubtitle" class="card-subtitle">Haz clic en las casillas para registrar el progreso diario</span>
+                      </div>
+                      <span class="badge-tag cyan">Control Semanal</span>
                     </div>
-                    <span class="badge-tag cyan">Control Semanal</span>
-                  </div>
-                  <div class="table-scroll-container">
-                    <table class="routine-matrix-table" id="routineMatrixTable">
-                      <!-- Rendered by JS -->
-                    </table>
+                    <div class="table-scroll-container">
+                      <table class="routine-matrix-table" id="routineMatrixTable">
+                        <!-- Rendered by JS -->
+                      </table>
+                    </div>
+
+                    <!-- SECCIÓN DE ANÁLISIS SEMANAL E HISTOGRAMA DE BARRAS -->
+                    <div class="weekly-analysis-section">
+                      <div class="card-header">
+                        <h3>ANÁLISIS SEMANAL Y HÁBITOS COMPLETADOS</h3>
+                      </div>
+                      <!-- Gráfico de Barras Diarias por Semana -->
+                      <div class="daily-bars-container" id="dailyBarsContainer">
+                        <!-- Rendered by JS -->
+                      </div>
+                      <!-- Filas Resumen COMPLETADOS / OBJETIVO / PENDIENTES / PROGRESO SEMANAL -->
+                      <div class="weekly-stats-summary" id="weeklyStatsSummary">
+                        <!-- Rendered by JS -->
+                      </div>
+                    </div>
                   </div>
 
-                  <!-- SECCIÓN DE ANÁLISIS SEMANAL E HISTOGRAMA DE BARRAS -->
-                  <div class="weekly-analysis-section">
-                    <div class="card-header">
-                      <h3>ANÁLISIS SEMANAL Y HÁBITOS COMPLETADOS</h3>
+                  <!-- RESUMEN MENSUAL DE MESES ANTERIORES -->
+                  <div class="tracker-card routine-history-card" id="routineHistoryCard">
+                    <div class="card-header flex-between">
+                      <div>
+                        <h3>RESUMEN DE MESES ANTERIORES</h3>
+                        <span class="card-subtitle">Evolución y hábitos destacados en los meses previos</span>
+                      </div>
+                      <div class="history-header-actions" style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" id="historyRestoreBtn" class="history-restore-btn" style="display: none;" title="Mostrar meses ocultos">Restaurar</button>
+                        <span class="badge-tag purple">Histórico</span>
+                      </div>
                     </div>
-                    <!-- Gráfico de Barras Diarias por Semana -->
-                    <div class="daily-bars-container" id="dailyBarsContainer">
-                      <!-- Rendered by JS -->
-                    </div>
-                    <!-- Filas Resumen COMPLETADOS / OBJETIVO / PENDIENTES / PROGRESO SEMANAL -->
-                    <div class="weekly-stats-summary" id="weeklyStatsSummary">
-                      <!-- Rendered by JS -->
+                    <div class="history-carousel-wrapper">
+                      <button type="button" class="history-side-arrow prev" id="historySidePrevBtn" title="Ver meses anteriores" aria-label="Meses anteriores">‹</button>
+                      <div class="routine-history-scroll-container" id="routineHistoryScrollContainer">
+                        <div class="routine-history-grid" id="routineHistoryGrid">
+                          <!-- Rendered by JS -->
+                        </div>
+                      </div>
+                      <button type="button" class="history-side-arrow next" id="historySideNextBtn" title="Ver meses posteriores" aria-label="Meses posteriores">›</button>
                     </div>
                   </div>
                 </div>
@@ -432,7 +458,7 @@
           </article>
         </div>
         <div class="settings-footer" style="display: flex; justify-content: flex-end; align-items: center; margin-top: 18px; font-size: 0.82rem; color: var(--muted); font-weight: bold;">
-          <span id="settingsVersionIndicator">LOG of growth • Versión 3.1.1</span>
+          <span id="settingsVersionIndicator">LOG of growth • Versión 3.2.1</span>
         </div>
       </section>
     </div>

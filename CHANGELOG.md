@@ -4,6 +4,12 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [3.2.1] - 2026-10-03
+
+### Added
+- **Resumen histórico de meses anteriores en el Tracker**: nueva tarjeta en la columna principal del tracker que aprovecha el espacio disponible para mostrar los meses previos en un carrusel fluido con flechas de desplazamiento lateral, soporte nativo de gestos táctiles con dos dedos en trackpad, porcentaje de cumplimiento global, barra de progreso, ratio de hábitos completados, días activos, hábito estrella y tendencia interactiva hacia cada mes.
+- **Ocultación y expansión dinámica de meses en el historial**: botón para descartar u ocultar meses individuales (`×`) con opción de restaurar meses ocultos. Si quedan pocos meses visibles (1 o 2), las tarjetas se expanden automáticamente para aprovechar todo el ancho disponible mostrando información enriquecida (top 3 hábitos con barras de progreso, desglose de mejor día y métricas adicionales), evitando cualquier hueco vacío.
+
 ## [3.1.1] - 2026-09-29
 
 ### Changed
@@ -11,6 +17,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ### Fixed
 - **Contador de horas totales del día**: mostraba el total en decimal crudo (ej. `4,92`) en lugar de respetar el formato legible (`4 h 55 min`). Ahora usa `formatTime` y el layout apila las horas arriba y la etiqueta debajo.
+- **Formato global en estadísticas y conteos**: total global, carga ponderada, medias diarias, mejor día, desglose por bloques/tierlists (asignaturas, deporte, hobbies), rankings avanzados e informes respetan de forma unificada el formato configurado (`hh:mm` o decimal).
 - El tiempo de las asignaturas conserva el formato de entrada elegido (`hh:mm` o decimal) al actualizar el día seleccionado.
 
 ## [3.1.0] - 2026-09-27
