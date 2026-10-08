@@ -1,4 +1,4 @@
-const APP_VERSION = "3.2.1";
+const APP_VERSION = "3.2.3";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -332,6 +332,8 @@ if (typeof initRoutineTrackerEvents === "function") {
 if (typeof renderRoutineTracker === "function") {
   renderRoutineTracker();
 }
+renderLastUpdateIndicator();
+setInterval(renderLastUpdateIndicator, 30000);
 
 if (statsPeriodSelectEl) {
   statsPeriodSelectEl.addEventListener("change", () => {
@@ -577,6 +579,11 @@ subjectFormEl.addEventListener("input", (event) => {
   if (!target.dataset.subject) return;
   const day = ensureDay(selectedDate);
   day.subjects[target.dataset.subject] = parseTimeInput(target.value);
+  recordLastUpdate({
+    source: "calendar",
+    target: target.dataset.subject,
+    type: "subject"
+  });
   onDayDataUpdated();
 });
 
@@ -586,11 +593,23 @@ focusTracksEl.addEventListener("input", (event) => {
   if (!target.dataset.track) return;
   const day = ensureDay(selectedDate);
   day.extra[target.dataset.track] = parseTimeInput(target.value);
+  const trackObj = (state.settings?.tracks || EXTRA_TRACKS || []).find(t => t.key === target.dataset.track);
+  const trackName = trackObj ? trackObj.label : target.dataset.track;
+  recordLastUpdate({
+    source: "calendar",
+    target: trackName,
+    type: "track"
+  });
   onDayDataUpdated();
 });
 
 dayNotesEl.addEventListener("input", () => {
   ensureDay(selectedDate).notes = dayNotesEl.value;
+  recordLastUpdate({
+    source: "calendar",
+    target: "Nota del día",
+    type: "note"
+  });
   saveState();
   refreshDayCell(selectedDate);
   flashAutoSave();
@@ -602,6 +621,11 @@ starsContainerEl.addEventListener("click", (event) => {
   const value = Number(star.dataset.value);
   const day = ensureDay(selectedDate);
   day.rating = day.rating === value ? 0 : value;
+  recordLastUpdate({
+    source: "calendar",
+    target: "Valoración del día",
+    type: "rating"
+  });
   saveState();
   renderRating(day.rating);
   refreshDayCell(selectedDate);
@@ -648,6 +672,128 @@ function flashAutoSave() {
   autoSaveEl.classList.add("visible");
   clearTimeout(flashAutoSave._t);
   flashAutoSave._t = setTimeout(() => autoSaveEl.classList.remove("visible"), 2000);
+}
+
+function recordLastUpdate({ source, target, type }) {
+  if (!state) return;
+  state.lastUpdate = {
+    timestamp: Date.now(),
+    source: String(source || ""),
+    target: String(target || "").trim(),
+    type: String(type || "")
+  };
+  saveState();
+  renderLastUpdateIndicator(true);
+}
+
+function formatRelativeTime(ts) {
+  if (!ts) return "";
+  const now = Date.now();
+  const diffSec = Math.max(0, Math.floor((now - ts) / 1000));
+  if (diffSec < 20) return "hace un momento";
+  if (diffSec < 60) return `hace ${diffSec} s`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin === 1) return "hace 1 min";
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours === 1) return "hace 1 h";
+  if (diffHours < 6) return `hace ${diffHours} h`;
+
+  const d = new Date(ts);
+  const nowDate = new Date(now);
+  const isToday = d.toDateString() === nowDate.toDateString();
+  const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+  if (isToday) {
+    return `hoy a las ${timeStr}`;
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(nowDate.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+  if (isYesterday) {
+    return `ayer a las ${timeStr}`;
+  }
+
+  const dayMonth = d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  return `${dayMonth} a las ${timeStr}`;
+}
+
+function renderLastUpdateIndicator(animate = false) {
+  const container = document.getElementById("topbarLastUpdate");
+  const timeEl = document.getElementById("lastUpdateTime");
+  const detailEl = document.getElementById("lastUpdateDetail");
+  const dotEl = document.getElementById("lastUpdateDot");
+  if (!container || !timeEl || !detailEl || !dotEl) return;
+
+  const lastUpdate = state?.lastUpdate;
+  if (!lastUpdate || !lastUpdate.timestamp) {
+    dotEl.classList.remove("is-active", "pulse");
+    timeEl.textContent = "Última actualización: —";
+    detailEl.textContent = "Sin registros recientes";
+    container.setAttribute("title", "No hay modificaciones registradas todavía");
+    return;
+  }
+
+  dotEl.classList.add("is-active");
+  if (animate) {
+    dotEl.classList.remove("pulse");
+    void dotEl.offsetWidth;
+    dotEl.classList.add("pulse");
+  }
+
+  const relativeTime = formatRelativeTime(lastUpdate.timestamp);
+  timeEl.textContent = `Última actualización: ${relativeTime}`;
+
+  let sourceLabel = "";
+  let typeLabel = "";
+  const subSingular = state?.settings?.subjectsLabelSingular || "Asignatura";
+  const hobSingular = state?.settings?.hobbiesLabelSingular || "Hobby";
+
+  if (lastUpdate.source === "calendar") {
+    sourceLabel = "Calendario";
+    if (lastUpdate.type === "subject") {
+      typeLabel = `${subSingular}: ${lastUpdate.target}`;
+    } else if (lastUpdate.type === "track") {
+      typeLabel = `${hobSingular}: ${lastUpdate.target}`;
+    } else if (lastUpdate.type === "note") {
+      typeLabel = "Nota del día";
+    } else if (lastUpdate.type === "rating") {
+      typeLabel = "Valoración del día";
+    } else if (lastUpdate.type === "event") {
+      typeLabel = lastUpdate.target || "Evento";
+    } else {
+      typeLabel = lastUpdate.target || "Registro";
+    }
+  } else if (lastUpdate.source === "tracker") {
+    sourceLabel = "Tracker";
+    if (lastUpdate.type === "habit") {
+      typeLabel = `Hábito: ${lastUpdate.target}`;
+    } else {
+      typeLabel = lastUpdate.target || "Hábito";
+    }
+  } else if (lastUpdate.source === "tasks") {
+    sourceLabel = "Tareas";
+    typeLabel = lastUpdate.target || "Tarea";
+  } else {
+    sourceLabel = lastUpdate.source || "General";
+    typeLabel = lastUpdate.target || "";
+  }
+
+  const detailText = typeLabel ? `${sourceLabel} · ${typeLabel}` : sourceLabel;
+  detailEl.textContent = detailText;
+
+  const exactDate = new Date(lastUpdate.timestamp);
+  const formattedFull = exactDate.toLocaleString("es-ES", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+  container.setAttribute("title", `Última actualización: ${formattedFull}\n${detailText}`);
 }
 
 function renameSubjectsPrompt() {
@@ -826,14 +972,26 @@ function createFallbackState() {
     routineTracker: {
       habits: getDefaultRoutineHabits(),
       monthlyChecks: {},
-      matrixScrollLeft: 0
-    }
+      hiddenHistoryMonths: []
+    },
+    lastUpdate: null
   };
 }
 
 function normalizeState(candidate) {
   const normalized = createFallbackState();
   if (!candidate || typeof candidate !== "object") return normalized;
+
+  if (candidate.lastUpdate && typeof candidate.lastUpdate === "object") {
+    normalized.lastUpdate = {
+      timestamp: Number(candidate.lastUpdate.timestamp) || 0,
+      source: String(candidate.lastUpdate.source || ""),
+      target: String(candidate.lastUpdate.target || ""),
+      type: String(candidate.lastUpdate.type || "")
+    };
+  } else {
+    normalized.lastUpdate = null;
+  }
 
   if (candidate.days && typeof candidate.days === "object") {
     normalized.days = candidate.days;
@@ -1649,6 +1807,13 @@ function addCustomEvent(event) {
     day.customEvents.push(payload);
   }
 
+  const eventLabel = type === "exam" && subjectName ? `Examen: ${subjectName}` : `Evento "${text}"`;
+  recordLastUpdate({
+    source: "calendar",
+    target: eventLabel,
+    type: "event"
+  });
+
   closeEventEntry();
   saveState();
   refreshDayCell(selectedDate);
@@ -1749,7 +1914,13 @@ function createCustomEventCategory(label, color) {
 
 function removeCustomEvent(index) {
   const day = ensureDay(selectedDate);
+  const removed = day.customEvents[index];
   day.customEvents.splice(index, 1);
+  recordLastUpdate({
+    source: "calendar",
+    target: removed ? `Evento "${removed.text || "eliminado"}"` : "Evento eliminado",
+    type: "event"
+  });
   saveState();
   refreshDayCell(selectedDate);
   renderNotices();
@@ -3323,6 +3494,7 @@ function importData(event) {
         refreshChecklistAll();
       }
       updateDynamicLabels();
+      renderLastUpdateIndicator();
       showToast("Datos importados.");
     } catch {
       showToast("No se pudo importar el archivo.");
@@ -3950,6 +4122,11 @@ function initRoutineTrackerEvents() {
       if (confirm(`¿Vaciar todas las marcas registradas de este mes (${formatMonthKeyTitle(routineActiveMonth)})?`)) {
         if (state.routineTracker && state.routineTracker.monthlyChecks) {
           delete state.routineTracker.monthlyChecks[routineActiveMonth];
+          recordLastUpdate({
+            source: "tracker",
+            target: "Marcas del mes vaciadas",
+            type: "habit"
+          });
           saveState();
           renderRoutineTracker();
           showToast("Marcas del mes vaciadas.");
@@ -4057,6 +4234,12 @@ function initRoutineTrackerEvents() {
         state.routineTracker.habits.push(newHabit);
       }
 
+      recordLastUpdate({
+        source: "tracker",
+        target: name,
+        type: "habit"
+      });
+
       saveState();
       closeHabitModal();
       renderRoutineTracker();
@@ -4070,7 +4253,13 @@ function initRoutineTrackerEvents() {
   if (habitDeleteBtn) {
     habitDeleteBtn.addEventListener("click", () => {
       if (editingHabitTarget && confirm("¿Eliminar este hábito de la lista?")) {
+        const habit = state.routineTracker.habits.find(h => h.id === editingHabitTarget);
         state.routineTracker.habits = state.routineTracker.habits.filter(h => h.id !== editingHabitTarget);
+        recordLastUpdate({
+          source: "tracker",
+          target: habit ? `Hábito "${habit.name}" eliminado` : "Hábito eliminado",
+          type: "habit"
+        });
         saveState();
         closeHabitModal();
         renderRoutineTracker();
@@ -4184,12 +4373,12 @@ function renderRoutineTracker() {
   let grandDone = 0;
   let grandGoal = 0;
   habits.forEach(h => {
-    const goal = h.goal || daysInMonth;
+    const goal = Math.min(daysInMonth, Math.max(1, Number(h.goal) || daysInMonth));
     grandDone += donePerHabit[h.id];
     grandGoal += goal;
   });
 
-  const globalPct = grandGoal > 0 ? ((grandDone / grandGoal) * 100).toFixed(1) : "0.0";
+  const globalPct = grandGoal > 0 ? Math.min(100, (grandDone / grandGoal) * 100).toFixed(1) : "0.0";
 
   // Summary Badge
   const summaryBadge = document.getElementById("trendMonthSummaryBadge");
@@ -4343,7 +4532,7 @@ function renderRoutineMatrixTable(year, month, daysInMonth, habits, checksMap) {
     bodyHtml += `<tr><td colspan="${daysInMonth + 2}" style="padding: 30px; color: var(--muted);">No hay hábitos definidos. Pulsa <strong>+ Añadir Hábito</strong> para comenzar.</td></tr>`;
   } else {
     habits.forEach(h => {
-      const goal = h.goal || daysInMonth;
+      const goal = Math.min(daysInMonth, Math.max(1, Number(h.goal) || daysInMonth));
       bodyHtml += `
         <tr>
           <td class="routine-name-td">
@@ -4414,6 +4603,14 @@ function toggleHabitCheck(habitId, dayNum) {
   const current = !!state.routineTracker.monthlyChecks[routineActiveMonth][habitId][dayNum];
   state.routineTracker.monthlyChecks[routineActiveMonth][habitId][dayNum] = !current;
 
+  const habit = (state.routineTracker.habits || []).find(h => h.id === habitId);
+  const habitName = habit ? habit.name : "Hábito";
+  recordLastUpdate({
+    source: "tracker",
+    target: habitName,
+    type: "habit"
+  });
+
   saveState();
   renderRoutineTracker();
 }
@@ -4424,6 +4621,11 @@ function updateHabitGoalInline(habitId, newGoalValue) {
   const habit = state.routineTracker.habits.find(h => h.id === habitId);
   if (habit) {
     habit.goal = val;
+    recordLastUpdate({
+      source: "tracker",
+      target: habit.name,
+      type: "habit"
+    });
     saveState();
     renderRoutineTracker();
     showToast(`Objetivo de "${habit.name}" actualizado a ${val} días`);
@@ -4516,10 +4718,9 @@ function renderRoutineOverview(grandDone, grandGoal, globalPct, habits, donePerH
   if (overviewList) {
     let listHtml = "";
     habits.forEach(h => {
-      const goal = h.goal || daysInMonth;
+      const goal = Math.min(daysInMonth, Math.max(1, Number(h.goal) || daysInMonth));
       const done = donePerHabit[h.id] || 0;
-      const open = Math.max(0, goal - done);
-      const pct = goal > 0 ? Math.round((done / goal) * 100) : 0;
+      const pct = goal > 0 ? Math.min(100, Math.round((done / goal) * 100)) : 0;
 
       listHtml += `
         <div class="habit-overview-item">
@@ -4528,7 +4729,7 @@ function renderRoutineOverview(grandDone, grandGoal, globalPct, habits, donePerH
             <span>${escapeHtml(h.name)}</span>
           </span>
           <div class="habit-info-stats">
-            <span class="habit-stat-badge" title="Completados / Pendientes">${done} / ${open}</span>
+            <span class="habit-stat-badge" title="Registros / objetivo mensual">${done} / ${goal}</span>
             <span style="font-size:0.75rem; font-weight:800; color:var(--accent-dark); width:34px; text-align:right;">${pct}%</span>
             <div class="habit-inline-bar">
               <div class="habit-inline-fill" style="width: ${pct}%;"></div>
@@ -4546,9 +4747,9 @@ function renderRoutineRanking(habits, donePerHabit, daysInMonth) {
   if (!rankingList) return;
 
   const sorted = habits.map(h => {
-    const goal = h.goal || daysInMonth;
+    const goal = Math.min(daysInMonth, Math.max(1, Number(h.goal) || daysInMonth));
     const done = donePerHabit[h.id] || 0;
-    const pct = goal > 0 ? (done / goal) * 100 : 0;
+    const pct = goal > 0 ? Math.min(100, (done / goal) * 100) : 0;
     return { ...h, done, goal, pct };
   }).sort((a, b) => b.pct - a.pct);
 
@@ -4566,7 +4767,7 @@ function renderRoutineRanking(habits, donePerHabit, daysInMonth) {
           <span class="rank-number ${rankClass}">${rank}</span>
           <span class="ranking-name">${h.emoji || "⭐"} ${escapeHtml(h.name)}</span>
         </div>
-        <span class="ranking-pct-pill">${h.pct.toFixed(0)}%</span>
+        <span class="ranking-pct-pill" title="${h.done} registros de ${h.goal} días objetivo">${h.done}/${h.goal} · ${h.pct.toFixed(0)}%</span>
       </div>
     `;
   });
@@ -4604,14 +4805,14 @@ function getRoutineMonthStats(mKey, habits) {
         donePerDay[d]++;
       }
     }
-    const goal = h.goal || daysInMonth;
+    const goal = Math.min(daysInMonth, Math.max(1, Number(h.goal) || daysInMonth));
     grandDone += done;
     grandGoal += goal;
-    const pct = goal > 0 ? (done / goal) * 100 : 0;
+    const pct = goal > 0 ? Math.min(100, (done / goal) * 100) : 0;
     habitPerformances.push({ habit: h, done, goal, pct });
   });
 
-  const globalPct = grandGoal > 0 ? (grandDone / grandGoal) * 100 : 0;
+  const globalPct = grandGoal > 0 ? Math.min(100, (grandDone / grandGoal) * 100) : 0;
   habitPerformances.sort((a, b) => b.pct - a.pct || b.done - a.done);
 
   // Mejor día del mes
@@ -5250,6 +5451,12 @@ function saveTask(event) {
     showToast("Tarea añadida.");
   }
   
+  recordLastUpdate({
+    source: "tasks",
+    target: text,
+    type: "task"
+  });
+
   closeTaskEntry();
   saveState();
   refreshChecklistAll();
@@ -5315,6 +5522,11 @@ function toggleTaskCompletion(taskId) {
   if (!task) return;
   task.completed = !task.completed;
   task.completedAt = task.completed ? new Date().toISOString() : "";
+  recordLastUpdate({
+    source: "tasks",
+    target: task.text || task.title || "Tarea",
+    type: "task"
+  });
   saveState();
   refreshChecklistAll();
   if (task.dueDate) {
@@ -5764,6 +5976,12 @@ function saveChecklistInPageTask(event) {
   state.checklistTasks.push(newTask);
   showToast("Tarea añadida.");
   
+  recordLastUpdate({
+    source: "tasks",
+    target: text,
+    type: "task"
+  });
+
   checklistAddFormEl.reset();
   if (checklistTaskDescriptionEl) checklistTaskDescriptionEl.value = "";
   checklistTaskDueDateEl.value = selectedDate;

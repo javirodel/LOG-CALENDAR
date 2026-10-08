@@ -4,6 +4,19 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [3.2.3] - 2026-10-08
+
+### Added
+- **Indicador dinámico de última actualización en la cabecera**: nuevo indicador en la esquina superior derecha (lado opuesto del título principal) con tipografía fina y discreta que muestra en tiempo real cuándo fue la última vez que se introdujo un dato en la aplicación.
+  - Identifica con precisión la sección y el elemento modificado: si fue en el Calendario (detallando la asignatura o hobby concreto, nota del día, valoración o evento), en el Tracker (detallando el hábito marcado o editado) o en Tareas.
+  - Contador dinámico de tiempo relativo que se actualiza periódicamente ("hace un momento", "hace 5 min", "hoy a las..."), con punto de estado verde esmeralda que emite un pulso suave al guardar y tooltip con fecha y hora completas al pasar el cursor.
+  - Persistencia automática en el almacenamiento local y compatibilidad con copias de seguridad JSON.
+
+## [3.2.2] - 2026-10-06
+
+### Fixed
+- **Conteo del cumplimiento global del Tracker**: el total refleja todos los días marcados en la matriz, incluso cuando se supera el objetivo. Cada hábito muestra sus registros frente a su objetivo mensual, igual que el ranking; los porcentajes se limitan al 100 %.
+
 ## [3.2.1] - 2026-10-03
 
 ### Added
