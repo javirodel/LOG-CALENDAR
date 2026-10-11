@@ -41,3 +41,9 @@ Thumbs.db
 node_modules/
 tmp/
 temp/
+
+# Documentos internos o sensibles del proyecto
+/audit_report.md
+/GUIA_IA.md
+/seguridad.md
+MDs/

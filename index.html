@@ -3,20 +3,20 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Log Calendar</title>
+    <title>LOG CALENDAR</title>
     <link rel="stylesheet" href="styles.css">
-    <script>
-      // Prevent flash of light theme
-      if (localStorage.getItem("LOG-calendar-dark-mode") === "1") {
-        document.documentElement.setAttribute("data-theme", "dark");
-      }
-    </script>
+    <link rel="manifest" href="assets/manifest.webmanifest">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LOG Calendar">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Tracker local</p>
           <h1 id="calendarTitle">LOG CALENDAR</h1>
           <p class="subtitle" id="calendarSubtitle">LOG is LOG of Growth</p>
         </div>
@@ -26,7 +26,7 @@
               <span class="last-update-dot" id="lastUpdateDot"></span>
               <span class="last-update-time" id="lastUpdateTime">Última actualización: —</span>
             </div>
-            <div class="last-update-detail" id="lastUpdateDetail">Sin registros recientes</div>
+            <div class="last-update-detail" id="lastUpdateDetail" data-i18n="topbar.noRecords">Sin registros recientes</div>
           </div>
         </div>
       </header>
@@ -38,17 +38,17 @@
             <section class="calendar-pane" aria-label="Calendario interactivo">
               <div class="calendar-toolbar">
                 <div>
-                  <h2>Mapa de horas</h2>
-                  <p id="visibleRangeLabel">Selecciona un día para editar estudio, actividades y eventos.</p>
+                  <h2 data-i18n="calendar.hoursMap">Mapa de horas</h2>
+                  <p id="visibleRangeLabel" data-i18n="calendar.visibleRangeHelp">Selecciona un día para editar estudio, actividades y eventos.</p>
                 </div>
                 <div class="calendar-legends">
                   <div class="legend" aria-label="Leyenda de intensidad">
-                    <span>0 h</span>
+                    <span data-i18n="calendar.legendMin">0 h</span>
                     <span class="swatch level-1"></span>
                     <span class="swatch level-2"></span>
                     <span class="swatch level-3"></span>
                     <span class="swatch level-4"></span>
-                    <span>10+ h</span>
+                    <span data-i18n="calendar.legendMax">10+ h</span>
                   </div>
                   <div class="marker-legend" id="eventLegend" aria-label="Leyenda de marcadores">
                     <!-- JS renders this -->
@@ -57,9 +57,9 @@
               </div>
 
               <div class="month-nav-strip" aria-label="Navegación de meses">
-                <button class="icon-button month-nav-button" id="prevMonthsBtn" type="button" aria-label="Ver dos meses anteriores">‹</button>
+                <button class="icon-button month-nav-button" id="prevMonthsBtn" type="button" aria-label="Ver dos meses anteriores" data-i18n-title="calendar.prevMonths">‹</button>
                 <strong id="visibleMonthPairTitle">Enero 2026 · Febrero 2026</strong>
-                <button class="icon-button month-nav-button" id="nextMonthsBtn" type="button" aria-label="Ver dos meses siguientes">›</button>
+                <button class="icon-button month-nav-button" id="nextMonthsBtn" type="button" aria-label="Ver dos meses siguientes" data-i18n-title="calendar.nextMonths">›</button>
               </div>
 
               <div class="months" id="months"></div>
@@ -68,23 +68,19 @@
             <section class="stats-section" aria-label="Resumen y estadísticas">
               <div class="stats-header">
                 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                  <h2 style="margin: 0;">Estadísticas principales</h2>
+                  <h2 style="margin: 0; cursor: pointer;" id="statsHeaderTitle" data-i18n="stats.mainStats" data-i18n-title="stats.fullAnalysis" title="Ver informe analítico completo en Perfil">Estadísticas principales</h2>
                   <select id="statsPeriodSelect" class="stats-period-select" style="min-height: 32px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 4px 8px; color: var(--ink); font-weight: 700; font-size: 0.84rem; cursor: pointer; outline: none;">
-                    <option value="all">Todo el historial</option>
+                    <option value="all" data-i18n="stats.allHistory">Todo el historial</option>
                   </select>
-                  <button id="generateReportBtn" class="primary-button" style="padding: 4px 12px; font-size: 0.82rem; min-height: 32px; display: none; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.3);">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                    Informe Avanzado
-                  </button>
                 </div>
                 <div class="stat-pill-wrap">
-                  <div class="stat-pill">
+                  <div class="stat-pill" id="statPillGrandTotal" style="cursor: pointer;" title="Ver desglose en Perfil">
                     <span id="grandTotal">0 h</span>
-                    <small id="grandTotalLabel">total global</small>
+                    <small id="grandTotalLabel" data-i18n="stats.grandTotalLabel">total global</small>
                   </div>
-                  <div class="stat-pill secondary">
+                  <div class="stat-pill secondary" id="statPillWeightedLoad" style="cursor: pointer;" title="Ver desglose en Perfil">
                     <span id="weightedLoad">0</span>
-                    <small id="weightedLoadLabel">carga ponderada</small>
+                    <small id="weightedLoadLabel" data-i18n="stats.weightedLoadLabel">carga ponderada</small>
                   </div>
                 </div>
               </div>
@@ -92,63 +88,63 @@
               <div class="metric-grid" id="metricsGrid">
                 <article>
                   <span id="avgPerDay">0 h</span>
-                  <p id="avgPerDayLabel">media diaria</p>
+                  <p id="avgPerDayLabel" data-i18n="stats.avgPerDayLabel">media diaria</p>
                 </article>
                 <article>
                   <span id="avgActiveDay">0 h</span>
-                  <p id="avgActiveDayLabel">media en días activos</p>
+                  <p id="avgActiveDayLabel" data-i18n="stats.avgActiveDayLabel">media en días activos</p>
                 </article>
                 <article>
                   <span id="bestDay">-</span>
-                  <p id="bestDayLabel">mejor día académico</p>
+                  <p id="bestDayLabel" data-i18n="stats.bestDayLabel">mejor día académico</p>
                 </article>
                 <article>
                   <span id="streak">0</span>
-                  <p id="streakLabel">racha de días seguidos con estudio</p>
+                  <p id="streakLabel" data-i18n="stats.streakLabel">racha de días seguidos con estudio</p>
                 </article>
                 <article>
                   <span id="studyFocus">0%</span>
-                  <p id="studyFocusLabel">foco en estudio</p>
+                  <p id="studyFocusLabel" data-i18n="stats.studyFocusLabel">foco en estudio</p>
                 </article>
                 <article>
                   <span id="hobbyFocus">0%</span>
-                  <p id="hobbyFocusLabel">foco en hobbies</p>
+                  <p id="hobbyFocusLabel" data-i18n="stats.hobbyFocusLabel">foco en hobbies</p>
                 </article>
                 <article>
                   <span id="topSubject">-</span>
-                  <p id="topSubjectLabel">asignatura dominante</p>
+                  <p id="topSubjectLabel" data-i18n="stats.topSubjectLabel">asignatura dominante</p>
                 </article>
                 <article>
                   <span id="topTrack">-</span>
-                  <p id="topTrackLabel">hobby dominante</p>
+                  <p id="topTrackLabel" data-i18n="stats.topTrackLabel">hobby dominante</p>
                 </article>
                 <article>
                   <span id="avgRating">—</span>
-                  <p id="avgRatingLabel">valoración media</p>
+                  <p id="avgRatingLabel" data-i18n="stats.avgRatingLabel">valoración media</p>
                 </article>
                 <article class="metric-more">
                   <button id="moreStatsBtn" type="button">
-                    <span>Ver más</span>
-                    <p>análisis completo</p>
+                    <span data-i18n="stats.seeMore">Ver más</span>
+                    <p data-i18n="stats.fullAnalysis">análisis completo</p>
                   </button>
                 </article>
               </div>
 
               <div class="charts">
                 <div class="chart-panel" id="subjectChartPanel">
-                  <h3 id="subjectChartTitle">Horas por asignatura</h3>
+                  <h3 id="subjectChartTitle" data-i18n="stats.hoursBySubject">Horas por asignatura</h3>
                   <div class="bar-chart" id="subjectChart"></div>
                 </div>
                 <div class="chart-panel" id="hobbyFrequencyPanel" hidden>
-                  <h3>Frecuencia y constancia por hobby</h3>
+                  <h3 data-i18n="stats.hobbyFrequency">Frecuencia y constancia por hobby</h3>
                   <div class="bar-chart" id="hobbyFrequencyChart"></div>
                 </div>
                 <div class="chart-panel">
-                  <h3>Distribución de valoraciones</h3>
+                  <h3 data-i18n="stats.ratingsDistribution">Distribución de valoraciones</h3>
                   <div class="ratings-chart" id="ratingsChart"></div>
                 </div>
                 <div class="chart-panel balance-panel">
-                  <h3>Distribución global</h3>
+                  <h3 data-i18n="stats.globalDistribution">Distribución global</h3>
                   <div class="balance-chart" id="balanceChart"></div>
                 </div>
               </div>
@@ -165,33 +161,33 @@
               <hr style="border: 0; border-top: 1px solid var(--line); margin: 12px 0 16px 0;">
               
               <div class="day-tasks-section" style="border-top: 0; margin-top: 0; padding-top: 0; margin-bottom: 20px;">
-                <label class="notes-label" style="font-size: 0.94rem; margin-top: 0; margin-bottom: 12px; color: #374151;">Tareas de este día</label>
+                <label class="notes-label" style="font-size: 0.94rem; margin-top: 0; margin-bottom: 12px; color: #374151;" data-i18n="tasks.tasksThisDay">Tareas de este día</label>
                 <div class="day-tasks-list" id="checklistDayTasksList">
                   <!-- JS renders tasks due on selected day -->
                 </div>
               </div>
 
               <div class="event-form" style="border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: rgba(var(--accent-rgb), 0.03); border-color: rgba(var(--accent-rgb), 0.15); margin-bottom: 0;">
-                <label class="notes-label" style="margin-top: 0; margin-bottom: 10px; font-size: 0.94rem; color: var(--accent-dark);">Añadir tarea para este día</label>
+                <label class="notes-label" style="margin-top: 0; margin-bottom: 10px; font-size: 0.94rem; color: var(--accent-dark);" data-i18n="tasks.addTaskThisDay">Añadir tarea para este día</label>
                 <form id="checklistAddForm" class="settings-form" style="gap: 10px;">
-                  <input id="checklistTaskText" type="text" maxlength="90" placeholder="¿Qué tarea tienes pendiente?" required style="min-height: 38px;">
-                  <input id="checklistTaskDescription" type="text" maxlength="150" placeholder="Descripción breve (opcional)" style="min-height: 38px;">
+                  <input id="checklistTaskText" type="text" maxlength="90" placeholder="¿Qué tarea tienes pendiente?" required style="min-height: 38px;" data-i18n-placeholder="tasks.taskInputPlaceholder">
+                  <input id="checklistTaskDescription" type="text" maxlength="150" placeholder="Descripción breve (opcional)" style="min-height: 38px;" data-i18n-placeholder="tasks.taskDescShortPlaceholder">
                   
-                  <label for="checklistTaskLink" style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;">Vincular a proyecto</label>
+                  <label for="checklistTaskLink" style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;" data-i18n="tasks.linkProject">Vincular a proyecto</label>
                   <select id="checklistTaskLink" aria-label="Vincular a proyecto" style="min-height: 38px; font-weight: bold;">
                     <!-- JS renders subjects and tracks -->
                   </select>
                   
                   <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 8px;">
-                    <label style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;">Dificultad (1-5)
+                    <label style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;" data-i18n="tasks.difficulty">Dificultad (1-5)
                       <input id="checklistTaskDifficulty" type="number" min="1" max="5" step="1" value="3" placeholder="Dif. 1-5" style="min-height: 38px; text-align: center;">
                     </label>
-                    <label style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;">Fecha de entrega
+                    <label style="font-size: 0.78rem; font-weight: 750; margin-bottom: 2px;" data-i18n="tasks.dueDateLabel">Fecha de entrega
                       <input id="checklistTaskDueDate" type="date" style="min-height: 38px;">
                     </label>
                   </div>
                   
-                  <button class="primary-button" type="submit" style="width: 100%; min-height: 38px; margin-top: 6px;">+ Añadir Tarea</button>
+                  <button class="primary-button" type="submit" style="width: 100%; min-height: 38px; margin-top: 6px;" data-i18n="tasks.addTaskBtn">+ Añadir Tarea</button>
                 </form>
               </div>
             </section>
@@ -206,50 +202,54 @@
               <h2 id="selectedDate">1 enero 2026</h2>
               <div class="day-total">
                 <span id="selectedTotal">0 h</span>
-                <small>totales registradas</small>
+                <small data-i18n="calendar.registeredTotal">totales registradas</small>
               </div>
               <div class="day-split" id="daySplit">
                 <span id="selectedStudy">Estudio: 0 h</span>
               </div>
             </div>
 
-            <div class="notice-list" id="noticeList"></div>
- 
+            <!-- CITA MOTIVACIONAL DETERMINISTA -->
+            <div class="daily-quote-card" id="dailyQuoteCard" style="display: none;">
+              <p class="quote-text" id="dailyQuoteText"></p>
+              <small class="quote-author" id="dailyQuoteAuthor"></small>
+            </div>
 
+            <div class="notice-list" id="noticeList"></div>
 
             <div class="event-form">
-              <label class="notes-label">Evento importante</label>
-              <button class="ghost-button event-open-button" id="openEventModalBtn" type="button">Añadir evento</button>
+              <label class="notes-label" data-i18n="calendar.importantEvent">Evento importante</label>
+              <button class="ghost-button event-open-button" id="openEventModalBtn" type="button" data-i18n="calendar.addEvent">Añadir evento</button>
             </div>
 
             <div class="subjects-header">
-              <label class="notes-label" id="subjectsHeaderLabel" style="cursor: pointer;">Asignaturas</label>
-              <button class="ghost-button" id="openSubjectModalFromDayBtn" type="button" style="min-height: 28px; padding: 2px 10px; font-size: 0.78rem; border-radius: 6px;" title="Añadir asignatura">+ Añadir</button>
+              <label class="notes-label" id="subjectsHeaderLabel" style="cursor: pointer;" data-i18n="calendar.subjectsLabel">Asignaturas</label>
+              <button class="ghost-button" id="openSubjectModalFromDayBtn" type="button" style="min-height: 28px; padding: 2px 10px; font-size: 0.78rem; border-radius: 6px;" title="Añadir asignatura" data-i18n="calendar.addSubjectShort">+ Añadir</button>
             </div>
             <form class="subject-form" id="subjectForm"></form>
 
             <div class="focus-tracks" id="focusTracks" aria-label="Bloques extra de tiempo"></div>
 
-            <label class="notes-label" for="dayNotes">Notas del día</label>
-            <textarea id="dayNotes" rows="4" placeholder="Exámenes, temas avanzados, sensaciones, rendimiento..."></textarea>
+            <label class="notes-label" for="dayNotes" data-i18n="calendar.dayNotes">Notas del día</label>
+            <textarea id="dayNotes" rows="4" placeholder="Notas, reflexiones o registro del día..." data-i18n-placeholder="calendar.notesPlaceholder"></textarea>
 
             <div class="rating-section">
-              <label class="notes-label">Valoración del día</label>
+              <label class="notes-label" data-i18n="calendar.dayRating">Valoración del día</label>
               <div class="rating-widget">
-                <div class="stars" id="starsContainer" role="radiogroup" aria-label="Valoración del día del 1 al 5">
-                  <button type="button" class="star" data-value="1" aria-label="1 estrella — Muy mal día">★</button>
-                  <button type="button" class="star" data-value="2" aria-label="2 estrellas — Poco productivo">★</button>
-                  <button type="button" class="star" data-value="3" aria-label="3 estrellas — Día normal">★</button>
-                  <button type="button" class="star" data-value="4" aria-label="4 estrellas — Productivo">★</button>
-                  <button type="button" class="star" data-value="5" aria-label="5 estrellas — Excelente">★</button>
+                <div class="stars" id="starsContainer" role="radiogroup" aria-label="Valoración del día del 1 al 5" data-i18n-aria-label="calendar.ratingHint">
+                  <button type="button" class="star" data-value="1" aria-label="1 estrella">★</button>
+                  <button type="button" class="star" data-value="2" aria-label="2 estrellas">★</button>
+                  <button type="button" class="star" data-value="3" aria-label="3 estrellas">★</button>
+                  <button type="button" class="star" data-value="4" aria-label="4 estrellas">★</button>
+                  <button type="button" class="star" data-value="5" aria-label="5 estrellas">★</button>
                 </div>
-                <span class="rating-hint" id="ratingHint">Sin valorar</span>
+                <span class="rating-hint" id="ratingHint" data-i18n="calendar.unrated">Sin valorar</span>
               </div>
             </div>
 
             <div class="panel-actions">
-              <span class="auto-save-indicator" id="autoSaveIndicator" aria-live="polite">✓ Guardado</span>
-              <button id="clearDayBtn" class="ghost-button" type="button">Vaciar día</button>
+              <span class="auto-save-indicator" id="autoSaveIndicator" aria-live="polite" data-i18n="calendar.saved">✓ Guardado</span>
+              <button id="clearDayBtn" class="ghost-button" type="button" data-i18n="calendar.clearDay">Vaciar día</button>
             </div>
           </div>
 
@@ -260,17 +260,17 @@
               <!-- CABECERA DE CONTROL DE MES -->
               <div class="tracker-header">
                 <div class="tracker-title-group">
-                  <span class="tracker-badge">RESUMEN MENSUAL</span>
+                  <span class="tracker-badge" data-i18n="tracker.monthlySummaryBadge">RESUMEN MENSUAL</span>
                   <div class="tracker-month-nav">
-                    <button id="routinePrevMonthBtn" class="tracker-icon-btn" type="button" title="Mes anterior">‹</button>
+                    <button id="routinePrevMonthBtn" class="tracker-icon-btn" type="button" title="Mes anterior" data-i18n-title="tracker.prevMonth">‹</button>
                     <h2 id="routineMonthTitle" class="tracker-month-title">ENERO 2026</h2>
-                    <button id="routineNextMonthBtn" class="tracker-icon-btn" type="button" title="Mes siguiente">›</button>
+                    <button id="routineNextMonthBtn" class="tracker-icon-btn" type="button" title="Mes siguiente" data-i18n-title="tracker.nextMonth">›</button>
                   </div>
                 </div>
                 <div class="tracker-actions">
                   <select id="routineMonthSelect" class="tracker-select" aria-label="Seleccionar mes"></select>
-                  <button id="addHabitBtn" class="tracker-btn primary" type="button">+ Añadir Hábito</button>
-                  <button id="resetMonthBtn" class="tracker-btn danger" type="button" title="Vaciar marcas de este mes">Restablecer Mes</button>
+                  <button id="addHabitBtn" class="tracker-btn primary" type="button" data-i18n="tracker.addHabit">+ Añadir Hábito</button>
+                  <button id="resetMonthBtn" class="tracker-btn danger" type="button" title="Vaciar marcas de este mes" data-i18n="tracker.resetMonth">Restablecer Mes</button>
                 </div>
               </div>
 
@@ -278,8 +278,8 @@
               <div class="tracker-card trend-card">
                 <div class="card-header flex-between">
                   <div>
-                    <h3>TENDENCIA DE CUMPLIMIENTO DIARIO</h3>
-                    <span id="trendSubtitle" class="card-subtitle">% de hábitos completados cada día del mes</span>
+                    <h3 data-i18n="tracker.dailyTrendTitle">TENDENCIA DE CUMPLIMIENTO DIARIO</h3>
+                    <span id="trendSubtitle" class="card-subtitle" data-i18n="tracker.dailyTrendSub">% de hábitos completados cada día del mes</span>
                   </div>
                   <div class="trend-badge" id="trendMonthSummaryBadge">0% Cumplido</div>
                 </div>
@@ -296,10 +296,10 @@
                   <div class="tracker-card matrix-card">
                     <div class="card-header flex-between">
                       <div>
-                        <h3>RUTINAS Y HÁBITOS DIARIOS</h3>
-                        <span id="matrixSubtitle" class="card-subtitle">Haz clic en las casillas para registrar el progreso diario</span>
+                        <h3 data-i18n="tracker.routinesTitle">RUTINAS Y HÁBITOS DIARIOS</h3>
+                        <span id="matrixSubtitle" class="card-subtitle" data-i18n="tracker.matrixSubtitle">Haz clic en las casillas para registrar el progreso diario</span>
                       </div>
-                      <span class="badge-tag cyan">Control Semanal</span>
+                      <span class="badge-tag cyan" data-i18n="tracker.weekLabel">Control Semanal</span>
                     </div>
                     <div class="table-scroll-container">
                       <table class="routine-matrix-table" id="routineMatrixTable">
@@ -310,7 +310,7 @@
                     <!-- SECCIÓN DE ANÁLISIS SEMANAL E HISTOGRAMA DE BARRAS -->
                     <div class="weekly-analysis-section">
                       <div class="card-header">
-                        <h3>ANÁLISIS SEMANAL Y HÁBITOS COMPLETADOS</h3>
+                        <h3 data-i18n="tracker.weeklyAnalysisTitle">ANÁLISIS SEMANAL Y HÁBITOS COMPLETADOS</h3>
                       </div>
                       <!-- Gráfico de Barras Diarias por Semana -->
                       <div class="daily-bars-container" id="dailyBarsContainer">
@@ -327,12 +327,12 @@
                   <div class="tracker-card routine-history-card" id="routineHistoryCard">
                     <div class="card-header flex-between">
                       <div>
-                        <h3>RESUMEN DE MESES ANTERIORES</h3>
-                        <span class="card-subtitle">Evolución y hábitos destacados en los meses previos</span>
+                        <h3 data-i18n="tracker.prevMonthsTitle">RESUMEN DE MESES ANTERIORES</h3>
+                        <span class="card-subtitle" data-i18n="tracker.prevMonthsSub">Evolución y hábitos destacados en los meses previos</span>
                       </div>
                       <div class="history-header-actions" style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" id="historyRestoreBtn" class="history-restore-btn" style="display: none;" title="Mostrar meses ocultos">Restaurar</button>
-                        <span class="badge-tag purple">Histórico</span>
+                        <button type="button" id="historyRestoreBtn" class="history-restore-btn" style="display: none;" title="Mostrar meses ocultos" data-i18n="tracker.restoreBtn">Restaurar</button>
+                        <span class="badge-tag purple" data-i18n="tracker.historyBadge">Histórico</span>
                       </div>
                     </div>
                     <div class="history-carousel-wrapper">
@@ -352,7 +352,7 @@
                   <!-- DONUT CHART & GLOBAL % -->
                   <div class="tracker-card overview-card">
                     <div class="card-header">
-                      <h3>CUMPLIMIENTO GLOBAL</h3>
+                      <h3 data-i18n="tracker.globalCompliance">CUMPLIMIENTO GLOBAL</h3>
                     </div>
                     <div class="donut-chart-container">
                       <div class="donut-svg-wrapper" id="donutSvgWrapper">
@@ -371,11 +371,505 @@
                   <!-- TOP 10 RANKING DINÁMICO -->
                   <div class="tracker-card ranking-card">
                     <div class="card-header flex-between">
-                      <h3>TOP HÁBITOS DIARIOS</h3>
-                      <span class="badge-tag purple">Ranking Dinámico</span>
+                      <h3 data-i18n="tracker.topHabits">TOP HÁBITOS DIARIOS</h3>
+                      <span class="badge-tag purple" data-i18n="tracker.dynamicRanking">Ranking Dinámico</span>
                     </div>
                     <div class="ranking-list" id="rankingList">
                       <!-- Rendered by JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISTA DEL DASHBOARD DE INSIGHTS & RENDIMIENTO (LEGACY CONTAINER) -->
+          <div id="paneInsightsMain" hidden></div>
+
+          <!-- VISTA PRINCIPAL DE PERFIL (DASHBOARD COMPLETO CON SUBNAVEGACIÓN LATERAL) -->
+          <div id="paneProfileMain" hidden>
+            <div class="profile-dashboard-layout">
+              <!-- CABECERA HERO DEL PERFIL (RENOVADA: SIN TEXTO REPETITIVO, CON FOTO PROPIA) -->
+              <div class="profile-hero-card">
+                <div class="profile-hero-left">
+                  <div class="profile-avatar-container">
+                    <div class="profile-avatar-circle" id="profileAvatar" title="Haz clic para subir o cambiar tu foto de perfil">
+                      <img id="profileAvatarImg" class="profile-avatar-img" src="" alt="Avatar" style="display: none;" />
+                      <span id="profileAvatarEmoji">👤</span>
+                    </div>
+                    <input type="file" id="profileAvatarFileInput" accept="image/*" style="display: none;">
+                  </div>
+
+                  <div class="profile-hero-meta">
+                    <div class="profile-name-badge-row">
+                      <h2 id="profileHeroName">Principal</h2>
+                    </div>
+                    <div class="profile-role-row">
+                      <span class="profile-role-badge" id="profileHeroRole">Estudiante / Desarrollo Personal</span>
+                      <span class="profile-dot-separator">•</span>
+                      <span class="profile-focus-text" id="profileHeroBio">Modo Enfoque Activo</span>
+                    </div>
+                    <p class="profile-hero-subtitle" id="profileHeroSubtitle" data-i18n="profile.heroSubtitle">Espacio privado de desarrollo continuo con persistencia física en disco</p>
+                  </div>
+                </div>
+
+                <!-- CONTROLES MULTI-PERFIL COMPACTOS -->
+                <div class="profile-multi-controls">
+                  <div class="profile-select-wrapper">
+                    <label for="profileActiveSelect" class="profile-control-label" data-i18n="profile.activeProfileLabel">PERFIL ACTIVO</label>
+                    <select id="profileActiveSelect" class="profile-active-select" aria-label="Seleccionar perfil activo"></select>
+                  </div>
+                  <div class="profile-actions-bar">
+                    <button type="button" id="profileNewBtn" class="profile-action-btn" title="Crear un nuevo perfil independiente" data-i18n="profile.newProfileBtn">+ Nuevo</button>
+                    <button type="button" id="profileRenameBtn" class="profile-action-btn" title="Renombrar perfil actual" data-i18n="profile.renameProfileBtn">✎ Renombrar</button>
+                    <button type="button" id="profileDeleteBtn" class="profile-action-btn danger" title="Eliminar este perfil" data-i18n="profile.deleteProfileBtn">🗑 Borrar</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CONTENEDOR PRINCIPAL: SUBMENÚ DOCK LATERAL + ÁREA DE CONTENIDO -->
+              <div class="profile-dashboard-split">
+                <!-- DOCK LATERAL DE PERFIL (SOLO PRESENTE EN LA VISTA DE PERFIL) -->
+                <aside class="profile-lateral-dock" id="profileLateralDock" aria-label="Navegación de perfil">
+                  <!-- NIVEL 1: NAVEGACIÓN PRINCIPAL (AJUSTES VS INFORME) -->
+                  <div class="profile-dock-level" id="profileDockLevel1">
+                    <button type="button" class="profile-dock-tab active" id="profileDockBtnSettings" data-level1-tab="settings" title="Configuración & Ajustes">
+                      <span class="dock-tab-icon">⚙️</span>
+                      <span class="dock-tab-text" data-i18n="profile.tabSettings">Ajustes</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" id="profileDockBtnStats" data-level1-tab="stats" title="Informe Avanzado">
+                      <span class="dock-tab-icon">📊</span>
+                      <span class="dock-tab-text" data-i18n="profile.tabReport">Informe</span>
+                    </button>
+                  </div>
+
+                  <!-- NIVEL 2: SUB-BARRA DE AJUSTES (SUPERPUESTA / CONMUTADA) -->
+                  <div class="profile-dock-level" id="profileDockLevelSettings" style="display: none;">
+                    <button type="button" class="profile-dock-tab dock-tab-back" id="profileDockBackFromSettings" title="Volver al menú de perfil">
+                      <span class="dock-tab-icon">↩️</span>
+                      <span class="dock-tab-text" data-i18n="profile.navMenu">Menú</span>
+                    </button>
+                    <div class="dock-tab-divider"></div>
+                    <button type="button" class="profile-dock-tab active" data-settings-nav="identity" title="Identidad & Personalización">
+                      <span class="dock-tab-icon">👤</span>
+                      <span class="dock-tab-text" data-i18n="profile.navIdentity">Identidad</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" data-settings-nav="appearance" title="Aspecto & Visualización">
+                      <span class="dock-tab-icon">🎨</span>
+                      <span class="dock-tab-text" data-i18n="profile.navAppearance">Aspecto</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" data-settings-nav="goals" title="Metas & Objetivos">
+                      <span class="dock-tab-icon">⏱️</span>
+                      <span class="dock-tab-text" data-i18n="profile.navGoals">Metas</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" data-settings-nav="subjects" title="Asignaturas & Hobbies">
+                      <span class="dock-tab-icon">📚</span>
+                      <span class="dock-tab-text" data-i18n="profile.navSubjects">Materias</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" data-settings-nav="periods" title="Cursos Académicos">
+                      <span class="dock-tab-icon">📅</span>
+                      <span class="dock-tab-text" data-i18n="profile.navPeriods">Cursos</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" data-settings-nav="storage" title="Almacenamiento Local (Disco)">
+                      <span class="dock-tab-icon">💾</span>
+                      <span class="dock-tab-text" data-i18n="profile.navStorage">Disco</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" data-settings-nav="about" title="Acerca de la Aplicación">
+                      <span class="dock-tab-icon">ℹ️</span>
+                      <span class="dock-tab-text" data-i18n="profile.navAbout">Acerca</span>
+                    </button>
+                  </div>
+
+                  <!-- NIVEL 2: SUB-BARRA DE ESTADÍSTICAS (SUPERPUESTA / CONMUTADA) -->
+                  <div class="profile-dock-level" id="profileDockLevelStats" style="display: none;">
+                    <button type="button" class="profile-dock-tab dock-tab-back" id="profileDockBackFromStats" title="Volver al menú de perfil">
+                      <span class="dock-tab-icon">↩️</span>
+                      <span class="dock-tab-text" data-i18n="profile.navMenu">Menú</span>
+                    </button>
+                    <div class="dock-tab-divider"></div>
+                    <button type="button" class="profile-dock-tab active" data-stats-nav="study" title="Estudio & Calendario">
+                      <span class="dock-tab-icon">📚</span>
+                      <span class="dock-tab-text" data-i18n="profile.navStudy">Estudio</span>
+                    </button>
+                    <button type="button" class="profile-dock-tab" data-stats-nav="tracker" title="Hábitos & Tracker">
+                      <span class="dock-tab-icon">📋</span>
+                      <span class="dock-tab-text" data-i18n="profile.navHabits">Hábitos</span>
+                    </button>
+                  </div>
+                </aside>
+
+                <!-- ÁREA PRINCIPAL DE CONTENIDO -->
+                <div class="profile-content-area">
+                  <!-- SUB-PANEL 1: AJUSTES PARTICIONADOS POR SECCIONES (SOLO UNA VISIBLE A LA VEZ) -->
+                  <div id="profileSettingsSection" class="profile-subpane active">
+                    <!-- SECCIÓN: IDENTIDAD -->
+                    <article class="settings-partition-card" id="settingsSecIdentity">
+                      <div class="partition-header">
+                        <h3 data-i18n="settings.identityTitle">👤 Identidad del Perfil</h3>
+                        <p class="settings-help" data-i18n="settings.identityHelp">Personaliza tu nombre, foto de perfil, rol y enfoque de productividad.</p>
+                      </div>
+                      <form class="settings-form" id="profileForm">
+                        <label><span data-i18n="settings.profileNameLabel">Nombre del perfil</span><input id="profileTitle" type="text" maxlength="70" required></label>
+                        <div class="settings-two">
+                          <label><span data-i18n="settings.profileRoleLabel">Rol / Ocupación (ej. Estudiante, Opositor, Investigador)</span>
+                            <input id="profileRoleInput" type="text" maxlength="50" placeholder="Ej. Estudiante">
+                          </label>
+                          <label><span data-i18n="settings.profileBioLabel">Enfoque actual / Bio (ej. Preparación Semestre 2)</span>
+                            <input id="profileBioInput" type="text" maxlength="80" placeholder="Ej. Modo Enfoque Activo">
+                          </label>
+                        </div>
+                        <button class="primary-button" type="submit" style="margin-top: 10px;" data-i18n="settings.saveProfileBtn">Guardar cambios del perfil</button>
+                      </form>
+
+                      <div class="dock-tab-divider" style="margin: 20px 0 16px 0;"></div>
+
+                      <!-- BANNER DEL TUTORIAL GUIADO -->
+                      <div class="tutorial-launcher-banner" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border-radius: 12px; background: rgba(var(--accent-rgb), 0.08); border: 1px solid rgba(var(--accent-rgb), 0.24);">
+                        <div>
+                          <strong style="display: flex; align-items: center; gap: 6px; font-size: 0.95rem; color: var(--ink);">
+                            <span>🎓</span> <span data-i18n="tutorial.bannerTitle">Tutorial Guiado de la Aplicación</span>
+                          </strong>
+                          <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--muted); line-height: 1.4;" data-i18n="tutorial.bannerHelp">
+                            Aprende en 2 minutos a utilizar el Perfil de Ejemplo, el registro de horas, el tracker de hábitos y tus métricas clave.
+                          </p>
+                        </div>
+                        <button type="button" class="primary-button" id="startGuidedTourBtn" style="white-space: nowrap; padding: 0 16px; min-height: 38px; font-size: 0.84rem;" data-i18n="tutorial.startBtn">
+                          ▶ Iniciar Tutorial
+                        </button>
+                      </div>
+                    </article>
+
+                    <!-- SECCIÓN: ASPECTO -->
+                    <article class="settings-partition-card" id="settingsSecAppearance">
+                      <div class="partition-header">
+                        <h3 data-i18n="settings.appearanceTitle">🎨 Aspecto & Visualización</h3>
+                        <p class="settings-help" data-i18n="settings.appearanceHelp">Configura el tema visual, paleta de colores, densidad del calendario y preferencias de uso.</p>
+                      </div>
+                      <div class="settings-form">
+                        <!-- SUBGRUPO 1: TEMA Y PALETA CROMÁTICA -->
+                        <div class="settings-subgroup">
+                          <div class="settings-subgroup-header">
+                            <h4 class="settings-subgroup-title" data-i18n="settings.subgroupVisual">🎨 Tema & Paleta Cromática</h4>
+                            <p class="settings-subgroup-help" data-i18n="settings.subgroupVisualHelp">Personaliza el estilo visual, contraste y colores del calendario.</p>
+                          </div>
+
+                          <!-- Selector de Tema (Sistema, Claro, Oscuro, OLED, Sepia) -->
+                          <div class="theme-toggle-row">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.themeModeLabel">🎨 Tema visual de la interfaz</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.appearanceHelp">Elige entre modo sistema automático, claro, oscuro, OLED negro puro o sepia papel.</small>
+                            </div>
+                            <select id="appThemeSelect" style="min-width: 170px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);">
+                              <option value="system" data-i18n="settings.themeSystem">🖥️ Por defecto del sistema</option>
+                              <option value="light" data-i18n="settings.themeLight">☀️ Claro</option>
+                              <option value="dark" data-i18n="settings.themeDark">🌙 Oscuro</option>
+                              <option value="oled" data-i18n="settings.themeOled">🖤 OLED Negro Puro</option>
+                              <option value="sepia" data-i18n="settings.themeSepia">📜 Sepia Lectura</option>
+                            </select>
+                          </div>
+
+                          <!-- Paleta de Calor del Calendario -->
+                          <div class="theme-toggle-row" style="border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px;">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.heatmapPaletteLabel">🟢 Paleta del mapa de calor de estudio</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.heatmapPaletteHelp">Define los tonos de color que representan la intensidad de estudio en el calendario.</small>
+                            </div>
+                            <select id="heatmapPaletteSelect" style="min-width: 170px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);">
+                              <option value="sync" data-i18n="settings.paletteSync">🎯 Sincronizada con acento (Recomendado)</option>
+                              <option value="emerald" data-i18n="settings.paletteEmerald">Esmeralda Clásico (Verde-Teal)</option>
+                              <option value="github" data-i18n="settings.paletteGithub">GitHub Green (Verde intenso)</option>
+                              <option value="dracula" data-i18n="settings.palettePurple">Dracula Purple (Púrpura elegante)</option>
+                              <option value="monokai" data-i18n="settings.paletteNeon">Monokai Neon (Cian eléctrico)</option>
+                              <option value="amber" data-i18n="settings.paletteAmber">Ámbar Otoño (Dorado cálido)</option>
+                              <option value="cyberpunk" data-i18n="settings.paletteCyberpunk">Cyberpunk Pink (Rosa neón)</option>
+                              <option value="custom" data-i18n="settings.paletteCustom">Personalizado (Color propio)</option>
+                            </select>
+                          </div>
+
+                          <!-- Color de acento y mapa personalizado (reubicado aquí desde Identidad) -->
+                          <div id="customAccentRow" class="theme-toggle-row" style="border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px;">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.profileAccentLabel">🎨 Color de acento y mapa personalizado</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.customAccentHelp">Color distintivo para botones, resaltados y cálculo del mapa de calor si eliges personalizado.</small>
+                            </div>
+                            <input id="profileAccent" type="color" style="width: 44px; height: 36px; padding: 2px; border-radius: 8px; border: 1px solid var(--line); cursor: pointer; background: var(--surface);">
+                          </div>
+
+                          <!-- Densidad Visual del Calendario -->
+                          <div class="theme-toggle-row" style="border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px;">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.calendarDensityLabel">📐 Densidad visual del calendario</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.calendarDensityHelp">Ajusta el espaciado y tamaño de las celdas del calendario para adaptarlo a tu pantalla.</small>
+                            </div>
+                            <select id="calendarDensitySelect" style="min-width: 170px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);">
+                              <option value="compact" data-i18n="settings.densityCompact">Compacta (Celdas reducidas)</option>
+                              <option value="standard" selected data-i18n="settings.densityStandard">Estándar (Equilibrada)</option>
+                              <option value="spacious" data-i18n="settings.densitySpacious">Espaciosa (Celdas amplias)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- SUBGRUPO 2: IDIOMA & EXPERIENCIA INTERACTIVA -->
+                        <div class="settings-subgroup">
+                          <div class="settings-subgroup-header">
+                            <h4 class="settings-subgroup-title" data-i18n="settings.subgroupInteractive">🌐 Idioma & Experiencia Interactiva</h4>
+                            <p class="settings-subgroup-help" data-i18n="settings.subgroupInteractiveHelp">Configura el idioma de la app y la respuesta háptica y motivacional.</p>
+                          </div>
+
+                          <!-- Idioma de la aplicación -->
+                          <div class="theme-toggle-row">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.languageLabel">🌐 Idioma de la aplicación</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.languageHelp">Selecciona el idioma de la interfaz y las explicaciones estadísticas.</small>
+                            </div>
+                            <select id="appLanguageSelect" style="min-width: 170px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);">
+                              <option value="es" selected>Español (ES)</option>
+                              <option value="en">English (EN)</option>
+                            </select>
+                          </div>
+
+                          <!-- Efectos de Sonido Hápticos -->
+                          <div class="theme-toggle-row" style="border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px;">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.soundFeedbackLabel">🔊 Efectos de sonido hápticos (Micro-clicks)</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.soundFeedbackHelp">Reproduce micro-sonidos mecánicos generados por síntesis web al marcar hábitos o tareas.</small>
+                            </div>
+                            <label class="toggle-switch">
+                              <input type="checkbox" id="soundFeedbackToggle">
+                              <span class="toggle-slider"></span>
+                            </label>
+                          </div>
+
+                          <!-- Cita Motivacional Diaria -->
+                          <div class="theme-toggle-row" style="border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px;">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.dailyQuoteLabel">💬 Cita motivacional diaria</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.dailyQuoteHelp">Muestra una frase inspiradora de productividad y constancia en el panel del día.</small>
+                            </div>
+                            <label class="toggle-switch">
+                              <input type="checkbox" id="dailyQuoteToggle" checked>
+                              <span class="toggle-slider"></span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <!-- SUBGRUPO 3: ERGONOMÍA & NAVEGACIÓN TRACKPAD -->
+                        <div class="settings-subgroup">
+                          <div class="settings-subgroup-header">
+                            <h4 class="settings-subgroup-title" data-i18n="settings.subgroupTrackpad">🎛️ Ergonomía & Navegación Trackpad</h4>
+                            <p class="settings-subgroup-help" data-i18n="settings.subgroupTrackpadHelp">Ajusta la respuesta al deslizar con dos dedos entre vistas.</p>
+                          </div>
+
+                          <!-- Sensibilidad del trackpad -->
+                          <div class="theme-toggle-row">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.trackpadSensitivityLabel">🎛️ Sensibilidad del trackpad</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.trackpadSensitivityHelp">Regula la fuerza del gesto para evitar cambios dobles accidentales.</small>
+                            </div>
+                            <select id="trackpadSensitivitySelect" style="min-width: 170px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);">
+                              <option value="low" data-i18n="settings.trackpadLow">Baja (Gesto amplio)</option>
+                              <option value="medium" selected data-i18n="settings.trackpadMedium">Media (Recomendada)</option>
+                              <option value="high" data-i18n="settings.trackpadHigh">Alta (Sensible)</option>
+                            </select>
+                          </div>
+
+                          <!-- Invertir sentido del trackpad -->
+                          <div class="theme-toggle-row" style="border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px;">
+                            <div>
+                              <span style="display: block;" data-i18n="settings.invertTrackpadLabel">🔄 Invertir sentido del trackpad</span>
+                              <small style="display: block; color: var(--muted); font-size: 0.76rem; font-weight: normal; margin-top: 2px;" data-i18n="settings.invertTrackpadHelp">Invierte la dirección lógica al deslizar con dos dedos entre Calendario, Tracker y Perfil.</small>
+                            </div>
+                            <label class="toggle-switch">
+                              <input type="checkbox" id="invertTrackpadSwipeToggle">
+                              <span class="toggle-slider"></span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <!-- SUBGRUPO 4: REGISTRO DE TIEMPO & NOMBRES PERSONALIZADOS -->
+                        <div class="settings-subgroup">
+                          <div class="settings-subgroup-header">
+                            <h4 class="settings-subgroup-title" data-i18n="settings.subgroupTimeAndNaming">⏱️ Registro de Tiempo & Nombres Personalizados</h4>
+                            <p class="settings-subgroup-help" data-i18n="settings.subgroupTimeAndNamingHelp">Define el formato de entrada de tiempo, terminología y umbrales de intensidad.</p>
+                          </div>
+
+                          <label><span data-i18n="settings.timeEntryModeLabel">Formato de registro de tiempo</span>
+                            <select id="profileTimeEntryMode">
+                              <option value="decimal" data-i18n="settings.timeDecimal">Horas decimales (ej. 1,5)</option>
+                              <option value="hours-minutes" data-i18n="settings.timeHoursMinutes">Horas y minutos (ej. 1:30)</option>
+                            </select>
+                          </label>
+
+                          <div style="border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px;">
+                            <span style="font-size: 0.82rem; font-weight: 750; color: var(--ink); display: block; margin-bottom: 6px;" data-i18n="settings.namingBlockTitle">Nombres personalizados de actividades</span>
+                            <div class="settings-two">
+                              <label><span data-i18n="settings.subjectsPluralLabel">Nombre de asignaturas (Plural)</span><input id="profileSubjectsPlural" type="text" maxlength="30" placeholder="Asignaturas"></label>
+                              <label><span data-i18n="settings.subjectsSingularLabel">Nombre de asignatura (Singular)</span><input id="profileSubjectsSingular" type="text" maxlength="30" placeholder="Asignatura"></label>
+                            </div>
+                            <div class="settings-two" style="margin-top: 6px;">
+                              <label><span data-i18n="settings.hobbiesPluralLabel">Nombre de hobbies (Plural)</span><input id="profileHobbiesPlural" type="text" maxlength="30" placeholder="Hobbies"></label>
+                              <label><span data-i18n="settings.hobbiesSingularLabel">Nombre de hobby (Singular)</span><input id="profileHobbiesSingular" type="text" maxlength="30" placeholder="Hobby"></label>
+                            </div>
+                          </div>
+
+                          <div style="border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px;">
+                            <span style="font-size: 0.82rem; font-weight: 750; color: var(--ink); display: block; margin-bottom: 4px;" data-i18n="settings.heatLevelsBlockTitle">Umbrales de intensidad del mapa de calor (horas)</span>
+                            <p class="settings-help" style="margin-top: 0; margin-bottom: 8px;" data-i18n="settings.heatScaleHelp">Escala de calor de estudio en el calendario:</p>
+                            <div class="settings-two">
+                              <label><span data-i18n="settings.level1Hours">Horas nivel 1</span><input id="profileLevel1" type="number" min="0.25" max="24" step="0.25"></label>
+                              <label><span data-i18n="settings.level2Hours">Horas nivel 2</span><input id="profileLevel2" type="number" min="0.25" max="24" step="0.25"></label>
+                              <label><span data-i18n="settings.level3Hours">Horas nivel 3</span><input id="profileLevel3" type="number" min="0.25" max="24" step="0.25"></label>
+                              <label><span data-i18n="settings.level4Hours">Horas nivel 4</span><input id="profileLevel4" type="number" min="0.25" max="24" step="0.25"></label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Modo oscuro de respaldo invisible -->
+                        <input type="checkbox" id="darkModeToggleSettings" style="display: none;">
+
+                        <button class="primary-button" type="button" id="saveAppearanceBtn" style="margin-top: 6px;" data-i18n="settings.saveAppearanceBtn">Guardar preferencias de aspecto</button>
+                      </div>
+                    </article>
+
+                    <!-- SECCIÓN: METAS -->
+                    <article class="settings-partition-card" id="settingsSecGoals">
+                      <div class="partition-header">
+                        <h3 id="settingsGoalsTitle" data-i18n="settings.goalsTitle">⏱️ Objetivos de Tiempo (Metas)</h3>
+                        <p class="settings-help" data-i18n="settings.goalsHelp">Define las horas de dedicación diaria general y objetivos por cada asignatura y hobby.</p>
+                      </div>
+                      <form class="settings-form" id="goalsForm">
+                        <label><span data-i18n="settings.dailyGoalLabel">Objetivo diario general (horas/día)</span>
+                          <input id="goalsDailyInput" type="number" min="0" max="24" step="0.25" placeholder="Ej. 6">
+                        </label>
+
+                        <div style="margin-top: 10px;">
+                          <label style="font-weight: 800; font-size: 0.8rem; margin-bottom: 6px; display: block;" id="goalsSubjectsHeading">Objetivos por Asignatura (horas)</label>
+                          <div class="settings-list" id="subjectGoalsList"></div>
+                        </div>
+
+                        <div style="margin-top: 10px;">
+                          <label style="font-weight: 800; font-size: 0.8rem; margin-bottom: 6px; display: block;" id="goalsTracksHeading">Objetivos por Hobby (horas)</label>
+                          <div class="settings-list" id="trackGoalsList"></div>
+                        </div>
+
+                        <button class="primary-button" type="submit" style="margin-top: 10px;" data-i18n="settings.saveGoalsBtn">Guardar objetivos</button>
+                      </form>
+                    </article>
+
+                    <!-- SECCIÓN: ASIGNATURAS & HOBBIES -->
+                    <article class="settings-partition-card" id="settingsSecSubjects">
+                      <div class="partition-header">
+                        <h3 data-i18n="settings.subjectsTitle">📚 Asignaturas & Hobbies</h3>
+                        <p class="settings-help" data-i18n="settings.subjectsHelp">Administra tus materias académicas y proyectos personales.</p>
+                      </div>
+                      <div style="margin-bottom: 20px;">
+                        <h4 id="settingsSubjectsTitle" style="margin: 0 0 8px 0; font-size: 0.92rem; color: var(--ink);">Asignaturas</h4>
+                        <div class="settings-list" id="subjectsSettingsList"></div>
+                        <button class="ghost-button add-config-button" id="openSubjectModalBtn" type="button" style="margin-top: 8px;" data-i18n="settings.addSubjectBtn">Añadir asignatura</button>
+                      </div>
+                      <div class="dock-tab-divider" style="margin: 16px 0;"></div>
+                      <div>
+                        <h4 id="settingsTracksTitle" style="margin: 0 0 8px 0; font-size: 0.92rem; color: var(--ink);">Hobbies</h4>
+                        <div class="settings-list" id="tracksSettingsList"></div>
+                        <button class="ghost-button add-config-button" id="openTrackModalBtn" type="button" style="margin-top: 8px;" data-i18n="settings.addTrackBtn">Añadir hobby</button>
+                      </div>
+                    </article>
+
+                    <!-- SECCIÓN: CURSOS ACADÉMICOS -->
+                    <article class="settings-partition-card" id="settingsSecPeriods">
+                      <div class="partition-header">
+                        <h3 id="settingsPeriodsTitle" data-i18n="settings.periodsTitle">📅 Cursos Académicos & Evaluaciones</h3>
+                        <p class="settings-help" data-i18n="settings.periodsHelp">Periodos temporales con asignaturas y objetivos acotados.</p>
+                      </div>
+                      <div class="settings-list" id="periodsSettingsList"></div>
+                      <button class="ghost-button add-config-button" id="openPeriodModalBtn" type="button" style="margin-top: 10px;" data-i18n="settings.addPeriodBtn">Añadir curso académico</button>
+                    </article>
+
+                    <!-- SECCIÓN: ALMACENAMIENTO LOCAL EN DISCO (LOCAL-FIRST) -->
+                    <article class="settings-partition-card" id="settingsSecStorage">
+                      <div class="partition-header">
+                        <h3 data-i18n="settings.storageTitle">💾 Almacenamiento Local en Disco (Local-First)</h3>
+                        <p class="settings-help" data-i18n="settings.storageHelp">Conecta una carpeta física de tu disco duro para persistir tus datos sin límite de 5 MB.</p>
+                      </div>
+
+                      <div class="storage-connection-box">
+                        <div class="storage-status-row">
+                          <span class="storage-status-icon" id="fsStatusIcon">📁</span>
+                          <div>
+                            <strong id="fsStatusTitle" data-i18n="settings.storageStatusBrowser">Almacenamiento del Navegador (localStorage)</strong>
+                            <p id="fsStatusDesc" style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--muted);">Conecta una carpeta local para particionar tus datos en settings.json, calendar.json, tasks.json y tracker.json.</p>
+                          </div>
+                          <span class="storage-status-badge" id="fsStatusBadge">Local</span>
+                        </div>
+
+                        <div class="storage-actions-row">
+                          <button type="button" class="primary-button" id="fsConnectBtn" data-i18n="settings.storageConnectBtn">📂 Conectar Carpeta Local en Disco</button>
+                          <button type="button" class="ghost-button" id="fsDisconnectBtn" style="display: none;" data-i18n="settings.storageDisconnectBtn">🔌 Desconectar Carpeta</button>
+                        </div>
+                      </div>
+
+                      <div class="dock-tab-divider" style="margin: 20px 0;"></div>
+
+                      <h4>Copias de Seguridad Manuales (JSON)</h4>
+                      <p class="settings-help">Exporta o importa una copia de seguridad completa del perfil en un archivo JSON.</p>
+                      <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="ghost-button" id="dockExportBtn" type="button" data-i18n="settings.exportJsonBtn">Exportar Datos (JSON)</button>
+                        <button class="ghost-button" id="dockImportTriggerBtn" type="button" data-i18n="settings.importJsonBtn">Importar Datos (JSON)</button>
+                      </div>
+
+                      <div class="dock-tab-divider" style="margin: 20px 0;"></div>
+
+                      <div class="danger-zone-box">
+                        <h4 style="color: #b91c1c; margin: 0 0 6px 0;" data-i18n="settings.dangerZone">Zona de Peligro</h4>
+                        <p class="settings-help" style="color: #7f1d1d; margin: 0 0 10px 0;" data-i18n="settings.dangerZoneHelp">Al restablecer se borrarán todas las asignaturas, notas y eventos del perfil actual.</p>
+                        <button class="ghost-button" id="resetDataBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.4); background: rgba(220, 38, 38, 0.05);" data-i18n="settings.dangerResetBtn">Restablecer datos del perfil</button>
+                      </div>
+                    </article>
+
+                    <!-- SECCIÓN: ACERCA DE LA APP -->
+                    <article class="settings-partition-card" id="settingsSecAbout">
+                      <div class="partition-header">
+                        <h3 data-i18n="settings.aboutTitle">ℹ️ Acerca de LOG Calendar</h3>
+                        <p class="settings-help" data-i18n="settings.aboutHelp">Información técnica, privacidad y arquitectura de la aplicación.</p>
+                      </div>
+                      <div class="about-card-body">
+                        <div class="about-version-banner">
+                          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <strong>LOG of Growth</strong>
+                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.0</span>
+                            <span id="aboutVersionStatusBadge" class="version-status-badge badge-up-to-date" data-i18n="settings.versionUpToDate">✓ Al día</span>
+                            <span id="pwaInstalledBadge" class="pwa-installed-badge" style="display: none;" data-i18n="settings.pwaInstalledText">✓ Modo app activo</span>
+                          </div>
+                          <div class="about-actions-strip" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                            <button type="button" class="ghost-button" id="checkUpdatesBtn" style="font-size: 0.82rem; padding: 6px 12px;" data-i18n="settings.checkUpdatesBtn">
+                              🔄 Comprobar actualizaciones
+                            </button>
+                            <button type="button" class="primary-button" id="pwaInstallBtn" style="font-size: 0.82rem; padding: 6px 14px; display: none;" data-i18n="settings.installPwaBtn">
+                              📲 Instalar como aplicación de escritorio
+                            </button>
+                          </div>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--ink); line-height: 1.5; margin: 12px 0;" data-i18n="settings.aboutDesc">
+                          Aplicación web Local-First diseñada para optimizar el estudio, el seguimiento de hábitos y el bienestar personal con privacidad total.
+                        </p>
+                        <ul class="about-feature-list">
+                          <li data-i18n="settings.aboutPrivacy">🔒 <strong>Privacidad Absoluta:</strong> Cero cookies de seguimiento, cero llamadas a servidores externos y ejecución 100% en local.</li>
+                          <li data-i18n="settings.aboutStorage">💾 <strong>Arquitectura Local-First:</strong> Compatible con File System Access API para almacenamiento nativo en archivos físicos JSON.</li>
+                          <li data-i18n="settings.aboutPerformance">⚡ <strong>Rendimiento Extremo:</strong> Cero dependencias npm, cero bundlers y código Vanilla JavaScript nativo.</li>
+                        </ul>
+                        <div style="margin-top: 18px;">
+                          <button type="button" class="ghost-button" id="startGuidedTourAboutBtn" style="border-color: rgba(var(--accent-rgb), 0.35); color: var(--accent); font-weight: 700;" data-i18n="tutorial.startBtn">
+                            🎓 Iniciar Tutorial Guiado
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+
+                  <!-- SUB-PANEL 2: INFORME AVANZADO (DASHBOARD ANALÍTICO) -->
+                  <div id="profileStatsSection" class="profile-subpane" style="display: none;">
+                    <div class="insights-dashboard" id="insightsDashboardContainer">
+                      <!-- Rendered dynamically by App.Insights -->
                     </div>
                   </div>
                 </div>
@@ -394,77 +888,9 @@
         <div class="settings-head">
           <div>
             <p class="eyebrow">Configuración</p>
-            <h2 id="settingsTitle">Ajustes del calendario</h2>
+            <h2 id="settingsTitle">Ajustes</h2>
           </div>
           <button class="icon-button" id="settingsCloseBtn" type="button" aria-label="Cerrar ajustes">×</button>
-        </div>
-
-        <div class="settings-grid">
-          <article class="settings-section">
-            <h3>Perfil</h3>
-            <form class="settings-form" id="profileForm">
-              <label>Título<input id="profileTitle" type="text" maxlength="70"></label>
-              <label>Color principal<input id="profileAccent" type="color"></label>
-              <div class="theme-toggle-row">
-                <span>🌙 Modo Oscuro</span>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="darkModeToggleSettings">
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="settings-two">
-                <label>Nombre de asignaturas (Plural)<input id="profileSubjectsPlural" type="text" maxlength="30" placeholder="Asignaturas"></label>
-                <label>Nombre de asignatura (Singular)<input id="profileSubjectsSingular" type="text" maxlength="30" placeholder="Asignatura"></label>
-              </div>
-              <div class="settings-two">
-                <label>Nombre de hobbies (Plural)<input id="profileHobbiesPlural" type="text" maxlength="30" placeholder="Hobbies"></label>
-                <label>Nombre de hobby (Singular)<input id="profileHobbiesSingular" type="text" maxlength="30" placeholder="Hobby"></label>
-              </div>
-              <label>Registrar tiempo en
-                <select id="profileTimeEntryMode">
-                  <option value="decimal">Horas decimales (ej. 1,5)</option>
-                  <option value="hours-minutes">Horas y minutos (ej. 1:30)</option>
-                </select>
-              </label>
-              <p class="settings-help">Los niveles indican desde cuántas horas de estudio se intensifica el color de cada día.</p>
-              <div class="settings-two">
-                <label>Horas nivel 1<input id="profileLevel1" type="number" min="0.25" max="24" step="0.25"></label>
-                <label>Horas nivel 2<input id="profileLevel2" type="number" min="0.25" max="24" step="0.25"></label>
-                <label>Horas nivel 3<input id="profileLevel3" type="number" min="0.25" max="24" step="0.25"></label>
-                <label>Horas nivel 4<input id="profileLevel4" type="number" min="0.25" max="24" step="0.25"></label>
-              </div>
-              <button class="primary-button" type="submit">Guardar perfil</button>
-            </form>
-          </article>
-
-          <article class="settings-section">
-            <h3 id="settingsSubjectsTitle" style="cursor: pointer;">Asignaturas</h3>
-            <div class="settings-list" id="subjectsSettingsList"></div>
-            <button class="ghost-button add-config-button" id="openSubjectModalBtn" type="button">Añadir asignatura</button>
-          </article>
-
-          <article class="settings-section">
-            <h3 id="settingsPeriodsTitle" style="cursor: pointer;">Cursos Académicos</h3>
-            <div class="settings-list" id="periodsSettingsList"></div>
-            <button class="ghost-button add-config-button" id="openPeriodModalBtn" type="button">Añadir curso</button>
-          </article>
-
-          <article class="settings-section">
-            <h3 id="settingsTracksTitle" style="cursor: pointer;">Hobbies</h3>
-            <div class="settings-list" id="tracksSettingsList"></div>
-            <button class="ghost-button add-config-button" id="openTrackModalBtn" type="button">Añadir hobby</button>
-          </article>
-
-          <article class="settings-section danger-zone" style="border-color: rgba(220, 38, 38, 0.3); background: #fff5f5;">
-            <h3 style="color: #b91c1c;">Zona de peligro</h3>
-            <p class="settings-help" style="color: #7f1d1d;">Al restablecer se borrarán todas las asignaturas, notas y eventos guardados. Se pondrá todo a cero. <strong>Se recomienda exportar una copia de seguridad antes.</strong></p>
-            <div style="margin-top: 14px; text-align: left;">
-              <button class="ghost-button" id="resetDataBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.4); background: rgba(220, 38, 38, 0.05);">Restablecer todos los datos</button>
-            </div>
-          </article>
-        </div>
-        <div class="settings-footer" style="display: flex; justify-content: flex-end; align-items: center; margin-top: 18px; font-size: 0.82rem; color: var(--muted); font-weight: bold;">
-          <span id="settingsVersionIndicator">LOG of growth • Versión 3.2.3</span>
         </div>
       </section>
     </div>
@@ -474,8 +900,8 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="subjectEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow" id="subjectEntryEyebrow">Asignaturas</p>
-            <h2 id="subjectEntryTitle">Añadir asignatura</h2>
+            <p class="eyebrow" id="subjectEntryEyebrow" data-i18n="calendar.subjectsLabel">Asignaturas</p>
+            <h2 id="subjectEntryTitle" data-i18n="settings.addSubjectBtn">Añadir asignatura</h2>
           </div>
           <button class="icon-button" id="subjectEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
@@ -484,7 +910,7 @@
           <input id="newSubjectDescription" type="text" maxlength="90" placeholder="Descripción (opcional)">
           <input id="newSubjectColor" type="color" value="#0f766e" aria-label="Color de la asignatura">
           <input id="newSubjectDifficulty" type="number" min="1" max="5" step="1" placeholder="Añadir dificultad de asignatura" aria-label="Dificultad de la asignatura">
-          <button class="primary-button" type="submit">Añadir asignatura</button>
+          <button class="primary-button" type="submit" data-i18n="settings.addSubjectBtn">Añadir asignatura</button>
         </form>
       </section>
     </div>
@@ -495,7 +921,7 @@
         <div class="settings-head">
           <div>
             <p class="eyebrow" id="trackEntryEyebrow">Hobbies</p>
-            <h2 id="trackEntryTitle">Añadir hobby</h2>
+            <h2 id="trackEntryTitle" data-i18n="settings.addTrackBtn">Añadir hobby</h2>
           </div>
           <button class="icon-button" id="trackEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
@@ -503,7 +929,7 @@
           <input id="newTrackName" type="text" maxlength="34" placeholder="Nombre del hobby" required>
           <input id="newTrackDescription" type="text" maxlength="90" placeholder="Descripción" required>
           <input id="newTrackColor" type="color" value="#d97706" aria-label="Color del hobby">
-          <button class="primary-button" type="submit">Añadir hobby</button>
+          <button class="primary-button" type="submit" data-i18n="settings.addTrackBtn">Añadir hobby</button>
         </form>
       </section>
     </div>
@@ -513,8 +939,8 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="periodEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow" id="periodEntryEyebrow">Cursos Académicos</p>
-            <h2 id="periodEntryTitle">Añadir curso académico</h2>
+            <p class="eyebrow" id="periodEntryEyebrow" data-i18n="profile.navPeriods">Cursos Académicos</p>
+            <h2 id="periodEntryTitle" data-i18n="settings.addPeriodBtn">Añadir curso académico</h2>
           </div>
           <button class="icon-button" id="periodEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
@@ -538,7 +964,7 @@
               </div>
             </div>
           </div>
-          <button class="primary-button" type="submit" style="margin-top: 14px; width: 100%;">Añadir curso / periodo</button>
+          <button class="primary-button" type="submit" style="margin-top: 14px; width: 100%;" data-i18n="settings.addPeriodBtn">Añadir curso / periodo</button>
         </form>
       </section>
     </div>
@@ -548,23 +974,23 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="eventEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow">Calendario</p>
-            <h2 id="eventEntryTitle">Añadir evento</h2>
+            <p class="eyebrow" data-i18n="dock.calendar">Calendario</p>
+            <h2 id="eventEntryTitle" data-i18n="events.modalTitle">Añadir evento</h2>
           </div>
           <button class="icon-button" id="eventEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
         <form class="settings-form event-entry-form" id="eventForm">
           <select id="eventType" aria-label="Categoría del evento">
-            <option value="exam">Examen</option>
-            <option value="deadline">Entrega</option>
-            <option value="review">Repaso clave</option>
-            <option value="personal">Aviso</option>
-            <option value="project">Proyecto</option>
-            <option value="sport">Deporte</option>
-            <option value="community">Comunidad</option>
-            <option value="__new__">Otro</option>
+            <option value="exam" data-i18n="events.categories.exam">Examen</option>
+            <option value="deadline" data-i18n="events.categories.deadline">Entrega</option>
+            <option value="review" data-i18n="events.categories.review">Repaso clave</option>
+            <option value="personal" data-i18n="events.categories.personal">Aviso</option>
+            <option value="project" data-i18n="events.categories.project">Proyecto</option>
+            <option value="sport" data-i18n="events.categories.sport">Deporte</option>
+            <option value="community" data-i18n="events.categories.community">Comunidad</option>
+            <option value="__new__" data-i18n="events.categories.other">Otro</option>
           </select>
-          <input id="eventText" type="text" maxlength="90" placeholder="Ej. Examen final" required>
+          <input id="eventText" type="text" maxlength="90" placeholder="Ej. Examen final" required data-i18n-placeholder="events.textPlaceholder">
           <div class="custom-category-fields" id="customCategoryFields" hidden>
             <input id="customCategoryName" type="text" maxlength="28" placeholder="Nombre de la categoría" aria-label="Nombre de la nueva categoría">
             <label class="color-field" for="customCategoryColor">
@@ -573,7 +999,7 @@
             </label>
           </div>
           <div class="event-subject-fields" id="eventSubjectFields" hidden>
-            <label for="eventSubject" id="eventSubjectLabel">Asignatura del evento</label>
+            <label for="eventSubject" id="eventSubjectLabel" data-i18n="events.subjectLabel">Asignatura del evento</label>
             <select id="eventSubject" aria-label="Asignatura del evento"></select>
             <div class="event-new-subject-fields" id="eventNewSubjectFields" hidden>
               <input id="eventNewSubjectName" type="text" maxlength="42" placeholder="Nombre de la asignatura">
@@ -582,7 +1008,7 @@
               <input id="eventNewSubjectDifficulty" type="number" min="1" max="5" step="1" placeholder="Dificultad 1-5">
             </div>
           </div>
-          <button class="primary-button" id="eventSubmitBtn" type="submit">Guardar evento</button>
+          <button class="primary-button" id="eventSubmitBtn" type="submit" data-i18n="events.saveBtn">Guardar evento</button>
         </form>
       </section>
     </div>
@@ -592,7 +1018,7 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="rangeEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow">Calendario</p>
+            <p class="eyebrow" data-i18n="dock.calendar">Calendario</p>
             <h2 id="rangeEntryTitle">Precargar más meses</h2>
           </div>
           <button class="icon-button" id="rangeEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
@@ -607,8 +1033,8 @@
       <section class="entry-dialog advanced-stats-dialog" role="dialog" aria-modal="true" aria-labelledby="advancedStatsTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow">Análisis</p>
-            <h2 id="advancedStatsTitle">Más estadísticas</h2>
+            <p class="eyebrow" data-i18n="profile.tabReport">Análisis</p>
+            <h2 id="advancedStatsTitle" data-i18n="calendar.moreStats">Más estadísticas</h2>
           </div>
           <button class="icon-button" id="advancedStatsCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
@@ -621,29 +1047,29 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="taskEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow" id="taskEntryEyebrow">Tareas</p>
-            <h2 id="taskEntryTitle">Añadir tarea</h2>
+            <p class="eyebrow" id="taskEntryEyebrow" data-i18n="tasks.title">Tareas</p>
+            <h2 id="taskEntryTitle" data-i18n="tasks.addTask">Añadir tarea</h2>
           </div>
           <button class="icon-button" id="taskEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
         <form class="settings-form" id="taskForm">
-          <input id="taskText" type="text" maxlength="90" placeholder="Ej. Estudiar tema 3" required>
+          <input id="taskText" type="text" maxlength="90" placeholder="Ej. Estudiar tema 3" required data-i18n-placeholder="tasks.taskTitlePlaceholder">
           
-          <label for="taskDescription">Descripción (opcional)</label>
-          <textarea id="taskDescription" rows="3" placeholder="Detalles de la tarea..." style="min-height: 70px;"></textarea>
+          <label for="taskDescription" data-i18n="tasks.descLabel">Descripción (opcional)</label>
+          <textarea id="taskDescription" rows="3" placeholder="Detalles de la tarea..." style="min-height: 70px;" data-i18n-placeholder="tasks.taskDescPlaceholder"></textarea>
 
-          <label for="taskLink" id="taskLinkLabel">Vincular a asignatura/hobby</label>
+          <label for="taskLink" id="taskLinkLabel" data-i18n="tasks.linkProject">Vincular a asignatura/hobby</label>
           <select id="taskLink" aria-label="Vincular a asignatura o hobby">
             <!-- JS renders subjects and tracks -->
           </select>
           
-          <label for="taskDueDate">Fecha de entrega (opcional)</label>
+          <label for="taskDueDate" data-i18n="tasks.dueDateLabel">Fecha de entrega (opcional)</label>
           <input id="taskDueDate" type="date">
           
-          <label for="taskDifficulty" id="taskDifficultyLabel">Dificultad (1-5)</label>
+          <label for="taskDifficulty" id="taskDifficultyLabel" data-i18n="tasks.difficultyLabel">Dificultad (1-5)</label>
           <input id="taskDifficulty" type="number" min="1" max="5" step="1" value="3" placeholder="Dificultad 1-5">
           
-          <button class="primary-button" id="taskSubmitBtn" type="submit">Añadir tarea</button>
+          <button class="primary-button" id="taskSubmitBtn" type="submit" data-i18n="tasks.addTaskBtn">Añadir tarea</button>
         </form>
       </section>
     </div>
@@ -654,7 +1080,7 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="taskDetailsTitle" style="width: min(480px, calc(100% - 24px)); max-height: calc(100vh - 40px);">
         <div class="settings-head" style="margin-bottom: 12px;">
           <div>
-            <p class="eyebrow" id="taskDetailsEyebrow">Detalles de la tarea</p>
+            <p class="eyebrow" id="taskDetailsEyebrow" data-i18n="tasks.taskDetailsEyebrow">Detalles de la tarea</p>
             <h2 id="taskDetailsTitle" style="font-size: 1.25rem; margin-top: 4px; overflow-wrap: anywhere;">Título de la tarea</h2>
           </div>
           <button class="icon-button" id="taskDetailsCloseBtn" type="button" aria-label="Cerrar">×</button>
@@ -662,31 +1088,31 @@
         
         <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
           <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; background: rgba(var(--accent-rgb), 0.02); min-height: 80px;">
-            <label class="notes-label" style="margin: 0 0 6px 0; font-size: 0.76rem; color: var(--muted); font-weight: 800;">DESCRIPCIÓN</label>
+            <label class="notes-label" style="margin: 0 0 6px 0; font-size: 0.76rem; color: var(--muted); font-weight: 800;" data-i18n="tasks.descLabel">DESCRIPCIÓN</label>
             <p id="taskDetailsDesc" style="margin: 0; font-size: 0.9rem; line-height: 1.45; white-space: pre-wrap; color: var(--ink); word-break: break-word;">Aquí va la descripción detallada de la tarea...</p>
           </div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface);">
-              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">PROYECTO / HOBBY</label>
+              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;" data-i18n="tasks.projectLabel">PROYECTO / HOBBY</label>
               <div id="taskDetailsLink" style="font-size: 0.84rem; font-weight: bold;">Sin vincular</div>
             </div>
             
             <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface);">
-              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">DIFICULTAD</label>
+              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;" data-i18n="tasks.difficultyTag">DIFICULTAD</label>
               <div id="taskDetailsDifficulty" style="color: #eab308; font-size: 0.94rem;">★★★☆☆</div>
             </div>
           </div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface);">
-              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">FECHA DE ENTREGA</label>
+              <label class="notes-label" style="margin: 0 0 4px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;" data-i18n="tasks.dueDateLabel">FECHA DE ENTREGA</label>
               <div id="taskDetailsDueDate" style="font-size: 0.84rem; font-weight: bold;">Sin fecha</div>
             </div>
             
             <div style="border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; background: var(--surface); display: flex; align-items: center; justify-content: space-between;">
               <div>
-                <label class="notes-label" style="margin: 0 0 2px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;">ESTADO</label>
+                <label class="notes-label" style="margin: 0 0 2px 0; font-size: 0.74rem; color: var(--muted); font-weight: 800;" data-i18n="tasks.statusLabel">ESTADO</label>
                 <div id="taskDetailsStatusText" style="font-size: 0.84rem; font-weight: bold; color: var(--muted);">Pendiente</div>
               </div>
               <label class="task-checkbox-wrapper" style="margin-left: 10px;">
@@ -697,9 +1123,9 @@
           </div>
           
           <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 14px;">
-            <button class="ghost-button" id="taskDetailsDeleteBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.3); background: rgba(220, 38, 38, 0.02); min-height: 38px; padding: 0 16px;">Eliminar</button>
-            <button class="ghost-button" id="taskDetailsEditBtn" type="button" style="color: var(--accent); border-color: rgba(var(--accent-rgb), 0.3); min-height: 38px; padding: 0 16px;">Editar</button>
-            <button class="primary-button" id="taskDetailsOkBtn" type="button" style="min-height: 38px; padding: 0 20px;">Aceptar</button>
+            <button class="ghost-button" id="taskDetailsDeleteBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.3); background: rgba(220, 38, 38, 0.02); min-height: 38px; padding: 0 16px;" data-i18n="tasks.deleteBtn">Eliminar</button>
+            <button class="ghost-button" id="taskDetailsEditBtn" type="button" style="color: var(--accent); border-color: rgba(var(--accent-rgb), 0.3); min-height: 38px; padding: 0 16px;" data-i18n="tasks.editBtn">Editar</button>
+            <button class="primary-button" id="taskDetailsOkBtn" type="button" style="min-height: 38px; padding: 0 20px;" data-i18n="tasks.acceptBtn">Aceptar</button>
           </div>
         </div>
       </section>
@@ -828,8 +1254,8 @@
       <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="habitEntryTitle">
         <div class="settings-head">
           <div>
-            <p class="eyebrow">Rutinas y Hábitos</p>
-            <h2 id="habitEntryTitle">Añadir Hábito</h2>
+            <p class="eyebrow" data-i18n="tracker.routinesTitle">Rutinas y Hábitos</p>
+            <h2 id="habitEntryTitle" data-i18n="tracker.habitModalTitle">Añadir Hábito</h2>
           </div>
           <button class="icon-button" id="habitEntryCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
@@ -838,18 +1264,259 @@
             <label style="display: flex; flex-direction: column; font-size: 0.78rem; font-weight: bold; width: 80px;">Emoji
               <input id="habitEmojiInput" type="text" maxlength="4" placeholder="Ej. 🏋" value="⭐" style="text-align: center; font-size: 1.2rem; min-height: 38px; margin-top: 4px;" required>
             </label>
-            <label style="display: flex; flex-direction: column; font-size: 0.78rem; font-weight: bold; flex: 1;">Nombre del Hábito
-              <input id="habitNameInput" type="text" maxlength="50" placeholder="Ej. Gimnasio / Ejercicio" required style="min-height: 38px; margin-top: 4px;">
+            <label style="display: flex; flex-direction: column; font-size: 0.78rem; font-weight: bold; flex: 1;"><span data-i18n="tracker.tableHabit">Nombre del Hábito</span>
+              <input id="habitNameInput" type="text" maxlength="50" placeholder="Ej. Gimnasio / Ejercicio" required style="min-height: 38px; margin-top: 4px;" data-i18n-placeholder="tracker.habitNamePlaceholder">
             </label>
           </div>
-          <label style="font-size: 0.78rem; font-weight: bold; margin-top: 6px; display: flex; flex-direction: column;">Objetivo Mensual (Días objetivo)
-            <input id="habitGoalInput" type="number" min="1" max="31" value="30" placeholder="30" style="min-height: 38px; margin-top: 4px;">
+          <label style="font-size: 0.78rem; font-weight: bold; margin-top: 6px; display: flex; flex-direction: column;"><span data-i18n="tracker.tableGoal">Objetivo Mensual (Días objetivo)</span>
+            <input id="habitGoalInput" type="number" min="1" max="31" value="30" placeholder="30" style="min-height: 38px; margin-top: 4px;" data-i18n-placeholder="tracker.habitGoalPlaceholder">
           </label>
           <div style="display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end;">
-            <button class="ghost-button" id="habitDeleteBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.3); display: none;">Eliminar Hábito</button>
-            <button class="primary-button" type="submit" style="min-height: 38px; padding: 0 20px;">Guardar Hábito</button>
+            <button class="ghost-button" id="habitDeleteBtn" type="button" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.3); display: none;" data-i18n="tracker.deleteHabit">Eliminar Hábito</button>
+            <button class="primary-button" type="submit" style="min-height: 38px; padding: 0 20px;" data-i18n="tracker.saveHabit">Guardar Hábito</button>
           </div>
         </form>
+      </section>
+    </div>
+
+    <!-- MODAL DETALLE DE MÉTRICA / INSIGHT -->
+    <div class="settings-modal" id="insightsDetailModal" hidden>
+      <div class="settings-backdrop" data-close-insights-detail></div>
+      <section class="settings-dialog insights-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="insightsDetailTitle">
+        <div class="settings-head">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="insights-detail-icon" id="insightsDetailIcon">📊</span>
+            <div>
+              <p class="eyebrow" id="insightsDetailEyebrow">Detalle de Métrica</p>
+              <h2 id="insightsDetailTitle">Título de la Métrica</h2>
+            </div>
+          </div>
+          <button class="icon-button" id="insightsDetailCloseBtn" type="button" aria-label="Cerrar detalle">×</button>
+        </div>
+
+        <div class="insights-detail-body">
+          <!-- Pestañas dinámicas interactivas -->
+          <div class="insights-modal-tab-bar" role="tablist">
+            <button type="button" class="insights-tab-chip active" id="insightsTabChipMeaning" data-modal-tab="meaning">📖 Significado</button>
+            <button type="button" class="insights-tab-chip" id="insightsTabChipStatus" data-modal-tab="status">🔍 Tu Diagnóstico</button>
+            <button type="button" class="insights-tab-chip" id="insightsTabChipScenarios" data-modal-tab="scenarios">💡 Escenarios & Consejos</button>
+          </div>
+
+          <div class="insights-tab-pane active" id="insightsPaneMeaning">
+            <p id="insightsDetailMeaning" class="insights-pane-text"></p>
+          </div>
+
+          <div class="insights-tab-pane" id="insightsPaneStatus" hidden>
+            <div class="insights-current-status" id="insightsDetailStatus"></div>
+          </div>
+
+          <div class="insights-tab-pane" id="insightsPaneScenarios" hidden>
+            <div class="insights-scenarios-list" id="insightsDetailScenarios"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MODAL DE SELECCIÓN DE PLANTILLAS DE PERFIL -->
+    <div class="entry-modal" id="profileTemplateModal" hidden>
+      <div class="entry-backdrop" data-close-template-modal></div>
+      <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="profileTemplateTitle" style="max-width: 620px; width: 94%;">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow" data-i18n="templates.eyebrow">Nuevo Perfil</p>
+            <h2 id="profileTemplateTitle" data-i18n="templates.modalTitle">Elige una Plantilla de Inicio</h2>
+          </div>
+          <button class="icon-button" id="profileTemplateCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <p class="settings-help" style="margin-top: 2px;" data-i18n="templates.modalDesc">Selecciona una plantilla preconfigurada con asignaturas y hábitos recomendados, o empieza en blanco.</p>
+
+        <form class="settings-form" id="profileTemplateForm">
+          <div class="template-grid" id="profileTemplateCardsGrid">
+            <!-- Rendered dynamically by JS -->
+          </div>
+
+          <label style="margin-top: 14px; font-weight: 700; font-size: 0.82rem;"><span data-i18n="templates.nameLabel">Nombre del nuevo perfil</span>
+            <input id="profileTemplateNameInput" type="text" maxlength="60" placeholder="Ej. Mi Nuevo Semestre" style="min-height: 38px; margin-top: 4px;" data-i18n-placeholder="templates.namePlaceholder">
+          </label>
+
+          <div style="display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;">
+            <button class="ghost-button" id="profileTemplateCancelBtn" type="button" data-i18n="templates.cancelBtn">Cancelar</button>
+            <button class="primary-button" type="submit" id="profileTemplateCreateBtn" style="min-height: 38px; padding: 0 22px;" data-i18n="templates.createBtn">Crear Perfil</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- MODAL SELECTOR PROFESIONAL DE FOTO DE PERFIL -->
+    <div class="entry-modal" id="avatarPickerModal" hidden>
+      <div class="entry-backdrop" id="avatarPickerBackdrop"></div>
+      <section class="entry-dialog avatar-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
+        <div class="settings-head" style="margin-bottom: 16px;">
+          <div>
+            <p class="eyebrow" data-i18n="profile.navIdentity">Identidad</p>
+            <h2 id="avatarPickerTitle" data-i18n="avatarPicker.modalTitle">Foto de perfil</h2>
+            <p class="settings-help" data-i18n="avatarPicker.modalSubtitle" style="margin: 4px 0 0 0;">Elige cómo quieres personalizar tu imagen de perfil</p>
+          </div>
+          <button class="icon-button" id="avatarPickerCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+
+        <div class="avatar-picker-content">
+          <!-- Vista previa del avatar actual -->
+          <div class="avatar-preview-banner">
+            <div class="avatar-preview-circle" id="avatarPickerCirclePreview">
+              <img id="avatarPickerImgPreview" class="avatar-preview-img" src="" alt="Avatar actual" style="display: none;" />
+              <span id="avatarPickerEmojiPreview">👤</span>
+            </div>
+            <div class="avatar-preview-info">
+              <strong id="avatarPickerProfileName">Principal</strong>
+              <small data-i18n="avatarPicker.currentPhoto">Foto actual</small>
+            </div>
+          </div>
+
+          <!-- Opciones profesionales -->
+          <div class="avatar-options-grid">
+            <!-- 1. Subir desde ordenador -->
+            <button type="button" class="avatar-action-card" id="avatarOptUpload">
+              <div class="avatar-action-icon">💻</div>
+              <div class="avatar-action-text">
+                <strong data-i18n="avatarPicker.optUploadTitle">Subir desde el ordenador</strong>
+                <span data-i18n="avatarPicker.optUploadDesc">Elige una imagen (JPG, PNG o WebP) desde tus archivos locales</span>
+              </div>
+              <span class="avatar-action-arrow">›</span>
+            </button>
+
+            <!-- 2. Hacer foto con la cámara -->
+            <button type="button" class="avatar-action-card" id="avatarOptCamera">
+              <div class="avatar-action-icon">📸</div>
+              <div class="avatar-action-text">
+                <strong data-i18n="avatarPicker.optCameraTitle">Hacer foto con la cámara</strong>
+                <span data-i18n="avatarPicker.optCameraDesc">Utiliza tu cámara web para capturar una foto al instante</span>
+              </div>
+              <span class="avatar-action-arrow">›</span>
+            </button>
+
+            <!-- 3. Elegir de la galería -->
+            <button type="button" class="avatar-action-card" id="avatarOptGallery">
+              <div class="avatar-action-icon">🖼️</div>
+              <div class="avatar-action-text">
+                <strong data-i18n="avatarPicker.optGalleryTitle">Elegir de la galería</strong>
+                <span data-i18n="avatarPicker.optGalleryDesc">Selecciona un avatar prediseñado y estético de nuestra colección</span>
+              </div>
+              <span class="avatar-action-arrow">›</span>
+            </button>
+
+            <!-- 4. Eliminar foto (solo si tiene foto personalizada) -->
+            <button type="button" class="avatar-action-card avatar-action-danger" id="avatarOptRemove">
+              <div class="avatar-action-icon">🗑️</div>
+              <div class="avatar-action-text">
+                <strong data-i18n="avatarPicker.optRemoveTitle">Eliminar foto actual</strong>
+                <span data-i18n="avatarPicker.optRemoveDesc">Restablece tu foto de perfil al icono predeterminado</span>
+              </div>
+              <span class="avatar-action-arrow">›</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MODAL DE CAPTURA CON CÁMARA WEB NATIVA -->
+    <div class="entry-modal" id="cameraModal" hidden>
+      <div class="entry-backdrop" id="cameraBackdrop"></div>
+      <section class="entry-dialog camera-dialog" role="dialog" aria-modal="true" aria-labelledby="cameraModalTitle">
+        <div class="settings-head" style="margin-bottom: 12px;">
+          <div>
+            <p class="eyebrow" data-i18n="avatarPicker.modalTitle">Foto de perfil</p>
+            <h2 id="cameraModalTitle" data-i18n="avatarPicker.cameraTitle">Cámara en directo</h2>
+            <p class="settings-help" data-i18n="avatarPicker.cameraSubtitle" style="margin: 4px 0 0 0;">Encuadra tu rostro en el círculo y toma la foto</p>
+          </div>
+          <button class="icon-button" id="cameraCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+
+        <div class="camera-container">
+          <div class="camera-viewfinder">
+            <video id="cameraVideo" autoplay playsinline muted></video>
+            <canvas id="cameraCanvas" style="display: none;"></canvas>
+            <img id="cameraSnapshotImg" alt="Snapshot" style="display: none;" />
+            <div class="camera-guide-circle"></div>
+          </div>
+
+          <div id="cameraStatusMsg" class="camera-status-text" style="display: none;"></div>
+
+          <div class="camera-controls-bar">
+            <!-- Botón de captura cuando la cámara está activa -->
+            <button type="button" class="primary-button camera-trigger-btn" id="cameraCaptureBtn" data-i18n="avatarPicker.cameraCapture">
+              📸 Capturar foto
+            </button>
+
+            <!-- Botones tras captura -->
+            <div id="cameraSnapshotActions" style="display: none; gap: 10px; width: 100%; justify-content: center;">
+              <button type="button" class="ghost-button" id="cameraRetakeBtn" data-i18n="avatarPicker.cameraRetake">
+                ↺ Repetir
+              </button>
+              <button type="button" class="primary-button" id="cameraUseBtn" data-i18n="avatarPicker.cameraUse">
+                ✓ Usar esta foto
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MODAL DE GALERÍA DE AVATARES PREDISEÑADOS -->
+    <div class="entry-modal" id="avatarGalleryModal" hidden>
+      <div class="entry-backdrop" id="avatarGalleryBackdrop"></div>
+      <section class="entry-dialog avatar-gallery-dialog" role="dialog" aria-modal="true" aria-labelledby="avatarGalleryTitle">
+        <div class="settings-head" style="margin-bottom: 14px;">
+          <div>
+            <p class="eyebrow" data-i18n="avatarPicker.modalTitle">Foto de perfil</p>
+            <h2 id="avatarGalleryTitle" data-i18n="avatarPicker.galleryTitle">Galería de avatares</h2>
+            <p class="settings-help" data-i18n="avatarPicker.gallerySubtitle" style="margin: 4px 0 0 0;">Elige un avatar que represente tu viaje de aprendizaje</p>
+          </div>
+          <button class="icon-button" id="avatarGalleryCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+
+        <div class="avatar-gallery-grid" id="avatarGalleryGrid">
+          <!-- Rendered dynamically by JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- MODAL DE NOTIFICACIÓN DE ACTUALIZACIÓN DISPONIBLE -->
+    <div class="entry-modal" id="updateNotificationModal" hidden>
+      <div class="entry-backdrop" id="updateModalBackdrop"></div>
+      <section class="entry-dialog update-dialog" role="dialog" aria-modal="true" aria-labelledby="updateModalTitle">
+        <div class="settings-head" style="margin-bottom: 12px;">
+          <div>
+            <p class="eyebrow" data-i18n="updater.eyebrow">Actualización del Sistema</p>
+            <h2 id="updateModalTitle" data-i18n="updater.modalTitle">🚀 Nueva versión disponible</h2>
+          </div>
+          <button class="icon-button" id="updateModalCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+
+        <p class="update-modal-summary" id="updateModalSummary" data-i18n="updater.modalDesc">
+          Hay una nueva versión de LOG Calendar lista para descargar.
+        </p>
+
+        <div class="update-guide-box">
+          <h4 style="margin: 0 0 8px 0; font-size: 0.88rem; color: var(--ink);" data-i18n="updater.guideTitle">¿Cómo actualizar tu copia local?</h4>
+          <ol class="update-steps-list">
+            <li data-i18n="updater.step1">1. Descarga el paquete .zip de la última versión en GitHub.</li>
+            <li data-i18n="updater.step2">2. Descomprime los archivos y reemplaza los archivos del programa (.html, .js, .css) en tu carpeta de LOG Calendar.</li>
+          </ol>
+          <div class="update-safe-notice">
+            <strong data-i18n="updater.step3Safety">🛡️ ¡Tus datos están 100% a salvo!</strong>
+            <p style="margin: 4px 0 0 0; font-size: 0.8rem; line-height: 1.4;" data-i18n="updater.step3SafetyDesc">
+              Todas tus horas registradas, asignaturas, hábitos y notas residen en el almacenamiento de tu navegador (localStorage) o en tu carpeta conectada en disco. Reemplazar los archivos del programa no altera ni borra tus datos.
+            </p>
+          </div>
+        </div>
+
+        <div class="update-modal-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; flex-wrap: wrap;">
+          <button class="ghost-button" id="updateModalLaterBtn" type="button" data-i18n="updater.laterBtn">Recordar más tarde</button>
+          <button class="primary-button" id="updateModalDownloadBtn" type="button" data-i18n="updater.downloadReleaseBtn">
+            🔗 Abrir Release en GitHub
+          </button>
+        </div>
       </section>
     </div>
 
@@ -858,65 +1525,19 @@
       <div class="dock-segment tabs-segment" role="tablist">
         <button class="dock-tab active" id="tabCalendar" type="button" role="tab" aria-selected="true" aria-controls="paneCalendar">
           <span class="dock-icon">📅</span>
-          <span class="dock-label">Calendario</span>
+          <span class="dock-label" data-i18n="dock.calendar">Calendario</span>
         </button>
         <button class="dock-tab" id="tabChecklist" type="button" role="tab" aria-selected="false" aria-controls="paneChecklistMain">
           <span class="dock-icon">📋</span>
-          <span class="dock-label">Tracker</span>
+          <span class="dock-label" data-i18n="dock.tracker">Tracker</span>
         </button>
-      </div>
-
-      <div class="dock-divider"></div>
-
-      <!-- MENÚ HOME CON POPOVER DESPLEGABLE -->
-      <div class="dock-home-wrapper">
-        <button class="dock-tab home-btn" id="dockHomeBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Menú de herramientas">
-          <span class="dock-icon">🏠</span>
-          <span class="dock-label">Inicio</span>
+        <button class="dock-tab" id="tabProfile" type="button" role="tab" aria-selected="false" aria-controls="paneProfileMain">
+          <span class="dock-icon dock-profile-icon" id="dockProfileIcon">
+            <img id="dockProfileAvatarImg" class="dock-avatar-img" src="" alt="Avatar" style="display: none;" />
+            <span id="dockProfileAvatarEmoji">👤</span>
+          </span>
+          <span class="dock-label" data-i18n="dock.profile">Perfil</span>
         </button>
-
-        <!-- POPOVER DESPLEGABLE LIQUID GLASS -->
-        <div class="home-popover-menu" id="homePopoverMenu" hidden>
-          <button class="popover-item" id="dockExportBtn" type="button">
-            <span class="popover-icon">📥</span>
-            <div class="popover-text">
-              <span class="popover-title">Exportar Datos</span>
-              <span class="popover-sub">Guardar archivo JSON</span>
-            </div>
-          </button>
-
-          <button class="popover-item" id="dockImportTriggerBtn" type="button">
-            <span class="popover-icon">📤</span>
-            <div class="popover-text">
-              <span class="popover-title">Importar Datos</span>
-              <span class="popover-sub">Restaurar desde archivo</span>
-            </div>
-          </button>
-
-          <div class="popover-divider"></div>
-
-          <div class="popover-item" style="cursor: default;">
-            <span class="popover-icon">🌙</span>
-            <div class="popover-text" style="flex: 1;">
-              <span class="popover-title">Modo Oscuro</span>
-              <span class="popover-sub">Cambiar tema de la interfaz</span>
-            </div>
-            <label class="toggle-switch" style="margin-left: auto;">
-              <input type="checkbox" id="darkModeTogglePopover">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <div class="popover-divider"></div>
-
-          <button class="popover-item" id="dockSettingsBtn" type="button">
-            <span class="popover-icon">⚙️</span>
-            <div class="popover-text">
-              <span class="popover-title">Ajustes</span>
-              <span class="popover-sub">Colores, temas y materias</span>
-            </div>
-          </button>
-        </div>
       </div>
     </div>
 
@@ -924,7 +1545,28 @@
     <input id="dockImportInput" type="file" accept="application/json" style="display: none !important;">
 
     <!-- The classic engine preserves file:// compatibility and legacy template handlers. -->
-    <script src="js/legacy/app-core.js"></script>
-    <script type="module" src="js/main.js"></script>
-  </body>
+    
+    
+  
+  <script src="js/core/constants.js"></script>
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/i18n.js"></script>
+  <script src="js/core/sound.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/features/tasks.js"></script>
+  <script src="js/infrastructure/storage.js"></script>
+  <script src="js/features/calendar.js"></script>
+  <script src="js/features/tracker.js"></script>
+  <script src="js/features/stats.js"></script>
+  <script src="js/features/insights.js"></script>
+  <script src="js/features/periods.js"></script>
+  <script src="js/features/settings.js"></script>
+  <script src="js/features/tutorial.js"></script>
+  <script src="js/features/updater.js"></script>
+  <script src="js/ui/theme.js"></script>
+  <script src="js/ui/dock.js"></script>
+  <script src="js/ui/day-panel.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
 </html>
