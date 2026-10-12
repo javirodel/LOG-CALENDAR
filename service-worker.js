@@ -4,7 +4,7 @@
    Zero interference with File System Access API or IndexedDB
    ==================================================================== */
 
-const CACHE_NAME = "log-calendar-pwa-v4.0.0";
+const CACHE_NAME = "log-calendar-pwa-v4.0.1";
 
 const PRECACHE_ASSETS = [
   "./",

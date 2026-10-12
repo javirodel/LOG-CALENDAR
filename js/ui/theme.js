@@ -41,6 +41,20 @@
     }
   }
 
+  const THEME_META_COLORS = {
+    light: "#f7f8fb",
+    dark: "#111116",
+    oled: "#000000",
+    sepia: "#f5ecd7"
+  };
+
+  function updateThemeMetaColor(effectiveTheme) {
+    const metaTag = document.querySelector('meta[name="theme-color"]');
+    if (metaTag) {
+      metaTag.setAttribute("content", THEME_META_COLORS[effectiveTheme] || "#f7f8fb");
+    }
+  }
+
   function ensureSystemListener() {
     if (systemMediaQueryAttached || !window.matchMedia) return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -51,6 +65,7 @@
         document.documentElement.setAttribute("data-theme-mode", "system");
         App.Storage.setDarkMode(e.matches);
         syncThemeControls("system");
+        updateThemeMetaColor(resolved);
         triggerThemeRerender();
       }
     };
@@ -83,6 +98,7 @@
     const isDarkLike = effective === "dark" || effective === "oled";
     App.Storage.setDarkMode(isDarkLike);
     syncThemeControls(target);
+    updateThemeMetaColor(effective);
 
     triggerThemeRerender();
   }

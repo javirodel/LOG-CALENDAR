@@ -1,13 +1,13 @@
 {
-  "name": "LOG CALENDAR - Productivity & Growth Tracker",
+  "name": "LOG CALENDAR",
   "short_name": "LOG Calendar",
   "description": "Aplicación Local-First de productividad, registro de estudio y hábitos diarios.",
   "start_url": "../index.html",
   "scope": "../",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#0f766e",
-  "background_color": "#060608",
+  "theme_color": "#f7f8fb",
+  "background_color": "#f7f8fb",
   "icons": [
     {
       "src": "icon-192.png",
