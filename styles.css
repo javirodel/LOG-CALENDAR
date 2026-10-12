@@ -6592,28 +6592,56 @@ textarea {
 /* ═══════════════════════════════════════════════════════════════
    CALENDAR GRID VISUAL DENSITY
    ═══════════════════════════════════════════════════════════════ */
-.calendar-pane[data-density="compact"] .day-cell {
+/* --- COMPACT (Celdas reducidas, todo a la vista) --- */
+.calendar-pane[data-density="compact"] .day-cell,
+.calendar-pane[data-density="compact"] .blank-cell {
   min-height: 44px;
-  padding: 4px 6px;
-  font-size: 0.76rem;
 }
-.calendar-pane[data-density="compact"] .month-grid {
+.calendar-pane[data-density="compact"] .day-cell {
+  padding: 4px 5px;
+  gap: 2px;
+  font-size: 0.74rem;
+}
+.calendar-pane[data-density="compact"] .weekday-row,
+.calendar-pane[data-density="compact"] .day-grid {
   gap: 3px;
 }
 .calendar-pane[data-density="compact"] .day-number {
   font-size: 0.74rem;
 }
 .calendar-pane[data-density="compact"] .day-hours {
-  font-size: 0.68rem;
-  padding: 1px 4px;
+  font-size: 0.66rem;
+  padding: 1px 3px;
+}
+.calendar-pane[data-density="compact"] .subject-dots {
+  gap: 2px;
+  min-height: 4px;
+}
+.calendar-pane[data-density="compact"] .subject-dots span {
+  width: 7px;
+  height: 3px;
+}
+.calendar-pane[data-density="compact"] .track-chips {
+  gap: 2px;
+  min-height: 8px;
+}
+.calendar-pane[data-density="compact"] .track-chip {
+  padding: 0 4px;
+  font-size: 0.55rem;
 }
 
+/* --- SPACIOUS (Celdas amplias y legibles) --- */
+.calendar-pane[data-density="spacious"] .day-cell,
+.calendar-pane[data-density="spacious"] .blank-cell {
+  min-height: 78px;
+}
 .calendar-pane[data-density="spacious"] .day-cell {
-  min-height: 74px;
   padding: 8px 10px;
+  gap: 6px;
   font-size: 0.94rem;
 }
-.calendar-pane[data-density="spacious"] .month-grid {
+.calendar-pane[data-density="spacious"] .weekday-row,
+.calendar-pane[data-density="spacious"] .day-grid {
   gap: 8px;
 }
 .calendar-pane[data-density="spacious"] .day-number {
@@ -6622,6 +6650,22 @@ textarea {
 .calendar-pane[data-density="spacious"] .day-hours {
   font-size: 0.82rem;
   padding: 3px 6px;
+}
+.calendar-pane[data-density="spacious"] .subject-dots {
+  gap: 4px;
+  min-height: 6px;
+}
+.calendar-pane[data-density="spacious"] .subject-dots span {
+  width: 12px;
+  height: 5px;
+}
+.calendar-pane[data-density="spacious"] .track-chips {
+  gap: 4px;
+  min-height: 14px;
+}
+.calendar-pane[data-density="spacious"] .track-chip {
+  padding: 2px 6px;
+  font-size: 0.66rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════
