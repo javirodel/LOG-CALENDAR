@@ -3,7 +3,7 @@
   window.App.Updater = window.App.Updater || {};
 
   function getLocalVersion() {
-    return (window.App && window.App.Constants && window.App.Constants.APP_VERSION) || "4.0.0";
+    return (window.App && window.App.Constants && window.App.Constants.APP_VERSION) || "4.0.2";
   }
   const GITHUB_RAW_VERSION_URL = "https://raw.githubusercontent.com/javirodel/LOG-CALENDAR/main/assets/version.json";
   const GITHUB_RELEASES_URL = "https://github.com/javirodel/LOG-CALENDAR/releases/latest";

@@ -1112,7 +1112,7 @@
     const resolveText = (str) => {
       if (typeof str !== "string") return str;
       if (str.includes("{version}")) {
-        const v = window.App?.Constants?.APP_VERSION || "4.0.0";
+        const v = window.App?.Constants?.APP_VERSION || "4.0.2";
         return str.replace(/\{version\}/g, v);
       }
       return str;

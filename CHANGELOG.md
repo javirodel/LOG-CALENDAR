@@ -4,6 +4,27 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [4.0.2] - 2026-10-12
+
+### Changed
+- **Manifiesto PWA actualizado**: añadido `display_override` con soporte para `window-controls-overlay` y fallback a `standalone`, mejorando la integración de la aplicación instalada con ventanas compatibles.
+- **Gestión de temas y colores dinámicos**: el color de la barra del navegador se sincroniza con el tema activo (claro, oscuro, OLED, sepia o sistema), incluyendo la adaptación automática a `prefers-color-scheme`.
+- **Persistencia del tema**: los cambios de tema se guardan inmediatamente en el estado del perfil y los controles del dock y de Ajustes permanecen sincronizados.
+- **Versión de la aplicación**: actualizada a `4.0.2` en la fuente central de constantes y en el metadato de publicación.
+
+### Fixed
+- **Arranque sin parpadeo de tema**: el documento aplica el tema y el color iniciales antes de cargar la interfaz, respetando la preferencia guardada y el modo oscuro del sistema.
+
+## [4.0.1] - 2026-10-12
+
+### Added
+- **Densidad visual configurable del calendario**: incorporados los modos compacto y espacioso, con ajustes específicos de altura, espaciado, tipografía, puntos de materias y etiquetas de actividades.
+
+### Changed
+- **Identidad visual del manifiesto PWA**: simplificados el nombre de la aplicación y los colores de tema y fondo para una instalación más coherente con la interfaz clara.
+- **Color dinámico del navegador**: añadido el ajuste del color de la barra del navegador cuando cambia el tema activo.
+- **Caché del Service Worker**: actualizada a `v4.0.1` para garantizar que las instalaciones PWA reciban los recursos de esta versión.
+
 ## [4.0.0] - 2026-10-12
 
 ### Fixed

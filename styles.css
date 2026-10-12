@@ -645,6 +645,24 @@ button {
   margin-bottom: 24px;
 }
 
+@supports (height: env(titlebar-area-height)) {
+  .app-shell {
+    padding-top: max(28px, calc(env(titlebar-area-height, 0px) + 8px));
+  }
+  .topbar {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .topbar button,
+  .topbar a,
+  .topbar input,
+  .topbar select,
+  .topbar .topbar-last-update {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: var(--accent-dark);
@@ -6937,7 +6955,7 @@ body.tour-active .liquid-glass-dock * {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DOCK PROFILE AVATAR & PROFESSIONAL AVATAR PICKER SUITE (v4.0.0)
+  DOCK PROFILE AVATAR & PROFESSIONAL AVATAR PICKER SUITE (v4.0.2)
    ═══════════════════════════════════════════════════════════════ */
 .dock-profile-icon {
   display: inline-flex;

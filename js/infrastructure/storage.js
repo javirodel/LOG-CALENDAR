@@ -969,7 +969,7 @@
 
     const payload = {
       exportedAt: new Date().toISOString(),
-      version: `v${App.Constants?.APP_VERSION || "4.0.0"}`,
+      version: `v${App.Constants?.APP_VERSION || "4.0.2"}`,
       activeProfile: currentProfile,
       profilesManifest: profiles,
       range: { start: App.Calendar.getCalendarStart(), end: App.Calendar.getCalendarEnd() },

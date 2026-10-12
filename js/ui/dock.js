@@ -56,14 +56,18 @@
     darkModeToggleSettings.checked = App.Storage.getDarkMode();
     darkModeToggleSettings.addEventListener("change", (e) => {
       const enabled = e.target.checked;
-      if (enabled) {
-        document.documentElement.setAttribute("data-theme", "dark");
-        App.Storage.setDarkMode(true);
+      if (App.Theme && typeof App.Theme.setTheme === "function") {
+        App.Theme.setTheme(enabled ? "dark" : "light");
       } else {
-        document.documentElement.removeAttribute("data-theme");
-        App.Storage.setDarkMode(false);
+        if (enabled) {
+          document.documentElement.setAttribute("data-theme", "dark");
+          App.Storage.setDarkMode(true);
+        } else {
+          document.documentElement.removeAttribute("data-theme");
+          App.Storage.setDarkMode(false);
+        }
+        App.Settings.applyProfile();
       }
-      App.Settings.applyProfile();
     });
   }
 

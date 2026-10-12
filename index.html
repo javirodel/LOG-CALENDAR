@@ -6,7 +6,39 @@
     <title>LOG CALENDAR</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="assets/manifest.webmanifest">
-    <meta name="theme-color" content="#f7f8fb">
+    <meta id="themeColorMeta" name="theme-color" content="#f7f8fb">
+    <script>
+      (function() {
+        try {
+          var isDark = localStorage.getItem("LOG-calendar-dark-mode") === "1";
+          var stateRaw = localStorage.getItem("LOG-calendar-local-state-v1");
+          var theme = isDark ? "dark" : "light";
+          if (stateRaw) {
+            var parsed = JSON.parse(stateRaw);
+            if (parsed && parsed.settings && parsed.settings.theme) {
+              theme = parsed.settings.theme;
+            }
+          }
+          if (theme === "system") {
+            theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+          }
+          var colorMap = {
+            light: "#f7f8fb",
+            dark: "#111116",
+            oled: "#000000",
+            sepia: "#f5ecd7"
+          };
+          var targetColor = colorMap[theme] || "#f7f8fb";
+          var meta = document.getElementById("themeColorMeta");
+          if (meta) meta.content = targetColor;
+          if (theme === "dark" || theme === "oled") {
+            document.documentElement.setAttribute("data-theme", theme);
+          } else if (theme === "sepia") {
+            document.documentElement.setAttribute("data-theme", "sepia");
+          }
+        } catch(e) {}
+      })();
+    </script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -836,7 +868,7 @@
                         <div class="about-version-banner">
                           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <strong>LOG of Growth</strong>
-                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.0</span>
+                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.2</span>
                             <span id="aboutVersionStatusBadge" class="version-status-badge badge-up-to-date" data-i18n="settings.versionUpToDate">✓ Al día</span>
                             <span id="pwaInstalledBadge" class="pwa-installed-badge" style="display: none;" data-i18n="settings.pwaInstalledText">✓ Modo app activo</span>
                           </div>

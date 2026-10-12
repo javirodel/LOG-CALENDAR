@@ -49,10 +49,15 @@
   };
 
   function updateThemeMetaColor(effectiveTheme) {
-    const metaTag = document.querySelector('meta[name="theme-color"]');
-    if (metaTag) {
-      metaTag.setAttribute("content", THEME_META_COLORS[effectiveTheme] || "#f7f8fb");
-    }
+    const targetColor = THEME_META_COLORS[effectiveTheme] || "#f7f8fb";
+    const existing = document.querySelectorAll('meta[name="theme-color"]');
+    existing.forEach((m) => m.remove());
+
+    const meta = document.createElement("meta");
+    meta.id = "themeColorMeta";
+    meta.name = "theme-color";
+    meta.content = targetColor;
+    document.head.appendChild(meta);
   }
 
   function ensureSystemListener() {
@@ -97,6 +102,9 @@
 
     const isDarkLike = effective === "dark" || effective === "oled";
     App.Storage.setDarkMode(isDarkLike);
+    if (App.Storage && typeof App.Storage.saveState === "function") {
+      App.Storage.saveState();
+    }
     syncThemeControls(target);
     updateThemeMetaColor(effective);
 
