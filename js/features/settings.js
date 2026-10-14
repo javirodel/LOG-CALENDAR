@@ -421,6 +421,11 @@ function renderSettings() {
   const dailyGoalInput = document.getElementById("profileDailyGoal");
   if (subjectsPluralInput) subjectsPluralInput.value = App.State.state.settings.subjectsLabelPlural || "Asignaturas";
   if (subjectsSingularInput) subjectsSingularInput.value = App.State.state.settings.subjectsLabelSingular || "Asignatura";
+  const subjectsColor = App.State.state.settings.subjectsColor || App.State.state.settings.profile?.accentColor || "#0f766e";
+  const subjectsColorInput = document.getElementById("profileSubjectsColor");
+  const subjectsGlobalColorInput = document.getElementById("profileSubjectsGlobalColor");
+  if (subjectsColorInput) subjectsColorInput.value = subjectsColor;
+  if (subjectsGlobalColorInput) subjectsGlobalColorInput.value = subjectsColor;
   if (hobbiesPluralInput) hobbiesPluralInput.value = App.State.state.settings.hobbiesLabelPlural || "Hobbies";
   if (hobbiesSingularInput) hobbiesSingularInput.value = App.State.state.settings.hobbiesLabelSingular || "Hobby";
   if (timeEntryModeInput) timeEntryModeInput.value = App.State.state.settings.timeEntryMode || "decimal";
@@ -641,6 +646,8 @@ function saveProfileSettings(event) {
 
   if (subjectsPluralInput) App.State.state.settings.subjectsLabelPlural = (subjectsPluralInput.value || "Asignaturas").trim();
   if (subjectsSingularInput) App.State.state.settings.subjectsLabelSingular = (subjectsSingularInput.value || "Asignatura").trim();
+  const subjectsColorInput = document.getElementById("profileSubjectsColor") || document.getElementById("profileSubjectsGlobalColor");
+  if (subjectsColorInput) App.State.state.settings.subjectsColor = App.Utils.normalizeColor(subjectsColorInput.value);
   if (hobbiesPluralInput) App.State.state.settings.hobbiesLabelPlural = (hobbiesPluralInput.value || "Hobbies").trim();
   if (hobbiesSingularInput) App.State.state.settings.hobbiesLabelSingular = (hobbiesSingularInput.value || "Hobby").trim();
   if (timeEntryModeInput) App.State.state.settings.timeEntryMode = timeEntryModeInput.value === "hours-minutes" ? "hours-minutes" : "decimal";
@@ -914,6 +921,11 @@ function renderAppearanceSettings() {
 
   if (subjectsPluralInput) subjectsPluralInput.value = App.State.state?.settings?.subjectsLabelPlural || "Asignaturas";
   if (subjectsSingularInput) subjectsSingularInput.value = App.State.state?.settings?.subjectsLabelSingular || "Asignatura";
+  const subjectsColor = App.State.state?.settings?.subjectsColor || App.State.state?.settings?.profile?.accentColor || "#0f766e";
+  const subjectsColorInput = document.getElementById("profileSubjectsColor");
+  const subjectsGlobalColorInput = document.getElementById("profileSubjectsGlobalColor");
+  if (subjectsColorInput) subjectsColorInput.value = subjectsColor;
+  if (subjectsGlobalColorInput) subjectsGlobalColorInput.value = subjectsColor;
   if (hobbiesPluralInput) hobbiesPluralInput.value = App.State.state?.settings?.hobbiesLabelPlural || "Hobbies";
   if (hobbiesSingularInput) hobbiesSingularInput.value = App.State.state?.settings?.hobbiesLabelSingular || "Hobby";
   if (timeEntryModeInput) timeEntryModeInput.value = App.State.state?.settings?.timeEntryMode || "decimal";
@@ -1324,6 +1336,8 @@ function renderProfileDashboard(targetSubTab = "identity") {
 
         App.State.state.settings.subjectsLabelPlural = (subjectsPluralInput?.value || "Asignaturas").trim();
         App.State.state.settings.subjectsLabelSingular = (subjectsSingularInput?.value || "Asignatura").trim();
+        const subjectsColorInput = document.getElementById("profileSubjectsColor") || document.getElementById("profileSubjectsGlobalColor");
+        if (subjectsColorInput) App.State.state.settings.subjectsColor = App.Utils.normalizeColor(subjectsColorInput.value);
         App.State.state.settings.hobbiesLabelPlural = (hobbiesPluralInput?.value || "Hobbies").trim();
         App.State.state.settings.hobbiesLabelSingular = (hobbiesSingularInput?.value || "Hobby").trim();
         App.State.state.settings.timeEntryMode = timeEntryModeInput?.value === "hours-minutes" ? "hours-minutes" : "decimal";
@@ -1437,6 +1451,34 @@ function renderProfileDashboard(targetSubTab = "identity") {
       });
       profileAccentInput.addEventListener("change", () => {
         App.Storage.saveState();
+      });
+    }
+
+    function handleGlobalSubjectsColorChange(e) {
+      const newColor = App.Utils.normalizeColor(e.target.value);
+      if (!App.State.state.settings) App.State.state.settings = {};
+      App.State.state.settings.subjectsColor = newColor;
+      const c1 = document.getElementById("profileSubjectsColor");
+      const c2 = document.getElementById("profileSubjectsGlobalColor");
+      if (c1 && c1 !== e.target) c1.value = newColor;
+      if (c2 && c2 !== e.target) c2.value = newColor;
+      App.Stats.renderStats();
+    }
+
+    const subColorEl = document.getElementById("profileSubjectsColor");
+    if (subColorEl) {
+      subColorEl.addEventListener("input", handleGlobalSubjectsColorChange);
+      subColorEl.addEventListener("change", () => {
+        App.Storage.saveState();
+      });
+    }
+
+    const subGlobalColorEl = document.getElementById("profileSubjectsGlobalColor");
+    if (subGlobalColorEl) {
+      subGlobalColorEl.addEventListener("input", handleGlobalSubjectsColorChange);
+      subGlobalColorEl.addEventListener("change", () => {
+        App.Storage.saveState();
+        App.Utils.showToast(App.I18n?.text("Color de asignaturas actualizado.", "Subjects color updated."));
       });
     }
 

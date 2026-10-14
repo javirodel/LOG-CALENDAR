@@ -37,7 +37,7 @@
 /* ── Body ─────────────────────────────────────────────────── */
 [data-theme="dark"] body {
   background:
-    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.06), transparent 34rem),
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.16) 0%, rgba(var(--accent-rgb), 0.08) 28%, rgba(var(--accent-rgb), 0.02) 54%, transparent 74%),
     linear-gradient(180deg, #0c0c12 0%, var(--bg) 38%, #0c0c12 100%);
 }
 
@@ -467,26 +467,57 @@
 }
 
 /* ── Focus tracks ─────────────────────────────────────────── */
-[data-theme="dark"] .focus-track,
-[data-theme="dark"] .track-projects,
-[data-theme="dark"] .track-sport,
-[data-theme="dark"] .track-community,
-[data-theme="oled"] .focus-track,
-[data-theme="oled"] .track-projects,
-[data-theme="oled"] .track-sport,
-[data-theme="oled"] .track-community {
-  background: var(--surface) !important;
-  border-color: var(--line) !important;
+[data-theme="dark"] .focus-track {
+  background: linear-gradient(130deg, color-mix(in srgb, var(--track-color) 20%, var(--surface)) 0%, var(--surface) 100%) !important;
+  border-color: color-mix(in srgb, var(--track-color) 38%, var(--line)) !important;
 }
-[data-theme="dark"] .focus-track h3,
-[data-theme="dark"] .track-projects h3,
-[data-theme="dark"] .track-sport h3,
-[data-theme="dark"] .track-community h3,
-[data-theme="oled"] .focus-track h3,
-[data-theme="oled"] .track-projects h3,
-[data-theme="oled"] .track-sport h3,
-[data-theme="oled"] .track-community h3 {
+[data-theme="dark"] .focus-track h3 {
+  color: color-mix(in srgb, var(--track-color) 65%, #ffffff) !important;
+}
+[data-theme="dark"] .focus-track input {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border-color: color-mix(in srgb, var(--track-color) 25%, var(--line)) !important;
   color: var(--ink) !important;
+}
+[data-theme="dark"] .focus-track input:focus {
+  border-color: color-mix(in srgb, var(--track-color) 70%, #ffffff) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--track-color) 24%, transparent) !important;
+}
+
+[data-theme="dark"] .track-projects {
+  border-color: rgba(245, 158, 11, 0.38) !important;
+  background: linear-gradient(130deg, rgba(245, 158, 11, 0.20) 0%, var(--surface) 100%) !important;
+}
+[data-theme="dark"] .track-projects h3 {
+  color: #fcd34d !important;
+}
+[data-theme="dark"] .track-projects input:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22) !important;
+}
+
+[data-theme="dark"] .track-sport {
+  border-color: rgba(14, 165, 233, 0.38) !important;
+  background: linear-gradient(130deg, rgba(14, 165, 233, 0.20) 0%, var(--surface) 100%) !important;
+}
+[data-theme="dark"] .track-sport h3 {
+  color: #7dd3fc !important;
+}
+[data-theme="dark"] .track-sport input:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22) !important;
+}
+
+[data-theme="dark"] .track-community {
+  border-color: rgba(168, 85, 247, 0.38) !important;
+  background: linear-gradient(130deg, rgba(168, 85, 247, 0.20) 0%, var(--surface) 100%) !important;
+}
+[data-theme="dark"] .track-community h3 {
+  color: #d8b4fe !important;
+}
+[data-theme="dark"] .track-community input:focus {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.22) !important;
 }
 [data-theme="dark"] .notice.project-note  { background: rgba(217, 119, 6, 0.12) !important; color: #fdba74 !important; }
 [data-theme="dark"] .notice.sport-note    { background: rgba(2, 132, 199, 0.12) !important; color: #7dd3fc !important; }
@@ -610,7 +641,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.10), transparent 34rem),
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.18) 0%, rgba(var(--accent-rgb), 0.08) 28%, rgba(var(--accent-rgb), 0.02) 52%, transparent 72%),
     linear-gradient(180deg, #fbfcff 0%, var(--bg) 38%, #eef2f7 100%);
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -6276,7 +6307,9 @@ textarea {
 }
 
 [data-theme="oled"] body {
-  background: #000000 !important;
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.14) 0%, rgba(var(--accent-rgb), 0.06) 28%, rgba(var(--accent-rgb), 0.015) 50%, transparent 72%),
+    #000000 !important;
 }
 
 [data-theme="oled"] .day-cell {
@@ -6358,42 +6391,74 @@ textarea {
   color: #888899 !important;
 }
 
-[data-theme="oled"] .focus-track,
-[data-theme="oled"] .track-projects,
-[data-theme="oled"] .track-sport,
-[data-theme="oled"] .track-community {
-  background: #08080c !important;
-  border-color: #1a1a24 !important;
+[data-theme="oled"] .focus-track {
+  background: linear-gradient(130deg, color-mix(in srgb, var(--track-color) 22%, #08080c) 0%, #08080c 100%) !important;
+  border-color: color-mix(in srgb, var(--track-color) 35%, #1a1a24) !important;
 }
 
-[data-theme="oled"] .focus-track h3,
-[data-theme="oled"] .track-projects h3,
-[data-theme="oled"] .track-sport h3,
-[data-theme="oled"] .track-community h3 {
-  color: #f1f1f6 !important;
+[data-theme="oled"] .focus-track h3 {
+  color: color-mix(in srgb, var(--track-color) 70%, #ffffff) !important;
 }
 
-[data-theme="oled"] .focus-track p,
-[data-theme="oled"] .track-projects p,
-[data-theme="oled"] .track-sport p,
-[data-theme="oled"] .track-community p {
+[data-theme="oled"] .focus-track p {
   color: #888899 !important;
 }
 
-[data-theme="oled"] .focus-track label,
-[data-theme="oled"] .track-projects label,
-[data-theme="oled"] .track-sport label,
-[data-theme="oled"] .track-community label {
-  color: #888899 !important;
+[data-theme="oled"] .focus-track label {
+  color: color-mix(in srgb, var(--track-color) 40%, #888899) !important;
 }
 
-[data-theme="oled"] .focus-track input,
-[data-theme="oled"] .track-projects input,
-[data-theme="oled"] .track-sport input,
-[data-theme="oled"] .track-community input {
+[data-theme="oled"] .focus-track input {
   background: #000000 !important;
-  border-color: #1a1a24 !important;
+  border-color: color-mix(in srgb, var(--track-color) 24%, #1a1a24) !important;
   color: #f1f1f6 !important;
+}
+
+[data-theme="oled"] .focus-track input:focus {
+  border-color: color-mix(in srgb, var(--track-color) 70%, #ffffff) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--track-color) 24%, transparent) !important;
+}
+
+[data-theme="oled"] .track-projects {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: linear-gradient(130deg, rgba(245, 158, 11, 0.22) 0%, #08080c 100%) !important;
+}
+
+[data-theme="oled"] .track-projects h3 {
+  color: #fcd34d !important;
+}
+
+[data-theme="oled"] .track-projects input:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22) !important;
+}
+
+[data-theme="oled"] .track-sport {
+  border-color: rgba(14, 165, 233, 0.35) !important;
+  background: linear-gradient(130deg, rgba(14, 165, 233, 0.22) 0%, #08080c 100%) !important;
+}
+
+[data-theme="oled"] .track-sport h3 {
+  color: #7dd3fc !important;
+}
+
+[data-theme="oled"] .track-sport input:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22) !important;
+}
+
+[data-theme="oled"] .track-community {
+  border-color: rgba(168, 85, 247, 0.35) !important;
+  background: linear-gradient(130deg, rgba(168, 85, 247, 0.22) 0%, #08080c 100%) !important;
+}
+
+[data-theme="oled"] .track-community h3 {
+  color: #d8b4fe !important;
+}
+
+[data-theme="oled"] .track-community input:focus {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.22) !important;
 }
 
 [data-theme="oled"] .subject-row {
@@ -6531,7 +6596,9 @@ textarea {
 }
 
 [data-theme="sepia"] body {
-  background: #f5ecd7 !important;
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.15) 0%, rgba(var(--accent-rgb), 0.06) 28%, transparent 68%),
+    #f5ecd7 !important;
 }
 
 [data-theme="sepia"] .day-cell {

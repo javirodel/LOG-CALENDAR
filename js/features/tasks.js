@@ -90,6 +90,7 @@ function normalizeState(candidate) {
       ...candidate.settings,
       subjectsLabelPlural: typeof candidate.settings.subjectsLabelPlural === "string" && candidate.settings.subjectsLabelPlural.trim() ? candidate.settings.subjectsLabelPlural.trim() : "Asignaturas",
       subjectsLabelSingular: typeof candidate.settings.subjectsLabelSingular === "string" && candidate.settings.subjectsLabelSingular.trim() ? candidate.settings.subjectsLabelSingular.trim() : "Asignatura",
+      subjectsColor: candidate.settings.subjectsColor ? App.Utils.normalizeColor(candidate.settings.subjectsColor) : (candidate.settings.profile?.accentColor || "#0f766e"),
       hobbiesLabelPlural: typeof candidate.settings.hobbiesLabelPlural === "string" && candidate.settings.hobbiesLabelPlural.trim() ? candidate.settings.hobbiesLabelPlural.trim() : "Hobbies",
       hobbiesLabelSingular: typeof candidate.settings.hobbiesLabelSingular === "string" && candidate.settings.hobbiesLabelSingular.trim() ? candidate.settings.hobbiesLabelSingular.trim() : "Hobby",
       timeEntryMode: candidate.settings.timeEntryMode === "hours-minutes" ? "hours-minutes" : "decimal",
@@ -445,7 +446,7 @@ function renderSubjectInputsWithList(list) {
 }
 
 function openEventEntry(target = null) {
-  editingEventTarget = target ? { source: target.source, index: target.index } : null;
+  App.State.editingEventTarget = target ? { source: target.source, index: target.index } : null;
   const sourceEvent = target || { type: "personal", text: "", subjectName: "" };
   App.Constants.eventEntryTitleEl.textContent = target ? (App.I18n?.text("Editar evento", "Edit event")) : (App.I18n?.t("events.modalTitle") || "Añadir evento");
   App.Constants.eventSubmitBtn.textContent = target ? (App.I18n?.text("Guardar cambios", "Save changes")) : (App.I18n?.t("events.saveBtn") || "Guardar evento");
@@ -464,7 +465,7 @@ function openEventEntry(target = null) {
 }
 
 function closeEventEntry() {
-  editingEventTarget = null;
+  App.State.editingEventTarget = null;
   App.Constants.eventEntryModalEl.hidden = true;
   App.Constants.eventFormEl.reset();
   App.Constants.customCategoryColorEl.value = "#0f766e";
@@ -723,7 +724,7 @@ function eventMatchesSubject(text, subjectName) {
 }
 
 function openSubjectEntry() {
-  editingSubjectTarget = null;
+  App.State.editingSubjectTarget = null;
   if (App.Constants.subjectSettingsFormEl) App.Constants.subjectSettingsFormEl.reset();
   if (App.Constants.newSubjectColorEl) App.Constants.newSubjectColorEl.value = "#0f766e";
   
@@ -738,7 +739,7 @@ function openSubjectEntry() {
 }
 
 function closeSubjectEntry() {
-  editingSubjectTarget = null;
+  App.State.editingSubjectTarget = null;
   if (App.Constants.subjectEntryModalEl) App.Constants.subjectEntryModalEl.hidden = true;
 }
 
@@ -794,7 +795,7 @@ function addSubjectFromSettings(event) {
       App.State.state.settings.subjectDifficulty[name] = clampDifficulty(App.Constants.newSubjectDifficultyEl.value);
     }
 
-    editingSubjectTarget = null;
+    App.State.editingSubjectTarget = null;
     closeSubjectEntry();
     App.Settings.refreshAfterConfigChange(`${subSingular} actualizada.`);
     return;
@@ -826,7 +827,7 @@ function handleSubjectSettingsClick(event) {
     const subject = App.State.subjects.find(s => s.name === oldName);
     if (!subject) return;
 
-    editingSubjectTarget = oldName;
+    App.State.editingSubjectTarget = oldName;
     App.Constants.newSubjectNameEl.value = subject.name;
     App.Constants.newSubjectDescriptionEl.value = subject.description || "";
     App.Constants.newSubjectColorEl.value = subject.color || "#0f766e";
@@ -960,7 +961,7 @@ function renderTaskLinkOptions(selectedValue = "") {
 
 function openTaskEntry(targetTask = null, defaultDate = "") {
   if (targetTask) {
-    editingTaskTarget = targetTask.id;
+    App.State.editingTaskTarget = targetTask.id;
     App.Constants.taskEntryTitleEl.textContent = App.I18n?.text("Editar tarea", "Edit task");
     App.Constants.taskSubmitBtn.textContent = App.I18n?.text("Guardar cambios", "Save changes");
     App.Constants.taskTextEl.value = targetTask.text;
@@ -971,7 +972,7 @@ function openTaskEntry(targetTask = null, defaultDate = "") {
     App.Constants.taskDueDateEl.value = targetTask.dueDate || "";
     App.Constants.taskDifficultyEl.value = targetTask.difficulty || 3;
   } else {
-    editingTaskTarget = null;
+    App.State.editingTaskTarget = null;
     App.Constants.taskEntryTitleEl.textContent = App.I18n?.t("tasks.addTask") || "Añadir tarea";
     App.Constants.taskSubmitBtn.textContent = App.I18n?.t("tasks.addTaskBtn") || "Añadir tarea";
     App.Constants.taskTextEl.value = "";
@@ -987,7 +988,7 @@ function openTaskEntry(targetTask = null, defaultDate = "") {
 }
 
 function closeTaskEntry() {
-  editingTaskTarget = null;
+  App.State.editingTaskTarget = null;
   App.Constants.taskEntryModalEl.hidden = true;
   App.Constants.taskFormEl.reset();
   if (App.Constants.taskDescriptionEl) {

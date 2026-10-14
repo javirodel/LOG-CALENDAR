@@ -66,7 +66,7 @@ function addTrackClasses(classNames, key) {
 }
 
 function openTrackEntry() {
-  editingTrackTarget = null;
+  App.State.editingTrackTarget = null;
   if (App.Constants.trackSettingsFormEl) App.Constants.trackSettingsFormEl.reset();
   if (App.Constants.newTrackColorEl) App.Constants.newTrackColorEl.value = "#d97706";
   
@@ -81,7 +81,9 @@ function openTrackEntry() {
 }
 
 function closeTrackEntry() {
-  editingTrackTarget = null;
+  App.State.editingTrackTarget = null;
+  if (App.Constants.trackSettingsFormEl) App.Constants.trackSettingsFormEl.reset();
+  if (App.Constants.newTrackColorEl) App.Constants.newTrackColorEl.value = "#d97706";
   if (App.Constants.trackEntryModalEl) App.Constants.trackEntryModalEl.hidden = true;
 }
 
@@ -104,7 +106,7 @@ function addTrackFromSettings(event) {
         color: App.Utils.normalizeColor(App.Constants.newTrackColorEl.value)
       };
     }
-    editingTrackTarget = null;
+    App.State.editingTrackTarget = null;
     closeTrackEntry();
     App.Settings.refreshAfterConfigChange(App.I18n?.text(`${hobSingular} actualizado.`, `${hobSingular} updated.`));
     return;
@@ -131,7 +133,7 @@ function handleTrackSettingsClick(event) {
     const track = App.State.EXTRA_TRACKS.find(t => t.key === key);
     if (!track) return;
 
-    editingTrackTarget = key;
+    App.State.editingTrackTarget = key;
     App.Constants.newTrackNameEl.value = track.label;
     App.Constants.newTrackDescriptionEl.value = track.description || "";
     App.Constants.newTrackColorEl.value = track.color || "#d97706";
@@ -354,10 +356,11 @@ function initRoutineTrackerEvents() {
         type: "habit"
       });
 
+      const wasEditingHabit = Boolean(App.State.editingHabitTarget);
       App.Storage.saveState();
       closeHabitModal();
       renderRoutineTracker();
-      App.Utils.showToast(App.State.editingHabitTarget ? App.I18n?.text("Hábito actualizado.", "Habit updated.") : App.I18n?.text("Hábito añadido.", "Habit added."));
+      App.Utils.showToast(wasEditingHabit ? App.I18n?.text("Hábito actualizado.", "Habit updated.") : App.I18n?.text("Hábito añadido.", "Habit added."));
     });
   }
 
@@ -397,7 +400,7 @@ function openHabitModal(habitId) {
 
   if (!modal) return;
 
-  editingHabitTarget = habitId;
+  App.State.editingHabitTarget = habitId;
 
   if (habitId) {
     const habit = (App.State.state.routineTracker && App.State.state.routineTracker.habits) ? App.State.state.routineTracker.habits.find(h => h.id === habitId) : null;
@@ -422,7 +425,7 @@ function openHabitModal(habitId) {
 function closeHabitModal() {
   const modal = document.getElementById("habitEntryModal");
   if (modal) modal.hidden = true;
-  editingHabitTarget = null;
+  App.State.editingHabitTarget = null;
 }
 
 function shiftMonthKey(key, delta) {

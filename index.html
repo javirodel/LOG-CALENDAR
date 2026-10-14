@@ -738,6 +738,15 @@
                               <label><span data-i18n="settings.subjectsPluralLabel">Nombre de asignaturas (Plural)</span><input id="profileSubjectsPlural" type="text" maxlength="30" placeholder="Asignaturas"></label>
                               <label><span data-i18n="settings.subjectsSingularLabel">Nombre de asignatura (Singular)</span><input id="profileSubjectsSingular" type="text" maxlength="30" placeholder="Asignatura"></label>
                             </div>
+                            <div style="margin-top: 6px;">
+                              <label style="display: flex; flex-direction: column; gap: 4px;">
+                                <span data-i18n="settings.subjectsGlobalColor">Color global de asignaturas</span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                  <input id="profileSubjectsColor" type="color" value="#0f766e" style="cursor: pointer; width: 44px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 6px;">
+                                  <span style="font-size: 0.8rem; color: var(--muted);" data-i18n="settings.subjectsGlobalColorHelp">Color para el concepto de asignaturas en el gráfico de distribución global.</span>
+                                </div>
+                              </label>
+                            </div>
                             <div class="settings-two" style="margin-top: 6px;">
                               <label><span data-i18n="settings.hobbiesPluralLabel">Nombre de hobbies (Plural)</span><input id="profileHobbiesPlural" type="text" maxlength="30" placeholder="Hobbies"></label>
                               <label><span data-i18n="settings.hobbiesSingularLabel">Nombre de hobby (Singular)</span><input id="profileHobbiesSingular" type="text" maxlength="30" placeholder="Hobby"></label>
@@ -795,7 +804,13 @@
                         <p class="settings-help" data-i18n="settings.subjectsHelp">Administra tus materias académicas y proyectos personales.</p>
                       </div>
                       <div style="margin-bottom: 20px;">
-                        <h4 id="settingsSubjectsTitle" style="margin: 0 0 8px 0; font-size: 0.92rem; color: var(--ink);">Asignaturas</h4>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                          <h4 id="settingsSubjectsTitle" style="margin: 0; font-size: 0.92rem; color: var(--ink);">Asignaturas</h4>
+                          <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 650; color: var(--muted); cursor: pointer; margin: 0;" title="Color global para el bloque de asignaturas en estadísticas y distribución">
+                            <span data-i18n="settings.subjectsGlobalColor">Color global</span>
+                            <input type="color" id="profileSubjectsGlobalColor" value="#0f766e" style="cursor: pointer; width: 32px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 4px; vertical-align: middle;">
+                          </label>
+                        </div>
                         <div class="settings-list" id="subjectsSettingsList"></div>
                         <button class="ghost-button add-config-button" id="openSubjectModalBtn" type="button" style="margin-top: 8px;" data-i18n="settings.addSubjectBtn">Añadir asignatura</button>
                       </div>
@@ -868,7 +883,7 @@
                         <div class="about-version-banner">
                           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <strong>LOG of Growth</strong>
-                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.2</span>
+                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.3</span>
                             <span id="aboutVersionStatusBadge" class="version-status-badge badge-up-to-date" data-i18n="settings.versionUpToDate">✓ Al día</span>
                             <span id="pwaInstalledBadge" class="pwa-installed-badge" style="display: none;" data-i18n="settings.pwaInstalledText">✓ Modo app activo</span>
                           </div>

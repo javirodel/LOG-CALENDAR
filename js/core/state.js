@@ -53,6 +53,7 @@ function syncConfigFromState() {
 
   if (!state.settings.subjectsLabelPlural) state.settings.subjectsLabelPlural = "Asignaturas";
   if (!state.settings.subjectsLabelSingular) state.settings.subjectsLabelSingular = "Asignatura";
+  if (!state.settings.subjectsColor) state.settings.subjectsColor = state.settings.profile?.accentColor || "#0f766e";
   if (!state.settings.hobbiesLabelPlural) state.settings.hobbiesLabelPlural = "Hobbies";
   if (!state.settings.hobbiesLabelSingular) state.settings.hobbiesLabelSingular = "Hobby";
   if (state.settings.timeEntryMode !== "hours-minutes") state.settings.timeEntryMode = "decimal";

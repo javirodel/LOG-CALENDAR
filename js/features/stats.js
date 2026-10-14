@@ -280,9 +280,11 @@ function renderRatingsChart(keys) {
 function renderBalanceChart(totalStudy, totalsByTrack, totalHours, activeTracks = App.State.EXTRA_TRACKS) {
   App.Constants.balanceChartEl.innerHTML = "";
 
+  const subjectsColor = App.State.state.settings.subjectsColor || App.State.state.settings.profile?.accentColor || "#0f766e";
+
   const parts = [];
   if (totalStudy > 0 || App.State.latestStats?.activeSubjects?.length > 0) {
-    parts.push({ label: App.State.state.settings.subjectsLabelPlural || "Estudio", value: totalStudy, color: App.State.state.settings.profile.accentColor });
+    parts.push({ label: App.State.state.settings.subjectsLabelPlural || "Estudio", value: totalStudy, color: subjectsColor });
   }
   parts.push(...activeTracks.map((track) => ({ label: track.label, value: totalsByTrack[track.key] || 0, color: track.color })));
 

@@ -299,6 +299,8 @@
         timeHoursMinutes: "Horas y minutos (ej. 1:30)",
         subjectsPluralLabel: "Nombre de asignaturas (Plural)",
         subjectsSingularLabel: "Nombre de asignatura (Singular)",
+        subjectsGlobalColor: "Color global de asignaturas",
+        subjectsGlobalColorHelp: "Color para el concepto de asignaturas en el gráfico de distribución global.",
         hobbiesPluralLabel: "Nombre de hobbies (Plural)",
         hobbiesSingularLabel: "Nombre de hobby (Singular)",
         heatScaleHelp: "Escala de calor de estudio en el calendario:",
@@ -780,6 +782,8 @@
         timeHoursMinutes: "Hours & minutes (e.g. 1:30)",
         subjectsPluralLabel: "Subject name (Plural)",
         subjectsSingularLabel: "Subject name (Singular)",
+        subjectsGlobalColor: "Subjects global color",
+        subjectsGlobalColorHelp: "Color for the subjects concept in the global distribution chart.",
         hobbiesPluralLabel: "Hobby name (Plural)",
         hobbiesSingularLabel: "Hobby name (Singular)",
         heatScaleHelp: "Calendar study intensity threshold scale:",
@@ -1112,7 +1116,7 @@
     const resolveText = (str) => {
       if (typeof str !== "string") return str;
       if (str.includes("{version}")) {
-        const v = window.App?.Constants?.APP_VERSION || "4.0.2";
+        const v = window.App?.Constants?.APP_VERSION || "4.0.3";
         return str.replace(/\{version\}/g, v);
       }
       return str;

@@ -2,7 +2,7 @@
   window.App = window.App || {};
   window.App.Constants = window.App.Constants || {};
 
-const APP_VERSION = "4.0.2";
+const APP_VERSION = "4.0.3";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -105,6 +105,8 @@ const profileLevel2El = document.getElementById("profileLevel2");
 const profileLevel3El = document.getElementById("profileLevel3");
 const profileLevel4El = document.getElementById("profileLevel4");
 const subjectsSettingsListEl = document.getElementById("subjectsSettingsList");
+const profileSubjectsColorEl = document.getElementById("profileSubjectsColor");
+const profileSubjectsGlobalColorEl = document.getElementById("profileSubjectsGlobalColor");
 const subjectSettingsFormEl = document.getElementById("subjectSettingsForm");
 const newSubjectNameEl = document.getElementById("newSubjectName");
 const newSubjectDescriptionEl = document.getElementById("newSubjectDescription");
@@ -326,6 +328,8 @@ Object.defineProperties(window.App.Constants, {
     profileLevel3El: { get: () => profileLevel3El, set: (v) => profileLevel3El = v, enumerable: true },
     profileLevel4El: { get: () => profileLevel4El, set: (v) => profileLevel4El = v, enumerable: true },
     subjectsSettingsListEl: { get: () => subjectsSettingsListEl, set: (v) => subjectsSettingsListEl = v, enumerable: true },
+    profileSubjectsColorEl: { get: () => profileSubjectsColorEl, set: (v) => profileSubjectsColorEl = v, enumerable: true },
+    profileSubjectsGlobalColorEl: { get: () => profileSubjectsGlobalColorEl, set: (v) => profileSubjectsGlobalColorEl = v, enumerable: true },
     subjectSettingsFormEl: { get: () => subjectSettingsFormEl, set: (v) => subjectSettingsFormEl = v, enumerable: true },
     newSubjectNameEl: { get: () => newSubjectNameEl, set: (v) => newSubjectNameEl = v, enumerable: true },
     newSubjectDescriptionEl: { get: () => newSubjectDescriptionEl, set: (v) => newSubjectDescriptionEl = v, enumerable: true },

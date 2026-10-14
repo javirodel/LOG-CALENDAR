@@ -4,6 +4,21 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [4.0.3] - 2026-10-13
+
+### Fixed
+- **Edición y actualización de hobbies sin duplicación**: corregido el selector de estado en `tracker.js` (`App.State.editingTrackTarget`) que provocaba que al editar el color o título de un hobby existente se creara una entrada duplicada en lugar de actualizarse. Se revisó y aseguró la misma persistencia para asignaturas, hábitos y tareas en `tasks.js`.
+
+### Added
+- **Color global personalizable para asignaturas**: incorporado el ajuste `subjectsColor` para definir el color representativo del bloque general de asignaturas (especialmente visible en la gráfica de *Distribución global* del calendario). Añadidos selectores de color en **Ajustes > Asignaturas & Hobbies** y en **Ajustes > Perfil / Apariencia > Nombres personalizados** con sincronización en tiempo real y persistencia en el almacenamiento.
+
+### Changed
+- **Degradados con luminosidad adaptada en Modo Oscuro y OLED**:
+  - Las tarjetas de registro de hobbies (`.focus-track`, proyectos/tiempo, deporte, scout/comunidad) recuperan sus degradados cromáticos en los temas oscuro y OLED, utilizando mezclas de contraste adaptativo (`color-mix`) con realce en blancos sobre el texto para evitar que colores oscuros queden apagados o ilegibles.
+- **Difuminado ambiental reforzado desde la esquina de LOG CALENDAR**:
+  - Mejorada la progresión de paradas del degradado radial en la esquina superior izquierda del `body` en todos los temas (claro, oscuro, OLED y sepia), logrando un resplandor ambiental orgánico y visible que acompaña al título sin resultar artificial ni excesivo.
+- **Caché del Service Worker y versión**: actualizada a `v4.0.3`.
+
 ## [4.0.2] - 2026-10-12
 
 ### Changed

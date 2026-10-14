@@ -737,6 +737,7 @@
       settings: {
         subjectsLabelPlural: "Asignaturas",
         subjectsLabelSingular: "Asignatura",
+        subjectsColor: "#0f766e",
         hobbiesLabelPlural: "Hobbies",
         hobbiesLabelSingular: "Hobby",
         timeEntryMode: "decimal",
@@ -841,6 +842,7 @@
       settings: {
         subjectsLabelPlural: "Asignaturas",
         subjectsLabelSingular: "Asignatura",
+        subjectsColor: "#0f766e",
         hobbiesLabelPlural: "Hobbies",
         hobbiesLabelSingular: "Hobby",
         timeEntryMode: "decimal",
@@ -969,7 +971,7 @@
 
     const payload = {
       exportedAt: new Date().toISOString(),
-      version: `v${App.Constants?.APP_VERSION || "4.0.2"}`,
+      version: `v${App.Constants?.APP_VERSION || "4.0.3"}`,
       activeProfile: currentProfile,
       profilesManifest: profiles,
       range: { start: App.Calendar.getCalendarStart(), end: App.Calendar.getCalendarEnd() },
