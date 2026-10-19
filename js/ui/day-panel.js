@@ -13,6 +13,8 @@ function ensureDay(dateKey) {
   if (!Array.isArray(day.customEvents)) day.customEvents = [];
 
   if (!day.extra || typeof day.extra !== "object") day.extra = {};
+  if (!day.subjectTimeEntries || typeof day.subjectTimeEntries !== "object") day.subjectTimeEntries = {};
+  if (!day.extraTimeEntries || typeof day.extraTimeEntries !== "object") day.extraTimeEntries = {};
 
   for (const track of App.State.EXTRA_TRACKS) {
     if (typeof day.extra[track.key] !== "number") {
@@ -64,8 +66,10 @@ function renderSelectedDay() {
   renderRating(day.rating);
 
   for (const input of App.Constants.subjectFormEl.querySelectorAll("input[data-subject]")) {
-    const value = day.subjects[input.dataset.subject] || 0;
-    input.value = value ? App.Utils.formatTimeInput(value) : "";
+    App.Utils.updateTimeInputDisplay(
+      input,
+      App.Utils.getTimeEntryParts(day, "subjectTimeEntries", input.dataset.subject)
+    );
   }
 
   renderNotices();
@@ -176,7 +180,9 @@ function clearSelectedDay() {
     notes: "",
     rating: 0,
     customEvents: existingEvents,
-    extra: Object.fromEntries(App.State.EXTRA_TRACKS.map((track) => [track.key, 0]))
+    extra: Object.fromEntries(App.State.EXTRA_TRACKS.map((track) => [track.key, 0])),
+    subjectTimeEntries: {},
+    extraTimeEntries: {}
   };
   App.Storage.persist();
   renderSelectedDay();

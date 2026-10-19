@@ -731,6 +731,13 @@
                               <option value="hours-minutes" data-i18n="settings.timeHoursMinutes">Horas y minutos (ej. 1:30)</option>
                             </select>
                           </label>
+                          <label class="settings-checkbox-row" style="margin-top: 8px;">
+                            <input id="profileTimeAdditionsEnabled" type="checkbox">
+                            <span>
+                              <strong data-i18n="settings.timeAdditionsLabel">Permitir sumas de tiempo</strong>
+                              <small data-i18n="settings.timeAdditionsHelp">Escribe una expresión sin “=” (por ejemplo, 0:40 +:45 o 0.67 +0.75). También puedes escribir solo +:45 para sumarlo al total anterior. Al pasar el ratón verás el desglose.</small>
+                            </span>
+                          </label>
 
                           <div style="border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px;">
                             <span style="font-size: 0.82rem; font-weight: 750; color: var(--ink); display: block; margin-bottom: 6px;" data-i18n="settings.namingBlockTitle">Nombres personalizados de actividades</span>
@@ -883,7 +890,7 @@
                         <div class="about-version-banner">
                           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <strong>LOG of Growth</strong>
-                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.3</span>
+                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.4</span>
                             <span id="aboutVersionStatusBadge" class="version-status-badge badge-up-to-date" data-i18n="settings.versionUpToDate">✓ Al día</span>
                             <span id="pwaInstalledBadge" class="pwa-installed-badge" style="display: none;" data-i18n="settings.pwaInstalledText">✓ Modo app activo</span>
                           </div>

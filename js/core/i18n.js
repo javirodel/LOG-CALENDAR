@@ -297,6 +297,8 @@
         timeEntryModeLabel: "Formato de registro de tiempo",
         timeDecimal: "Horas decimales (ej. 1,5)",
         timeHoursMinutes: "Horas y minutos (ej. 1:30)",
+        timeAdditionsLabel: "Permitir sumas de tiempo",
+        timeAdditionsHelp: "Escribe una expresión sin “=” (por ejemplo, 0:40 +:45 o 0,67 +0,75). También puedes escribir solo +:45 para sumarlo al total anterior. Al pasar el ratón verás el desglose.",
         subjectsPluralLabel: "Nombre de asignaturas (Plural)",
         subjectsSingularLabel: "Nombre de asignatura (Singular)",
         subjectsGlobalColor: "Color global de asignaturas",
@@ -780,6 +782,8 @@
         timeEntryModeLabel: "Time entry format",
         timeDecimal: "Decimal hours (e.g. 1.5)",
         timeHoursMinutes: "Hours & minutes (e.g. 1:30)",
+        timeAdditionsLabel: "Allow time expressions",
+        timeAdditionsHelp: "Type an expression without “=” (for example, 0:40 +:45 or 0.67 +0.75). You can also type only +:45 to add to the previous total. Hover to see the breakdown.",
         subjectsPluralLabel: "Subject name (Plural)",
         subjectsSingularLabel: "Subject name (Singular)",
         subjectsGlobalColor: "Subjects global color",
@@ -1116,7 +1120,7 @@
     const resolveText = (str) => {
       if (typeof str !== "string") return str;
       if (str.includes("{version}")) {
-        const v = window.App?.Constants?.APP_VERSION || "4.0.3";
+        const v = window.App?.Constants?.APP_VERSION || "4.0.4";
         return str.replace(/\{version\}/g, v);
       }
       return str;

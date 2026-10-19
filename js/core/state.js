@@ -57,6 +57,7 @@ function syncConfigFromState() {
   if (!state.settings.hobbiesLabelPlural) state.settings.hobbiesLabelPlural = "Hobbies";
   if (!state.settings.hobbiesLabelSingular) state.settings.hobbiesLabelSingular = "Hobby";
   if (state.settings.timeEntryMode !== "hours-minutes") state.settings.timeEntryMode = "decimal";
+  if (typeof state.settings.timeAdditionsEnabled !== "boolean") state.settings.timeAdditionsEnabled = true;
 
   for (const subject of subjects) {
     if (typeof state.settings.subjectDifficulty[subject.name] !== "number") {

@@ -94,6 +94,7 @@ function normalizeState(candidate) {
       hobbiesLabelPlural: typeof candidate.settings.hobbiesLabelPlural === "string" && candidate.settings.hobbiesLabelPlural.trim() ? candidate.settings.hobbiesLabelPlural.trim() : "Hobbies",
       hobbiesLabelSingular: typeof candidate.settings.hobbiesLabelSingular === "string" && candidate.settings.hobbiesLabelSingular.trim() ? candidate.settings.hobbiesLabelSingular.trim() : "Hobby",
       timeEntryMode: candidate.settings.timeEntryMode === "hours-minutes" ? "hours-minutes" : "decimal",
+      timeAdditionsEnabled: candidate.settings.timeAdditionsEnabled !== false,
       invertTrackpadSwipe: Boolean(candidate.settings.invertTrackpadSwipe),
       subjectDifficulty: {
         ...normalized.settings.subjectDifficulty,
@@ -434,14 +435,20 @@ function renderSubjectInputsWithList(list) {
         <span class="color-dot" style="background:${App.Utils.escapeHtml(subject.color)}"></span>
         <span>${App.Utils.escapeHtml(subject.name)}</span>
       </span>
-      <input type="${App.Utils.getTimeInputType()}" ${App.Utils.getTimeInputAttributes()} data-subject="${App.Utils.escapeHtml(subject.name)}" aria-label="Tiempo de ${App.Utils.escapeHtml(subject.name)}">
+      <span class="time-entry-control">
+        <input type="${App.Utils.getTimeInputType()}" ${App.Utils.getTimeInputAttributes()} placeholder="${App.Utils.getTimeInputPlaceholder()}" data-subject="${App.Utils.escapeHtml(subject.name)}" aria-label="Tiempo de ${App.Utils.escapeHtml(subject.name)}">
+        <span class="time-entry-breakdown" aria-hidden="true"></span>
+      </span>
     `;
     App.Constants.subjectFormEl.appendChild(row);
   }
 
   for (const input of App.Constants.subjectFormEl.querySelectorAll("input[data-subject]")) {
-    const value = App.DayPanel.ensureDay(App.State.selectedDate).subjects[input.dataset.subject] || 0;
-    input.value = value ? App.Utils.formatTimeInput(value) : "";
+    const day = App.DayPanel.ensureDay(App.State.selectedDate);
+    App.Utils.updateTimeInputDisplay(
+      input,
+      App.Utils.getTimeEntryParts(day, "subjectTimeEntries", input.dataset.subject)
+    );
   }
 }
 
@@ -776,6 +783,10 @@ function addSubjectFromSettings(event) {
           day.subjects[name] = day.subjects[App.State.editingSubjectTarget];
           delete day.subjects[App.State.editingSubjectTarget];
         }
+        if (day.subjectTimeEntries && day.subjectTimeEntries[App.State.editingSubjectTarget] !== undefined) {
+          day.subjectTimeEntries[name] = day.subjectTimeEntries[App.State.editingSubjectTarget];
+          delete day.subjectTimeEntries[App.State.editingSubjectTarget];
+        }
         if (day.customEvents) {
           for (const ev of day.customEvents) {
             if (ev.subjectName === App.State.editingSubjectTarget) {
@@ -856,6 +867,7 @@ function handleSubjectSettingsClick(event) {
   delete App.State.state.settings.subjectDifficulty[name];
   for (const day of Object.values(App.State.state.days)) {
     if (day.subjects) delete day.subjects[name];
+    if (day.subjectTimeEntries) delete day.subjectTimeEntries[name];
   }
   if (App.State.state?.checklistTasks) {
     App.State.state.checklistTasks = App.State.state.checklistTasks.map(task => {

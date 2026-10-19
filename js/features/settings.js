@@ -418,6 +418,7 @@ function renderSettings() {
   const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
   const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
   const timeEntryModeInput = document.getElementById("profileTimeEntryMode");
+  const timeAdditionsInput = document.getElementById("profileTimeAdditionsEnabled");
   const dailyGoalInput = document.getElementById("profileDailyGoal");
   if (subjectsPluralInput) subjectsPluralInput.value = App.State.state.settings.subjectsLabelPlural || "Asignaturas";
   if (subjectsSingularInput) subjectsSingularInput.value = App.State.state.settings.subjectsLabelSingular || "Asignatura";
@@ -429,6 +430,7 @@ function renderSettings() {
   if (hobbiesPluralInput) hobbiesPluralInput.value = App.State.state.settings.hobbiesLabelPlural || "Hobbies";
   if (hobbiesSingularInput) hobbiesSingularInput.value = App.State.state.settings.hobbiesLabelSingular || "Hobby";
   if (timeEntryModeInput) timeEntryModeInput.value = App.State.state.settings.timeEntryMode || "decimal";
+  if (timeAdditionsInput) timeAdditionsInput.checked = App.State.state.settings.timeAdditionsEnabled !== false;
   if (dailyGoalInput) dailyGoalInput.value = App.State.state.settings.dailyGoal || 0;
 
   [App.Constants.profileLevel1El, App.Constants.profileLevel2El, App.Constants.profileLevel3El, App.Constants.profileLevel4El].forEach((input, index) => {
@@ -640,6 +642,7 @@ function saveProfileSettings(event) {
   const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
   const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
   const timeEntryModeInput = document.getElementById("profileTimeEntryMode");
+  const timeAdditionsInput = document.getElementById("profileTimeAdditionsEnabled");
   const dailyGoalInput = document.getElementById("profileDailyGoal");
   const roleInput = document.getElementById("profileRoleInput");
   const bioInput = document.getElementById("profileBioInput");
@@ -651,6 +654,7 @@ function saveProfileSettings(event) {
   if (hobbiesPluralInput) App.State.state.settings.hobbiesLabelPlural = (hobbiesPluralInput.value || "Hobbies").trim();
   if (hobbiesSingularInput) App.State.state.settings.hobbiesLabelSingular = (hobbiesSingularInput.value || "Hobby").trim();
   if (timeEntryModeInput) App.State.state.settings.timeEntryMode = timeEntryModeInput.value === "hours-minutes" ? "hours-minutes" : "decimal";
+  if (timeAdditionsInput) App.State.state.settings.timeAdditionsEnabled = timeAdditionsInput.checked;
   if (dailyGoalInput) App.State.state.settings.dailyGoal = parseFloat(dailyGoalInput.value) || 0;
 
   const titleVal = (App.Constants.profileTitleEl?.value || "").trim() || "Principal";
@@ -918,6 +922,7 @@ function renderAppearanceSettings() {
   const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
   const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
   const timeEntryModeInput = document.getElementById("profileTimeEntryMode");
+  const timeAdditionsInput = document.getElementById("profileTimeAdditionsEnabled");
 
   if (subjectsPluralInput) subjectsPluralInput.value = App.State.state?.settings?.subjectsLabelPlural || "Asignaturas";
   if (subjectsSingularInput) subjectsSingularInput.value = App.State.state?.settings?.subjectsLabelSingular || "Asignatura";
@@ -929,6 +934,7 @@ function renderAppearanceSettings() {
   if (hobbiesPluralInput) hobbiesPluralInput.value = App.State.state?.settings?.hobbiesLabelPlural || "Hobbies";
   if (hobbiesSingularInput) hobbiesSingularInput.value = App.State.state?.settings?.hobbiesLabelSingular || "Hobby";
   if (timeEntryModeInput) timeEntryModeInput.value = App.State.state?.settings?.timeEntryMode || "decimal";
+  if (timeAdditionsInput) timeAdditionsInput.checked = App.State.state?.settings?.timeAdditionsEnabled !== false;
 
   const profile = App.State.state?.settings?.profile;
   if (profile && Array.isArray(profile.intensityLevels)) {
@@ -1333,6 +1339,7 @@ function renderProfileDashboard(targetSubTab = "identity") {
         const hobbiesPluralInput = document.getElementById("profileHobbiesPlural");
         const hobbiesSingularInput = document.getElementById("profileHobbiesSingular");
         const timeEntryModeInput = document.getElementById("profileTimeEntryMode");
+        const timeAdditionsInput = document.getElementById("profileTimeAdditionsEnabled");
 
         App.State.state.settings.subjectsLabelPlural = (subjectsPluralInput?.value || "Asignaturas").trim();
         App.State.state.settings.subjectsLabelSingular = (subjectsSingularInput?.value || "Asignatura").trim();
@@ -1341,6 +1348,7 @@ function renderProfileDashboard(targetSubTab = "identity") {
         App.State.state.settings.hobbiesLabelPlural = (hobbiesPluralInput?.value || "Hobbies").trim();
         App.State.state.settings.hobbiesLabelSingular = (hobbiesSingularInput?.value || "Hobby").trim();
         App.State.state.settings.timeEntryMode = timeEntryModeInput?.value === "hours-minutes" ? "hours-minutes" : "decimal";
+        App.State.state.settings.timeAdditionsEnabled = timeAdditionsInput?.checked !== false;
 
         App.State.state.settings.profile.intensityLevels = [
           parseFloat(App.Constants.profileLevel1El?.value) || 2,
@@ -1740,4 +1748,3 @@ function renderProfileDashboard(targetSubTab = "identity") {
     updateDockProfileAvatar();
   }
 })();
-

@@ -741,6 +741,7 @@
         hobbiesLabelPlural: "Hobbies",
         hobbiesLabelSingular: "Hobby",
         timeEntryMode: "decimal",
+        timeAdditionsEnabled: true,
         invertTrackpadSwipe: false,
         trackpadSensitivity: "medium",
         language: "es",
@@ -846,6 +847,7 @@
         hobbiesLabelPlural: "Hobbies",
         hobbiesLabelSingular: "Hobby",
         timeEntryMode: "decimal",
+        timeAdditionsEnabled: true,
         invertTrackpadSwipe: false,
         trackpadSensitivity: "medium",
         language: "es",
@@ -971,7 +973,7 @@
 
     const payload = {
       exportedAt: new Date().toISOString(),
-      version: `v${App.Constants?.APP_VERSION || "4.0.3"}`,
+      version: `v${App.Constants?.APP_VERSION || "4.0.4"}`,
       activeProfile: currentProfile,
       profilesManifest: profiles,
       range: { start: App.Calendar.getCalendarStart(), end: App.Calendar.getCalendarEnd() },

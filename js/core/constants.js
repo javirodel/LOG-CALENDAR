@@ -2,7 +2,7 @@
   window.App = window.App || {};
   window.App.Constants = window.App.Constants || {};
 
-const APP_VERSION = "4.0.3";
+const APP_VERSION = "4.0.4";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";

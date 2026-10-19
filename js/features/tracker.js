@@ -52,10 +52,16 @@ function renderTrackInputs() {
       <h3>${App.Utils.escapeHtml(track.label)}</h3>
       <p>${App.Utils.escapeHtml(track.description || "Tiempo dedicado a este hobby.")}</p>
       <label for="track-${App.Utils.escapeHtml(track.key)}">Tiempo del día</label>
-      <input id="track-${App.Utils.escapeHtml(track.key)}" type="${App.Utils.getTimeInputType()}" ${App.Utils.getTimeInputAttributes()} placeholder="${App.Utils.getTimeInputPlaceholder()}" data-track="${App.Utils.escapeHtml(track.key)}">
+      <span class="time-entry-control">
+        <input id="track-${App.Utils.escapeHtml(track.key)}" type="${App.Utils.getTimeInputType()}" ${App.Utils.getTimeInputAttributes()} placeholder="${App.Utils.getTimeInputPlaceholder()}" data-track="${App.Utils.escapeHtml(track.key)}">
+        <span class="time-entry-breakdown" aria-hidden="true"></span>
+      </span>
     `;
     const input = article.querySelector("input");
-    input.value = day.extra[track.key] ? App.Utils.formatTimeInput(day.extra[track.key]) : "";
+    App.Utils.updateTimeInputDisplay(
+      input,
+      App.Utils.getTimeEntryParts(day, "extraTimeEntries", track.key)
+    );
     App.Constants.focusTracksEl.appendChild(article);
   }
 }
@@ -161,6 +167,7 @@ function handleTrackSettingsClick(event) {
   App.State.state.settings.tracks = App.State.state.settings.tracks.filter((item) => item.key !== key);
   for (const day of Object.values(App.State.state.days)) {
     if (day.extra) delete day.extra[key];
+    if (day.extraTimeEntries) delete day.extraTimeEntries[key];
   }
   if (App.State.state?.checklistTasks) {
     App.State.state.checklistTasks = App.State.state.checklistTasks.map(task => {
@@ -370,8 +377,10 @@ function initRoutineTrackerEvents() {
   if (habitDeleteBtn) {
     habitDeleteBtn.addEventListener("click", () => {
       if (App.State.editingHabitTarget && confirm(App.I18n?.text("¿Eliminar este hábito de la lista?", "Delete this habit from the list?"))) {
-        const habit = App.State.state.routineTracker.habits.find(h => h.id === App.State.editingHabitTarget);
-        App.State.state.routineTracker.habits = App.State.state.routineTracker.habits.filter(h => h.id !== App.State.editingHabitTarget);
+        const habitId = App.State.editingHabitTarget;
+        const habit = App.State.state.routineTracker.habits.find(h => h.id === habitId);
+        App.State.state.routineTracker.habits = App.State.state.routineTracker.habits.filter(h => h.id !== habitId);
+        removeHabitChecks(habitId);
         App.Main.recordLastUpdate({
           source: "tracker",
           target: habit ? `Hábito "${habit.name}" eliminado` : "Hábito eliminado",
@@ -388,6 +397,29 @@ function initRoutineTrackerEvents() {
   // Navegación fluida por gestos de trackpad (dos dedos / scroll horizontal)
   window.removeEventListener("wheel", handleHorizontalViewSwipe);
   window.addEventListener("wheel", handleHorizontalViewSwipe, { passive: false });
+}
+
+function removeHabitChecks(habitId) {
+  const routineTracker = App.State.state?.routineTracker;
+  if (!routineTracker || !habitId || !routineTracker.monthlyChecks || typeof routineTracker.monthlyChecks !== "object") return;
+
+  for (const [monthKey, monthChecks] of Object.entries(routineTracker.monthlyChecks)) {
+    if (!monthChecks || typeof monthChecks !== "object") {
+      delete routineTracker.monthlyChecks[monthKey];
+      continue;
+    }
+
+    delete monthChecks[habitId];
+    const hasChecks = Object.values(monthChecks).some((habitDays) =>
+      habitDays && typeof habitDays === "object" && Object.values(habitDays).some(Boolean)
+    );
+    if (!hasChecks) delete routineTracker.monthlyChecks[monthKey];
+  }
+
+  if (Array.isArray(routineTracker.hiddenHistoryMonths)) {
+    const monthsWithData = new Set(Object.keys(routineTracker.monthlyChecks));
+    routineTracker.hiddenHistoryMonths = routineTracker.hiddenHistoryMonths.filter((monthKey) => monthsWithData.has(monthKey));
+  }
 }
 
 function openHabitModal(habitId) {
@@ -853,8 +885,8 @@ function renderRoutineOverview(grandDone, grandGoal, globalPct, habits, donePerH
   const overviewList = document.getElementById("habitOverviewList");
 
   if (pctEl) pctEl.textContent = `${globalPct}%`;
-  if (subEl) subEl.textContent = (App.I18n && typeof App.I18n.t === "function") 
-    ? App.I18n.t("tracker.completedOf", { c: grandDone, t: grandGoal }) 
+  if (subEl) subEl.textContent = (App.I18n && typeof App.I18n.format === "function")
+    ? App.I18n.format("tracker.completedOf", { c: grandDone, t: grandGoal })
     : `${grandDone} de ${grandGoal} completados`;
 
   if (donutWrapper) {
@@ -947,7 +979,9 @@ function hasMonthHabitChecks(mKey) {
   const allMonthly = App.State.state.routineTracker?.monthlyChecks || {};
   const checks = allMonthly[key1] || allMonthly[key2] || allMonthly[key3];
   if (!checks || typeof checks !== "object") return false;
-  return Object.values(checks).some(habitDays => 
+  const activeHabitIds = new Set((App.State.state?.routineTracker?.habits || []).map((habit) => habit.id));
+  return Object.entries(checks).some(([habitId, habitDays]) =>
+    activeHabitIds.has(habitId) &&
     habitDays && typeof habitDays === "object" && Object.values(habitDays).some(val => !!val)
   );
 }
@@ -1570,6 +1604,7 @@ function switchView(viewName, targetSubTab) {
     initRoutineTrackerEvents: { get: () => initRoutineTrackerEvents, set: (v) => initRoutineTrackerEvents = v, enumerable: true },
     openHabitModal: { get: () => openHabitModal, set: (v) => openHabitModal = v, enumerable: true },
     closeHabitModal: { get: () => closeHabitModal, set: (v) => closeHabitModal = v, enumerable: true },
+    removeHabitChecks: { get: () => removeHabitChecks, set: (v) => removeHabitChecks = v, enumerable: true },
     shiftMonthKey: { get: () => shiftMonthKey, set: (v) => shiftMonthKey = v, enumerable: true },
     formatMonthKeyTitle: { get: () => formatMonthKeyTitle, set: (v) => formatMonthKeyTitle = v, enumerable: true },
     renderRoutineTracker: { get: () => renderRoutineTracker, set: (v) => renderRoutineTracker = v, enumerable: true },

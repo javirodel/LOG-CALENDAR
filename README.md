@@ -11,6 +11,7 @@ Es intencionalmente simple. No intenta reemplazar Notion, Google Calendar, un ge
 - **Seguimiento diario basado en calendario**: Registro de horas de estudio y actividad por día.
 - **Horas por asignatura**: Organización del tiempo dedicado a cada materia.
 - **Bloques opcionales de actividades extra (Hobbies)**: Registro de lectura, deporte o cualquier afición.
+- **Expresiones de tiempo acumulativas**: en los campos de horas puedes escribir operaciones sin `=` como `0:40 +:45` o `0.5 +0.75`; también puedes usar solo `+:45` o `+0.75` para añadir tiempo al total existente. El total se usa en estadísticas y el desglose aparece al pasar el ratón o enfocar el campo.
 - **Notas y valoraciones diarias con estrellas**: Puntúa la productividad de tu jornada del 1 al 5.
 - **Eventos importantes**: Solicitudes, fechas límite, avisos y recordatorios.
 - **Exámenes vinculados**: Los eventos de examen pueden vincularse a una asignatura para calcular el riesgo académico.
@@ -56,6 +57,7 @@ Abre `index.html` en un navegador web.
 3. Agrega hobbies u otros bloques de actividad no relacionados con el estudio si quieres registrarlos.
 4. Cambia a la vista **`📋 Tracker`** y usa **+ Añadir Hábito** para crear tus rutinas diarias (ej. Beber agua, Leer 20 min). Puedes cambiar los días objetivo directamente desde la celda de la columna **OBJETIVO**.
 5. Selecciona un día en el calendario para registrar horas de estudio, notas, eventos y una valoración diaria.
+   - En **Ajustes > Aspecto & Visualización > Registro de Tiempo** puedes activar o desactivar las expresiones acumulativas. En formato horas:minutos usa, por ejemplo, `0:40 +:45`; en formato decimal, `0.5 +0.75`.
 6. Usa "Ver más" para revisar estadísticas más profundas.
 7. Exporta una copia JSON desde `🏠 Inicio` cuando quieras conservar tus datos.
 

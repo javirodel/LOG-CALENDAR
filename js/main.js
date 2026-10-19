@@ -364,36 +364,80 @@ if (nextPreviewMonthBtn) {
   });
 }
 
+function commitTimeInput(target, entriesCollection, valueCollection, key, label, type) {
+  const day = App.DayPanel.ensureDay(App.State.selectedDate);
+  const raw = target.value.trim();
+  const currentParts = App.Utils.getTimeEntryParts(day, entriesCollection, key);
+  const parts = App.Utils.parseTimeExpression(raw, currentParts);
+  if (raw && !parts.length) {
+    App.Utils.updateTimeInputDisplay(target, currentParts);
+    return;
+  }
+  const total = parts.reduce((sum, value) => sum + value, 0);
+  const normalizedTotal = App.Utils.getTimeEntryMode() === "hours-minutes"
+    ? Math.min(24, Math.round(total * 60) / 60)
+    : App.Utils.normalizeHours(total);
+
+  day[valueCollection][key] = normalizedTotal;
+  App.Utils.setTimeEntryParts(day, entriesCollection, key, parts);
+  App.Utils.updateTimeInputDisplay(target, parts);
+  recordLastUpdate({ source: "calendar", target: label, type });
+  App.State.onDayDataUpdated();
+}
 
 App.Constants.subjectFormEl.addEventListener("input", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement)) return;
-  if (!target.dataset.subject) return;
-  const day = App.DayPanel.ensureDay(App.State.selectedDate);
-  day.subjects[target.dataset.subject] = App.Utils.parseTimeInput(target.value);
-  recordLastUpdate({
-    source: "calendar",
-    target: target.dataset.subject,
-    type: "subject"
-  });
-  App.State.onDayDataUpdated();
+  if (!(event.target instanceof HTMLInputElement) || !event.target.dataset.subject) return;
 });
 
 App.Constants.focusTracksEl.addEventListener("input", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement)) return;
-  if (!target.dataset.track) return;
-  const day = App.DayPanel.ensureDay(App.State.selectedDate);
-  day.extra[target.dataset.track] = App.Utils.parseTimeInput(target.value);
-  const trackObj = (App.State.state.settings?.tracks || App.State.EXTRA_TRACKS || []).find(t => t.key === target.dataset.track);
-  const trackName = trackObj ? trackObj.label : target.dataset.track;
-  recordLastUpdate({
-    source: "calendar",
-    target: trackName,
-    type: "track"
-  });
-  App.State.onDayDataUpdated();
+  if (!(event.target instanceof HTMLInputElement) || !event.target.dataset.track) return;
 });
+
+App.Constants.subjectFormEl.addEventListener("change", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLInputElement && target.dataset.subject) {
+    commitTimeInput(target, "subjectTimeEntries", "subjects", target.dataset.subject, target.dataset.subject, "subject");
+  }
+});
+
+App.Constants.focusTracksEl.addEventListener("change", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLInputElement && target.dataset.track) {
+    const trackObj = (App.State.state.settings?.tracks || App.State.EXTRA_TRACKS || []).find(t => t.key === target.dataset.track);
+    commitTimeInput(target, "extraTimeEntries", "extra", target.dataset.track, trackObj ? trackObj.label : target.dataset.track, "track");
+  }
+});
+
+App.Constants.subjectFormEl.addEventListener("blur", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLInputElement && target.dataset.subject) {
+    commitTimeInput(target, "subjectTimeEntries", "subjects", target.dataset.subject, target.dataset.subject, "subject");
+  }
+}, true);
+
+App.Constants.focusTracksEl.addEventListener("blur", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLInputElement && target.dataset.track) {
+    const trackObj = (App.State.state.settings?.tracks || App.State.EXTRA_TRACKS || []).find(t => t.key === target.dataset.track);
+    commitTimeInput(target, "extraTimeEntries", "extra", target.dataset.track, trackObj ? trackObj.label : target.dataset.track, "track");
+  }
+}, true);
+
+function commitTimeInputOnEnter(event) {
+  if (event.key !== "Enter" || !(event.target instanceof HTMLInputElement)) return;
+  const target = event.target;
+  if (target.dataset.subject) {
+    event.preventDefault();
+    commitTimeInput(target, "subjectTimeEntries", "subjects", target.dataset.subject, target.dataset.subject, "subject");
+  } else if (target.dataset.track) {
+    event.preventDefault();
+    const trackObj = (App.State.state.settings?.tracks || App.State.EXTRA_TRACKS || []).find(t => t.key === target.dataset.track);
+    commitTimeInput(target, "extraTimeEntries", "extra", target.dataset.track, trackObj ? trackObj.label : target.dataset.track, "track");
+  }
+}
+
+App.Constants.subjectFormEl.addEventListener("keydown", commitTimeInputOnEnter);
+App.Constants.focusTracksEl.addEventListener("keydown", commitTimeInputOnEnter);
 
 App.Constants.dayNotesEl.addEventListener("input", () => {
   App.DayPanel.ensureDay(App.State.selectedDate).notes = App.Constants.dayNotesEl.value;

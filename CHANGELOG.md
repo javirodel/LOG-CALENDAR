@@ -4,6 +4,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [4.0.4] - 2026-10-18
+
+### Added
+- **Expresiones de tiempo acumulativas en el calendario**: los campos de asignaturas y hobbies aceptan expresiones sin `=` como `0:40 +:45` en formato horas:minutos o `0.5 +0.75` en formato decimal. También se puede escribir únicamente `+:45` o `+0.75` para añadir tiempo al total ya registrado.
+- **Desglose interactivo de sumas**: el campo muestra el total acumulado normalmente y enseña sus sumandos al pasar el ratón o enfocarlo, sin mostrar sumandos vacíos o `+0`.
+- **Preferencia configurable**: añadida en **Ajustes > Aspecto y visualización > Registro de Tiempo** la opción para activar o desactivar las expresiones de tiempo acumulativas, con explicación en español e inglés.
+
+### Changed
+- **Entrada de tiempo decimal**: cuando las expresiones están activadas, el campo acepta texto para permitir el operador `+` y confirma el cálculo al salir del campo o pulsar `Enter`, evitando interrumpir la escritura.
+- **Compatibilidad de datos**: se conservan los totales existentes y se almacenan opcionalmente los sumandos para mantener el desglose sin alterar las estadísticas, el calendario ni el autoguardado.
+- **Caché del Service Worker y versión**: actualizada a `v4.0.4`.
+
 ## [4.0.3] - 2026-10-13
 
 ### Fixed

@@ -2322,6 +2322,57 @@ textarea {
   outline: none;
 }
 
+.time-entry-control {
+  position: relative;
+  display: block;
+}
+
+.time-entry-breakdown {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: calc(100% + 5px);
+  display: none;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.time-entry-control.has-breakdown:hover .time-entry-breakdown,
+.time-entry-control.has-breakdown:focus-within .time-entry-breakdown {
+  display: block;
+}
+
+.settings-form label.settings-checkbox-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.settings-form label.settings-checkbox-row input {
+  width: auto;
+  margin-top: 3px;
+}
+
+.settings-form label.settings-checkbox-row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
 .track-projects {
   border-color: rgba(217, 119, 6, 0.3);
   background: linear-gradient(130deg, rgba(255, 237, 213, 0.9), rgba(255, 251, 235, 0.95));
@@ -7471,5 +7522,3 @@ body.tour-active .liquid-glass-dock * {
 .update-safe-notice p {
   color: var(--ink);
 }
-
-

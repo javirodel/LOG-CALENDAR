@@ -61,17 +61,19 @@ function getTimeEntryMode() {
 }
 
 function getTimeInputType() {
-  return getTimeEntryMode() === "hours-minutes" ? "text" : "number";
+  return getTimeEntryMode() === "hours-minutes" || getTimeAdditionsEnabled() ? "text" : "number";
 }
 
 function getTimeInputAttributes() {
   return getTimeEntryMode() === "hours-minutes"
-    ? 'inputmode="numeric" pattern="[0-9]{1,2}:[0-5][0-9]" title="Usa horas:minutos, por ejemplo 1:30"'
-    : 'min="0" max="24" step="0.25" inputmode="decimal"';
+    ? 'inputmode="numeric" pattern=".*" title="Usa 0:40 +:45 o +:45 para sumar tiempo"'
+    : 'inputmode="decimal" pattern=".*" title="Usa 0.67 +0.75 o +0.75 para sumar tiempo"';
 }
 
 function getTimeInputPlaceholder() {
-  return getTimeEntryMode() === "hours-minutes" ? "0:00" : "0";
+  return getTimeAdditionsEnabled()
+    ? (getTimeEntryMode() === "hours-minutes" ? "0:00 o +0:45" : "0 o +0.75")
+    : (getTimeEntryMode() === "hours-minutes" ? "0:00" : "0");
 }
 
 function parseTimeInput(value) {
@@ -87,6 +89,86 @@ function parseTimeInput(value) {
     return 0;
   }
   return normalizeHours(raw);
+}
+
+function getTimeAdditionsEnabled() {
+  return App.State.state?.settings?.timeAdditionsEnabled !== false;
+}
+
+function parseTimeAddition(value) {
+  const raw = String(value ?? "").trim();
+  if (!getTimeAdditionsEnabled() || !raw.startsWith("+")) return null;
+  let incrementRaw = raw.slice(1).trim();
+  if (getTimeEntryMode() === "hours-minutes" && incrementRaw.startsWith(":")) {
+    incrementRaw = `0${incrementRaw}`;
+  }
+  const increment = parseTimeInput(incrementRaw);
+  return incrementRaw && increment > 0 ? increment : null;
+}
+
+function parseTimeExpression(value, currentParts = []) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return [];
+  if (!getTimeAdditionsEnabled() && raw.includes("+")) return [];
+
+  const additionOnly = parseTimeAddition(raw);
+  if (additionOnly !== null) return [...currentParts, additionOnly];
+
+  const tokens = raw.split("+").map((token) => token.trim()).filter(Boolean);
+  if (tokens.length === 0) return [];
+  if (tokens.length === 1) {
+    const total = parseTimeInput(tokens[0]);
+    return total > 0 ? [total] : [];
+  }
+
+  const parts = tokens.map((token) => {
+    const normalizedToken = getTimeEntryMode() === "hours-minutes" && token.startsWith(":")
+      ? `0${token}`
+      : token;
+    return parseTimeInput(normalizedToken);
+  });
+  return parts.every((part) => part > 0) ? parts : [];
+}
+
+function formatTimeBreakdown(values) {
+  return values
+    .map((value) => getTimeEntryMode() === "hours-minutes" ? formatTimeInput(value) : formatNumber(value))
+    .filter((value) => Number(value) > 0 || value !== "0")
+    .join(" + ");
+}
+
+function getTimeEntryParts(day, collection, key) {
+  const entries = day?.[collection]?.[key];
+  if (Array.isArray(entries)) {
+    return entries.map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  }
+  const total = Number(day?.[collection === "subjectTimeEntries" ? "subjects" : "extra"]?.[key]) || 0;
+  return total > 0 ? [total] : [];
+}
+
+function setTimeEntryParts(day, collection, key, values) {
+  if (!day[collection] || typeof day[collection] !== "object") day[collection] = {};
+  const normalized = values.map((value) => {
+    if (getTimeEntryMode() === "hours-minutes") {
+      return Math.min(24, Math.round((Number(value) || 0) * 60) / 60);
+    }
+    return normalizeHours(value);
+  }).filter((value) => value > 0);
+  if (normalized.length > 1) day[collection][key] = normalized;
+  else delete day[collection][key];
+}
+
+function updateTimeInputDisplay(input, values) {
+  if (!input) return;
+  const total = values.reduce((sum, value) => sum + (Number(value) || 0), 0);
+  input.value = total ? formatTimeInput(total) : "";
+  const wrapper = input.closest(".time-entry-control");
+  if (!wrapper) return;
+  const breakdown = values.length > 1 ? formatTimeBreakdown(values) : "";
+  wrapper.dataset.breakdown = breakdown;
+  wrapper.classList.toggle("has-breakdown", Boolean(breakdown));
+  const breakdownEl = wrapper.querySelector(".time-entry-breakdown");
+  if (breakdownEl) breakdownEl.textContent = breakdown;
 }
 
 function formatTimeInput(hours) {
@@ -332,6 +414,13 @@ function normalizeIntensityLevels(values) {
     getTimeInputAttributes: { get: () => getTimeInputAttributes, set: (v) => getTimeInputAttributes = v, enumerable: true },
     getTimeInputPlaceholder: { get: () => getTimeInputPlaceholder, set: (v) => getTimeInputPlaceholder = v, enumerable: true },
     parseTimeInput: { get: () => parseTimeInput, set: (v) => parseTimeInput = v, enumerable: true },
+    getTimeAdditionsEnabled: { get: () => getTimeAdditionsEnabled, set: (v) => getTimeAdditionsEnabled = v, enumerable: true },
+    parseTimeAddition: { get: () => parseTimeAddition, set: (v) => parseTimeAddition = v, enumerable: true },
+    parseTimeExpression: { get: () => parseTimeExpression, set: (v) => parseTimeExpression = v, enumerable: true },
+    formatTimeBreakdown: { get: () => formatTimeBreakdown, set: (v) => formatTimeBreakdown = v, enumerable: true },
+    getTimeEntryParts: { get: () => getTimeEntryParts, set: (v) => getTimeEntryParts = v, enumerable: true },
+    setTimeEntryParts: { get: () => setTimeEntryParts, set: (v) => setTimeEntryParts = v, enumerable: true },
+    updateTimeInputDisplay: { get: () => updateTimeInputDisplay, set: (v) => updateTimeInputDisplay = v, enumerable: true },
     formatTimeInput: { get: () => formatTimeInput, set: (v) => formatTimeInput = v, enumerable: true },
     formatTime: { get: () => formatTime, set: (v) => formatTime = v, enumerable: true },
     formatShortTime: { get: () => formatShortTime, set: (v) => formatShortTime = v, enumerable: true },
