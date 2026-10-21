@@ -2,7 +2,7 @@
   window.App = window.App || {};
   window.App.Constants = window.App.Constants || {};
 
-const APP_VERSION = "4.0.4";
+const APP_VERSION = "4.0.8";
 const STORAGE_KEY = "LOG-calendar-local-state-v1";
 
 const INITIAL_START_DATE = "2026-01-01";
@@ -64,6 +64,7 @@ const eventEntryCloseBtn = document.getElementById("eventEntryCloseBtn");
 const eventFormEl = document.getElementById("eventForm");
 const eventTypeEl = document.getElementById("eventType");
 const eventTextEl = document.getElementById("eventText");
+const eventColorEl = document.getElementById("eventColor");
 const customCategoryFieldsEl = document.getElementById("customCategoryFields");
 const customCategoryNameEl = document.getElementById("customCategoryName");
 const customCategoryColorEl = document.getElementById("customCategoryColor");
@@ -287,6 +288,7 @@ Object.defineProperties(window.App.Constants, {
     eventFormEl: { get: () => eventFormEl, set: (v) => eventFormEl = v, enumerable: true },
     eventTypeEl: { get: () => eventTypeEl, set: (v) => eventTypeEl = v, enumerable: true },
     eventTextEl: { get: () => eventTextEl, set: (v) => eventTextEl = v, enumerable: true },
+    eventColorEl: { get: () => eventColorEl, set: (v) => eventColorEl = v, enumerable: true },
     customCategoryFieldsEl: { get: () => customCategoryFieldsEl, set: (v) => customCategoryFieldsEl = v, enumerable: true },
     customCategoryNameEl: { get: () => customCategoryNameEl, set: (v) => customCategoryNameEl = v, enumerable: true },
     customCategoryColorEl: { get: () => customCategoryColorEl, set: (v) => customCategoryColorEl = v, enumerable: true },

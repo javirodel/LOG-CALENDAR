@@ -460,6 +460,9 @@ function openEventEntry(target = null) {
   renderEventTypeOptions(sourceEvent.type);
   renderEventSubjectOptions(sourceEvent.subjectName);
   App.Constants.eventTextEl.value = sourceEvent.text || "";
+  App.Constants.eventColorEl.value = App.Utils.normalizeColor(
+    sourceEvent.color || getEventCategory(sourceEvent.type).color || getDefaultEventColor(sourceEvent.type)
+  );
   App.Constants.customCategoryNameEl.value = "";
   App.Constants.customCategoryColorEl.value = getEventCategory(sourceEvent.type).color || "#0f766e";
   App.Constants.eventNewSubjectNameEl.value = "";
@@ -475,6 +478,7 @@ function closeEventEntry() {
   App.State.editingEventTarget = null;
   App.Constants.eventEntryModalEl.hidden = true;
   App.Constants.eventFormEl.reset();
+  App.Constants.eventColorEl.value = "#0f766e";
   App.Constants.customCategoryColorEl.value = "#0f766e";
   App.Constants.eventNewSubjectColorEl.value = "#0f766e";
   renderEventTypeOptions();
@@ -499,6 +503,7 @@ function addCustomEvent(event) {
   const payload = {
     type,
     text,
+    color: App.Utils.normalizeColor(App.Constants.eventColorEl.value || getDefaultEventColor(type)),
     ...(subjectName ? { subjectName } : {}),
     createdAt: new Date().toISOString()
   };
@@ -698,7 +703,7 @@ function getEventBorderColors(dayEvents) {
   for (const event of dayEvents) {
     if (event.type === "weekend") continue;
     const category = getEventCategory(event.type);
-    const color = category.color || getDefaultEventColor(event.type);
+    const color = event.color || category.color || getDefaultEventColor(event.type);
     if (color && !colors.includes(color)) colors.push(color);
     if (colors.length === 4) break;
   }

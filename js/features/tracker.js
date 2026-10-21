@@ -617,7 +617,7 @@ function renderRoutineTrendChart(daysInMonth, donePerDay, totalHabits) {
   `).join("");
 
   container.innerHTML = `
-    <svg viewBox="0 0 ${width} ${height}" class="trend-svg" preserveAspectRatio="none">
+    <svg viewBox="0 0 ${width} ${height}" class="trend-svg" preserveAspectRatio="xMidYMid meet">
       <defs>
         <linearGradient id="themeGradient" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.35"/>

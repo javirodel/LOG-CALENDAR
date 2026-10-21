@@ -183,6 +183,22 @@ const navigateToCalendarStats = () => {
   }
 };
 if (App.Constants.moreStatsBtn) App.Constants.moreStatsBtn.addEventListener("click", navigateToCalendarStats);
+const metricsGridEl = document.getElementById("metricsGrid");
+if (metricsGridEl) {
+  const openMetricFromEvent = (event) => {
+    const card = event.target.closest("[data-metric-id]");
+    if (!card || !metricsGridEl.contains(card)) return;
+    App.Stats.openMetricDetails(card.dataset.metricId);
+  };
+  metricsGridEl.addEventListener("click", openMetricFromEvent);
+  metricsGridEl.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const card = event.target.closest("[data-metric-id]");
+    if (!card || !metricsGridEl.contains(card)) return;
+    event.preventDefault();
+    App.Stats.openMetricDetails(card.dataset.metricId);
+  });
+}
 if (App.Constants.statsHeaderTitle) App.Constants.statsHeaderTitle.addEventListener("click", navigateToCalendarStats);
 if (App.Constants.statPillGrandTotal) App.Constants.statPillGrandTotal.addEventListener("click", navigateToCalendarStats);
 if (App.Constants.statPillWeightedLoad) App.Constants.statPillWeightedLoad.addEventListener("click", navigateToCalendarStats);
@@ -190,6 +206,14 @@ if (App.Constants.advancedStatsCloseBtn) App.Constants.advancedStatsCloseBtn.add
 if (App.Constants.advancedStatsModalEl) {
   App.Constants.advancedStatsModalEl.addEventListener("click", (event) => {
     if (event.target.hasAttribute("data-close-advanced-stats")) App.Stats.closeAdvancedStats();
+  });
+}
+const metricDetailsCloseBtn = document.getElementById("metricDetailsCloseBtn");
+const metricDetailsModal = document.getElementById("metricDetailsModal");
+if (metricDetailsCloseBtn) metricDetailsCloseBtn.addEventListener("click", App.Stats.closeMetricDetails);
+if (metricDetailsModal) {
+  metricDetailsModal.addEventListener("click", (event) => {
+    if (event.target.hasAttribute("data-close-metric-details")) App.Stats.closeMetricDetails();
   });
 }
 if (App.Constants.settingsCloseBtn) App.Constants.settingsCloseBtn.addEventListener("click", App.Settings.closeSettings);

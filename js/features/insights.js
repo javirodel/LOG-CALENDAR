@@ -255,6 +255,69 @@
 
     const globalScore = Math.max(0, Math.min(100, Math.round(compScore)));
 
+    const todayKey = App.Utils.getTodayDateKey();
+    const pendingTasks = (App.State.state?.checklistTasks || []).filter(task => !task.completed);
+    const overdueTasks = pendingTasks.filter(task => task.dueDate && task.dueDate < todayKey);
+    const dueSoonTasks = pendingTasks.filter(task => {
+      if (!task.dueDate || task.dueDate < todayKey) return false;
+      const daysUntil = Math.round((App.Utils.parseKey(task.dueDate) - App.Utils.parseKey(todayKey)) / 86400000);
+      return daysUntil <= 7;
+    });
+    const completedTasksInRange = (App.State.state?.checklistTasks || []).filter(task => (
+      task.completed && task.completedAt && keys.some(key => task.completedAt.startsWith(key))
+    ));
+    const eventSummary = { total: 0, upcoming: 0, next7Days: 0, byType: {} };
+    const seenEvents = new Set();
+    const eventKeys = new Set([...Object.keys(App.State.events || {}), ...keys]);
+    eventKeys.forEach(key => {
+      if (key < (keys[0] || key) || key > (keys[keys.length - 1] || key)) return;
+      const events = [
+        ...(App.Calendar.getVisibleStaticEvents?.(key) || []).map(item => item.event),
+        ...(App.State.state.days[key]?.customEvents || [])
+      ];
+      events.forEach((event, index) => {
+        const eventId = `${key}:${event.id || event.text || index}`;
+        if (seenEvents.has(eventId)) return;
+        seenEvents.add(eventId);
+        eventSummary.total++;
+        const type = event.type || "other";
+        eventSummary.byType[type] = (eventSummary.byType[type] || 0) + 1;
+        if (key >= todayKey) {
+          eventSummary.upcoming++;
+          const daysUntil = Math.round((App.Utils.parseKey(key) - App.Utils.parseKey(todayKey)) / 86400000);
+          if (daysUntil <= 7) eventSummary.next7Days++;
+        }
+      });
+    });
+
+    const riskRanking = App.Stats?.buildSubjectRiskRanking
+      ? App.Stats.buildSubjectRiskRanking(
+        activeSubjects.map(subject => ({
+          name: subject.name,
+          total: totalsBySubject[subject.name] || 0,
+          difficulty: App.Tasks.getSubjectDifficulty(subject.name)
+        })),
+        keys
+      )
+      : [];
+    const attentionItems = [
+      ...overdueTasks.slice(0, 3).map(task => ({
+        kind: "task",
+        title: task.text || task.title || "Tarea pendiente",
+        detail: "Vencida"
+      })),
+      ...riskRanking.filter(item => item.score >= 40).slice(0, 3).map(item => ({
+        kind: "subject",
+        title: item.name,
+        detail: item.exam ? item.examText : item.riskReason
+      })),
+      ...(eventSummary.next7Days > 0 ? [{
+        kind: "event",
+        title: `${eventSummary.next7Days} ${eventSummary.next7Days === 1 ? "evento" : "eventos"}`,
+        detail: "Próximos 7 días"
+      }] : [])
+    ].slice(0, 5);
+
     let projectionText = "N/A";
     let projectedHours = 0;
     if (currentPeriod && currentPeriod.startDate && currentPeriod.endDate) {
@@ -298,6 +361,13 @@
       globalScore,
       projectedHours,
       projectionText,
+      pendingTasks: pendingTasks.length,
+      overdueTasks: overdueTasks.length,
+      dueSoonTasks: dueSoonTasks.length,
+      completedTasksInRange: completedTasksInRange.length,
+      eventSummary,
+      riskRanking,
+      attentionItems,
       activeSubjects,
       activeTracks,
       totalsBySubject,
@@ -804,6 +874,22 @@
 
   // --- BASE DE CONOCIMIENTO PREDEFINIDA PARA CADA RECUADRO INTERACTIVO ---
   const INSIGHTS_KNOWLEDGE_BASE = {
+    priorities: {
+      title: "Prioridades abiertas",
+      icon: "🧭",
+      meaning: "Esta cola no intenta convertir tu actividad en una nota arbitraria. Reúne solo señales que pueden requerir una decisión: tareas vencidas, tareas próximas, asignaturas con riesgo y eventos cercanos vinculados.",
+      getDiagnosis: (d) => d.attentionItems.length
+        ? `Hay **${d.attentionItems.length} prioridades** que conviene revisar. ${d.overdueTasks ? `Tienes **${d.overdueTasks} tareas vencidas**. ` : ""}${d.dueSoonTasks ? `Además, hay **${d.dueSoonTasks} tareas para los próximos 7 días**.` : ""}`
+        : "No se detectan prioridades inmediatas con los datos actuales.",
+      getCurrentAdvice: (d) => d.attentionItems.length
+        ? { situation: "Cola de atención activa", phrase: "No intentes resolverlo todo a la vez.", advice: "Empieza por la tarea vencida o por la asignatura con entrega más cercana. Después registra una sesión breve y vuelve a comprobar la cola." }
+        : { situation: "Sin alertas inmediatas", phrase: "Tu calendario no muestra bloqueos urgentes.", advice: "Usa este margen para mantener sesiones pequeñas y anticipar la siguiente entrega antes de que entre en la zona de riesgo." },
+      scenarios: [
+        { range: "Tareas vencidas", label: "Urgente", text: "Trabajo cuyo plazo ya ha pasado.", tip: "Resolver o reprogramar explícitamente." },
+        { range: "Próximos 7 días", label: "Planificar", text: "Trabajo o eventos que pueden cambiar tu semana.", tip: "Reservar una sesión concreta en el calendario." },
+        { range: "Riesgo académico", label: "Reforzar", text: "Asignaturas con poca cobertura, dificultad o inactividad.", tip: "Priorizar el siguiente bloque de estudio." }
+      ]
+    },
     score: {
       title: "Puntuación Global de Rendimiento",
       icon: "🏆",
@@ -1093,6 +1179,22 @@
   };
 
   const INSIGHTS_KNOWLEDGE_BASE_EN = {
+    priorities: {
+      title: "Open priorities",
+      icon: "🧭",
+      meaning: "This queue does not turn your activity into an arbitrary score. It only surfaces signals that may require a decision: overdue tasks, upcoming tasks, at-risk subjects and nearby linked events.",
+      getDiagnosis: (d) => d.attentionItems.length
+        ? `There are **${d.attentionItems.length} priorities** worth reviewing. ${d.overdueTasks ? `You have **${d.overdueTasks} overdue tasks**. ` : ""}${d.dueSoonTasks ? `There are also **${d.dueSoonTasks} tasks due within 7 days**.` : ""}`
+        : "No immediate priorities were detected with the current data.",
+      getCurrentAdvice: (d) => d.attentionItems.length
+        ? { situation: "Active attention queue", phrase: "Do not try to solve everything at once.", advice: "Start with the overdue task or the subject with the closest deadline. Then log a short session and review the queue again." }
+        : { situation: "No immediate alerts", phrase: "Your calendar shows no urgent blockers.", advice: "Use this margin to keep small sessions going and anticipate the next deadline before it becomes urgent." },
+      scenarios: [
+        { range: "Overdue tasks", label: "Urgent", text: "Work whose due date has already passed.", tip: "Resolve or explicitly reschedule it." },
+        { range: "Next 7 days", label: "Plan", text: "Work or events that can shape your week.", tip: "Reserve a concrete session in the calendar." },
+        { range: "Academic risk", label: "Reinforce", text: "Subjects affected by coverage, difficulty or inactivity.", tip: "Prioritize the next study block." }
+      ]
+    },
     score: {
       title: "Global Performance Score",
       icon: "🏆",
@@ -1566,7 +1668,7 @@
 
     return `
       <div class="weekly-chart-wrapper">
-        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" class="weekly-bars-svg" preserveAspectRatio="none">
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" class="weekly-bars-svg" preserveAspectRatio="xMidYMid meet">
           ${barsSvg}
           ${labelsSvg}
         </svg>
@@ -1883,23 +1985,23 @@
     return `
       <!-- KPI RIBBON DIRECTIVO (TODOS INTERACTIVOS CON CLICK) -->
       <section class="insights-kpi-ribbon" aria-label="Indicadores Clave">
-        <!-- KPI 1: SCORE GLOBAL -->
-        <article class="insights-kpi-card highlight-card insights-clickable-card" data-insight-type="score" tabindex="0" role="button" aria-label="Ver detalle de puntuación global">
+        <!-- KPI 1: PRIORIDADES ABIERTAS -->
+        <article class="insights-kpi-card highlight-card insights-clickable-card" data-insight-type="priorities" tabindex="0" role="button" aria-label="Ver detalle de prioridades">
           <div class="kpi-head">
-            <span class="kpi-label">${scoreTitle}</span>
+            <span class="kpi-label">${isEn ? "OPEN PRIORITIES" : "PRIORIDADES ABIERTAS"}</span>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="kpi-tier-tag" style="background: rgba(var(--accent-rgb), 0.12); color: ${tierColor};">${tierText}</span>
+              <span class="kpi-tier-tag" style="background: rgba(var(--accent-rgb), 0.12); color: ${data.attentionItems.length ? "#d97706" : "var(--accent)"};">${data.attentionItems.length ? (isEn ? "Action needed" : "Requiere acción") : (isEn ? "Clear" : "Sin alertas")}</span>
               <span class="kpi-info-icon" title="Hacer clic para ver explicación y consejos">ℹ️</span>
             </div>
           </div>
           <div class="kpi-main-val">
-            <span class="kpi-big-num">${data.globalScore}</span>
-            <span class="kpi-denom">/ 100</span>
+            <span class="kpi-big-num">${data.attentionItems.length}</span>
+            <span class="kpi-denom">${isEn ? "items" : "puntos"}</span>
           </div>
           <div class="kpi-progress-bar">
-            <div class="kpi-progress-fill" style="width: ${data.globalScore}%; background: ${tierColor};"></div>
+            <div class="kpi-progress-fill" style="width: ${Math.min(100, data.attentionItems.length * 20)}%; background: ${data.attentionItems.length ? "#f59e0b" : "var(--accent)"};"></div>
           </div>
-          <span class="kpi-subtext">${scoreSub}</span>
+          <span class="kpi-subtext">${isEn ? `${data.overdueTasks} overdue tasks · ${data.dueSoonTasks} due soon · Tap for details` : `${data.overdueTasks} tareas vencidas · ${data.dueSoonTasks} próximas · Toca para ver detalle`}</span>
         </article>
 
         <!-- KPI 2: REGULARIDAD -->
@@ -1954,6 +2056,25 @@
             ${isEn ? `Current vs previous week (${App.Utils.formatTime(data.prevWeek ? data.prevWeek.total : 0)}) · <em>Tap for details</em>` : `Semana actual vs previa (${App.Utils.formatTime(data.prevWeek ? data.prevWeek.total : 0)}) · <em>Toca para ver detalle</em>`}
           </div>
         </article>
+      </section>
+
+      <section class="insights-card insights-priority-card">
+        <div class="insights-card-head flex-between">
+          <div>
+            <h3>${isEn ? "WHAT DESERVES ATTENTION NOW" : "QUÉ MERECE ATENCIÓN AHORA"}</h3>
+            <p class="insights-card-subtitle">${isEn ? "A short queue built from deadlines, linked tasks and study gaps." : "Una cola breve construida con entregas, tareas vinculadas y huecos de estudio."}</p>
+          </div>
+          <span class="kpi-badge">${data.eventSummary.next7Days} ${isEn ? "events in 7d" : "eventos en 7 días"}</span>
+        </div>
+        <div class="insights-priority-list">
+          ${data.attentionItems.length ? data.attentionItems.map(item => `
+            <div class="insights-priority-item">
+              <span class="insights-priority-dot ${item.kind}"></span>
+              <strong>${App.Utils.escapeHtml(item.title)}</strong>
+              <span>${App.Utils.escapeHtml(item.detail)}</span>
+            </div>
+          `).join("") : `<div class="insights-empty-chart">${isEn ? "No immediate priority detected. Keep the current rhythm." : "No se detecta ninguna prioridad inmediata. Mantén el ritmo actual."}</div>`}
+        </div>
       </section>
 
       <!-- SECCIÓN PRINCIPAL: BARRAS SEMANALES LIMPIAS & DIVERSIFICACIÓN RADIAL -->

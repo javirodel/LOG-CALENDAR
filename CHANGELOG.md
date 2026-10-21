@@ -4,6 +4,37 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [4.0.8] - 2026-10-20
+
+### Changed
+- **Tarjeta de asignaturas en riesgo**: alineada con el patrón visual del resto de métricas. Muestra únicamente el título, la asignatura con mayor riesgo y una explicación breve; el clic sigue abriendo el desglose ampliado.
+- **Interfaz depurada**: eliminados la puntuación, la flecha y los textos auxiliares que sobraban en la tarjeta compacta.
+- **Caché del Service Worker y versión**: actualizada a `v4.0.8`.
+
+## [4.0.7] - 2026-10-20
+
+### Changed
+- **Tarjeta de asignaturas en riesgo**: simplificada a un título y un subtítulo con la asignatura de mayor riesgo y su puntuación, manteniendo el detalle completo al interactuar.
+- **Interacción más discreta**: añadido un indicador sutil de detalle al pasar el ratón o enfocar la tarjeta, sin convertirla visualmente en un botón.
+- **Caché del Service Worker y versión**: actualizada a `v4.0.7`.
+
+## [4.0.6] - 2026-10-20
+
+### Added
+- **Color individual de eventos**: al crear o editar entregas, exámenes, avisos, proyectos y demás eventos se puede elegir un color propio, partiendo del color predefinido de su categoría.
+- **Aplicación consistente del color**: el color elegido se conserva al editar el evento y se refleja en la tarjeta del día, los avisos y los bordes de eventos del calendario.
+
+### Changed
+- **Caché del Service Worker y versión**: actualizada a `v4.0.6`.
+
+## [4.0.5] - 2026-10-18
+
+### Changed
+- **Panel analítico del Perfil**: reorganizadas las tarjetas de Calendario y Tracker para aprovechar mejor el espacio disponible en escritorio y móvil.
+- **Gráficos responsive**: corregidas las proporciones forzadas de los SVG, mejoradas las alturas mínimas y ajustadas las leyendas, el donut radial y las barras semanales para evitar deformaciones y compresión.
+- **Asignaturas en riesgo**: la métrica mantiene su ancho de dos huecos y ahora muestra un resumen contextual equilibrado antes de abrir el detalle completo.
+- **Caché del Service Worker y versión**: actualizada a `v4.0.5`.
+
 ## [4.0.4] - 2026-10-18
 
 ### Added

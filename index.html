@@ -118,41 +118,48 @@
               </div>
 
               <div class="metric-grid" id="metricsGrid">
-                <article>
+                <article class="metric-card" data-metric-id="avgPerDay" tabindex="0" role="button">
                   <span id="avgPerDay">0 h</span>
                   <p id="avgPerDayLabel" data-i18n="stats.avgPerDayLabel">media diaria</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="avgActiveDay" tabindex="0" role="button">
                   <span id="avgActiveDay">0 h</span>
                   <p id="avgActiveDayLabel" data-i18n="stats.avgActiveDayLabel">media en días activos</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="bestDay" tabindex="0" role="button">
                   <span id="bestDay">-</span>
                   <p id="bestDayLabel" data-i18n="stats.bestDayLabel">mejor día académico</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="streak" tabindex="0" role="button">
                   <span id="streak">0</span>
                   <p id="streakLabel" data-i18n="stats.streakLabel">racha de días seguidos con estudio</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="studyFocus" tabindex="0" role="button">
                   <span id="studyFocus">0%</span>
                   <p id="studyFocusLabel" data-i18n="stats.studyFocusLabel">foco en estudio</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="hobbyFocus" tabindex="0" role="button">
                   <span id="hobbyFocus">0%</span>
                   <p id="hobbyFocusLabel" data-i18n="stats.hobbyFocusLabel">foco en hobbies</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="topSubject" tabindex="0" role="button">
                   <span id="topSubject">-</span>
                   <p id="topSubjectLabel" data-i18n="stats.topSubjectLabel">asignatura dominante</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="topTrack" tabindex="0" role="button">
                   <span id="topTrack">-</span>
                   <p id="topTrackLabel" data-i18n="stats.topTrackLabel">hobby dominante</p>
                 </article>
-                <article>
+                <article class="metric-card" data-metric-id="avgRating" tabindex="0" role="button">
                   <span id="avgRating">—</span>
                   <p id="avgRatingLabel" data-i18n="stats.avgRatingLabel">valoración media</p>
+                </article>
+                <article class="metric-card metric-risk" id="subjectRiskMetric" data-metric-id="subjectRisk" tabindex="0" role="button">
+                  <div class="metric-risk-main">
+                    <p data-i18n="stats.subjectRiskTitle">Asignaturas en riesgo</p>
+                    <span class="metric-risk-subject" id="subjectRiskMetricValue">—</span>
+                    <small class="metric-risk-reason" id="subjectRiskMetricMeta">—</small>
+                  </div>
                 </article>
                 <article class="metric-more">
                   <button id="moreStatsBtn" type="button">
@@ -890,7 +897,7 @@
                         <div class="about-version-banner">
                           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <strong>LOG of Growth</strong>
-                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.4</span>
+                            <span class="about-version-tag" data-i18n="settings.versionTag">Versión 4.0.8</span>
                             <span id="aboutVersionStatusBadge" class="version-status-badge badge-up-to-date" data-i18n="settings.versionUpToDate">✓ Al día</span>
                             <span id="pwaInstalledBadge" class="pwa-installed-badge" style="display: none;" data-i18n="settings.pwaInstalledText">✓ Modo app activo</span>
                           </div>
@@ -1045,6 +1052,10 @@
             <option value="__new__" data-i18n="events.categories.other">Otro</option>
           </select>
           <input id="eventText" type="text" maxlength="90" placeholder="Ej. Examen final" required data-i18n-placeholder="events.textPlaceholder">
+          <label class="color-field event-color-field" for="eventColor">
+            <span data-i18n="events.colorLabel">Color del evento</span>
+            <input id="eventColor" type="color" value="#0f766e" aria-label="Color del evento">
+          </label>
           <div class="custom-category-fields" id="customCategoryFields" hidden>
             <input id="customCategoryName" type="text" maxlength="28" placeholder="Nombre de la categoría" aria-label="Nombre de la nueva categoría">
             <label class="color-field" for="customCategoryColor">
@@ -1090,9 +1101,24 @@
             <p class="eyebrow" data-i18n="profile.tabReport">Análisis</p>
             <h2 id="advancedStatsTitle" data-i18n="calendar.moreStats">Más estadísticas</h2>
           </div>
+
           <button class="icon-button" id="advancedStatsCloseBtn" type="button" aria-label="Cerrar">×</button>
         </div>
         <div class="advanced-stats-content" id="advancedStatsContent"></div>
+      </section>
+    </div>
+
+    <div class="entry-modal" id="metricDetailsModal" hidden>
+      <div class="entry-backdrop" data-close-metric-details></div>
+      <section class="entry-dialog metric-details-dialog" role="dialog" aria-modal="true" aria-labelledby="metricDetailsTitle">
+        <div class="settings-head">
+          <div>
+            <p class="eyebrow" data-i18n="stats.mainStats">Estadísticas principales</p>
+            <h2 id="metricDetailsTitle">Detalle de estadística</h2>
+          </div>
+          <button class="icon-button" id="metricDetailsCloseBtn" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div id="metricDetailsContent" class="metric-details-content"></div>
       </section>
     </div>
 

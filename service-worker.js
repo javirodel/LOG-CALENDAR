@@ -1,10 +1,10 @@
 /* ====================================================================
-  LOG CALENDAR - PWA Service Worker (v4.0.4)
+  LOG CALENDAR - PWA Service Worker (v4.0.8)
    Offline Support & Network-First Cache Strategy
    Zero interference with File System Access API or IndexedDB
    ==================================================================== */
 
-const CACHE_NAME = "log-calendar-pwa-v4.0.4";
+const CACHE_NAME = "log-calendar-pwa-v4.0.8";
 
 const PRECACHE_ASSETS = [
   "./",

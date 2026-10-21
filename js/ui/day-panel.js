@@ -127,11 +127,12 @@ function renderNotices() {
   for (const ev of list) {
     const item = document.createElement("div");
     const category = ev.type === "track" ? { label: ev.label, className: "custom-note", color: ev.color } : App.Tasks.getEventCategory(ev.type);
+    const eventColor = ev.color || category.color;
     item.className = `notice ${category.className}`;
-    if (category.color) {
-      item.style.borderLeftColor = category.color;
-      item.style.background = App.Utils.hexToSoftBackground(category.color);
-      item.style.color = App.Utils.readableColor(category.color);
+    if (eventColor) {
+      item.style.borderLeftColor = eventColor;
+      item.style.background = App.Utils.hexToSoftBackground(eventColor);
+      item.style.color = App.Utils.readableColor(eventColor);
     }
     const text = document.createElement("span");
     const subjectSuffix = ev.subjectName ? ` · ${ev.subjectName}` : "";

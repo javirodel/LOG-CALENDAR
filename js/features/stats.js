@@ -161,6 +161,8 @@ function renderStats() {
     activeTracks
   };
 
+  renderSubjectRiskMetric(activeSubjects, totalsBySubject, keys);
+
   if (isHobbyMode || activeSubjects.length === 0) {
     if (App.Constants.subjectChartPanel) App.Constants.subjectChartPanel.hidden = true;
     if (App.Constants.hobbyFrequencyPanel) App.Constants.hobbyFrequencyPanel.hidden = false;
@@ -172,6 +174,124 @@ function renderStats() {
   }
   renderRatingsChart(keys);
   renderBalanceChart(totalStudy, totalsByTrack, totalHours, activeTracks);
+}
+
+function renderSubjectRiskMetric(activeSubjects, totalsBySubject, statsKeys) {
+  const valueEl = document.getElementById("subjectRiskMetricValue");
+  const metaEl = document.getElementById("subjectRiskMetricMeta");
+  if (!valueEl) return;
+
+  const isEn = App.I18n?.getCurrentLanguage?.() === "en";
+  if (!activeSubjects.length) {
+    valueEl.textContent = "—";
+    if (metaEl) metaEl.textContent = isEn ? "No subjects to evaluate" : "Sin asignaturas que evaluar";
+    return;
+  }
+
+  const subjectRanking = activeSubjects.map((subject) => ({
+    name: subject.name,
+    total: totalsBySubject[subject.name] || 0,
+    difficulty: App.Tasks.getSubjectDifficulty(subject.name)
+  }));
+  const riskRanking = buildSubjectRiskRanking(subjectRanking, statsKeys);
+  const highestRisk = riskRanking[0];
+  valueEl.textContent = highestRisk
+    ? highestRisk.name
+    : (isEn ? "No subject currently stands out" : "Ninguna asignatura destaca ahora");
+  if (metaEl) {
+    metaEl.textContent = highestRisk
+      ? highestRisk.riskReason
+      : (isEn ? "No current risk signal" : "Sin señales de riesgo actuales");
+  }
+}
+
+function openMetricDetails(metricId) {
+  const modal = document.getElementById("metricDetailsModal");
+  const titleEl = document.getElementById("metricDetailsTitle");
+  const contentEl = document.getElementById("metricDetailsContent");
+  const stats = App.State.latestStats;
+  if (!modal || !titleEl || !contentEl || !stats) return;
+
+  const isEn = App.I18n?.getCurrentLanguage?.() === "en";
+  const subjectRanking = (stats.activeSubjects || []).map((subject) => ({
+    name: subject.name,
+    total: stats.totalsBySubject[subject.name] || 0,
+    difficulty: App.Tasks.getSubjectDifficulty(subject.name)
+  }));
+  const riskRanking = buildSubjectRiskRanking(subjectRanking, stats.keys);
+  const trackRanking = (stats.activeTracks || []).map((track) => ({
+    label: track.label,
+    total: stats.totalsByTrack[track.key] || 0
+  })).sort((a, b) => b.total - a.total);
+  const subjectList = subjectRanking.slice().sort((a, b) => b.total - a.total);
+  const formatList = (items, labelKey, valueFn) => `
+    <div class="metric-detail-list">
+      ${items.map((item, index) => `<div class="metric-detail-row"><span>#${index + 1} ${App.Utils.escapeHtml(item[labelKey])}</span><strong>${valueFn(item)}</strong></div>`).join("")}
+    </div>`;
+
+  const details = {
+    avgPerDay: {
+      title: isEn ? "Daily average" : "Media diaria",
+      body: isEn
+        ? `You have recorded ${App.Utils.formatTime(stats.totalHours)} across ${stats.elapsedDays} days, which gives an average of ${App.Utils.formatTime(stats.totalHours / stats.elapsedDays)} per day.`
+        : `Has registrado ${App.Utils.formatTime(stats.totalHours)} en ${stats.elapsedDays} días. La media resultante es de ${App.Utils.formatTime(stats.totalHours / stats.elapsedDays)} al día.`
+    },
+    avgActiveDay: {
+      title: isEn ? "Average on active days" : "Media en días activos",
+      body: isEn
+        ? `${stats.activeDays} days contain recorded activity. On those days you averaged ${App.Utils.formatTime(stats.activeDays ? stats.totalHours / stats.activeDays : 0)}.`
+        : `${stats.activeDays} días tienen actividad registrada. En esos días has hecho una media de ${App.Utils.formatTime(stats.activeDays ? stats.totalHours / stats.activeDays : 0)}.`
+    },
+    bestDay: {
+      title: isEn ? "Best day" : "Mejor día",
+      body: stats.best.key
+        ? (isEn ? `Your strongest day was ${App.Utils.formatShortDate(stats.best.key)}, with ${App.Utils.formatTime(stats.best.total)}.` : `Tu mejor día fue el ${App.Utils.formatShortDate(stats.best.key)}, con ${App.Utils.formatTime(stats.best.total)}.`)
+        : (isEn ? "There is no recorded day yet." : "Todavía no hay ningún día registrado.")
+    },
+    streak: {
+      title: isEn ? "Current streak" : "Racha actual",
+      body: isEn ? `You currently have ${stats.currentStreak} consecutive active days. The calculation follows the selected statistics period.` : `Ahora mismo tienes ${stats.currentStreak} días consecutivos con actividad. El cálculo respeta el periodo estadístico seleccionado.`
+    },
+    studyFocus: {
+      title: isEn ? "Study focus" : "Foco en estudio",
+      body: isEn ? `${App.Utils.formatTime(stats.totalStudy)} of ${App.Utils.formatTime(stats.totalHours)} recorded hours belong to subjects.` : `${App.Utils.formatTime(stats.totalStudy)} de las ${App.Utils.formatTime(stats.totalHours)} registradas corresponden a asignaturas.`
+    },
+    hobbyFocus: {
+      title: isEn ? "Hobby focus" : "Foco en hobbies",
+      body: isEn ? `${App.Utils.formatTime(stats.totalTracks)} of ${App.Utils.formatTime(stats.totalHours)} recorded hours belong to hobbies.` : `${App.Utils.formatTime(stats.totalTracks)} de las ${App.Utils.formatTime(stats.totalHours)} registradas corresponden a hobbies.`
+    },
+    topSubject: {
+      title: isEn ? "Subjects ranking" : "Ranking de asignaturas",
+      body: formatList(subjectList, "name", (item) => App.Utils.formatTime(item.total))
+    },
+    topTrack: {
+      title: isEn ? "Hobbies ranking" : "Ranking de hobbies",
+      body: formatList(trackRanking, "label", (item) => App.Utils.formatTime(item.total))
+    },
+    avgRating: {
+      title: isEn ? "Average rating" : "Valoración media",
+      body: stats.ratedDays ? (isEn ? `Your average rating is ${App.Utils.formatNumber(stats.averageRating)} out of 5 across ${stats.ratedDays} rated days.` : `Tu valoración media es de ${App.Utils.formatNumber(stats.averageRating)} sobre 5 en ${stats.ratedDays} días valorados.`) : (isEn ? "No rated days yet." : "Todavía no hay días valorados.")
+    },
+    subjectRisk: {
+      title: isEn ? "Subjects at risk" : "Asignaturas en riesgo",
+      body: riskRanking.length
+        ? `<p>${isEn ? "The ranking combines upcoming linked events, hours covered against a difficulty-based target, pending tasks, inactivity and subject difficulty." : "El ranking combina eventos vinculados próximos, horas cubiertas frente a un objetivo según dificultad, tareas pendientes, inactividad y dificultad de la asignatura."}</p>
+           ${riskRanking.map((item, index) => `<div class="metric-detail-risk-row"><span><strong>#${index + 1} ${App.Utils.escapeHtml(item.name)}</strong><small>${App.Utils.escapeHtml(item.riskReason)} · ${App.Utils.formatTime(item.total)}/${App.Utils.formatTime(item.targetHours)} · ${item.difficulty}/5</small></span><b>${App.Utils.formatNumber(item.score)}/100</b></div>`).join("")}`
+        : (isEn ? "No subjects to evaluate." : "No hay asignaturas para evaluar.")
+    }
+  }[metricId];
+
+  if (!details) return;
+  titleEl.textContent = details.title;
+  contentEl.innerHTML = typeof details.body === "string" && details.body.startsWith("<")
+    ? details.body
+    : `<p>${details.body}</p>`;
+  modal.hidden = false;
+}
+
+function closeMetricDetails() {
+  const modal = document.getElementById("metricDetailsModal");
+  if (modal) modal.hidden = true;
 }
 
 function renderHobbyFrequencyChart(keys, activeTracks, totalsByTrack) {
@@ -1580,6 +1700,8 @@ function renderReportBadges(activePeriod) {
     renderReportWeekdayChart: { get: () => renderReportWeekdayChart, set: (v) => renderReportWeekdayChart = v, enumerable: true },
     renderReportMoodCorrelation: { get: () => renderReportMoodCorrelation, set: (v) => renderReportMoodCorrelation = v, enumerable: true },
     renderReportBadges: { get: () => renderReportBadges, set: (v) => renderReportBadges = v, enumerable: true },
-    calculateDeepMetrics: { get: () => calculateDeepMetrics, set: (v) => calculateDeepMetrics = v, enumerable: true }
+    calculateDeepMetrics: { get: () => calculateDeepMetrics, set: (v) => calculateDeepMetrics = v, enumerable: true },
+    openMetricDetails: { get: () => openMetricDetails, set: (v) => openMetricDetails = v, enumerable: true },
+    closeMetricDetails: { get: () => closeMetricDetails, set: (v) => closeMetricDetails = v, enumerable: true }
   });
 })();

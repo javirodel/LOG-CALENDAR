@@ -100,6 +100,9 @@
         topSubjectLabel: "asignatura dominante",
         topTrackLabel: "hobby dominante",
         avgRatingLabel: "valoración media",
+        subjectRiskTitle: "Asignaturas en riesgo",
+        subjectRiskHelp: "Horas, dificultad y próximas entregas",
+        subjectRiskEmpty: "No hay asignaturas para evaluar.",
         seeMore: "Ver más",
         fullAnalysis: "análisis completo",
         hoursBySubject: "Horas por asignatura",
@@ -127,6 +130,7 @@
         modalTitle: "Añadir evento",
         typeLabel: "Tipo de evento",
         textPlaceholder: "Ej. Examen final",
+        colorLabel: "Color del evento",
         subjectLabel: "Asignatura del evento",
         saveBtn: "Guardar evento",
         categories: {
@@ -585,6 +589,9 @@
         topSubjectLabel: "dominant subject",
         topTrackLabel: "dominant hobby",
         avgRatingLabel: "average rating",
+        subjectRiskTitle: "Subjects at risk",
+        subjectRiskHelp: "Hours, difficulty and upcoming deadlines",
+        subjectRiskEmpty: "No subjects to evaluate.",
         seeMore: "View more",
         fullAnalysis: "full analytics",
         hoursBySubject: "Hours per Subject",
@@ -612,6 +619,7 @@
         modalTitle: "Add Event",
         typeLabel: "Event Type",
         textPlaceholder: "e.g. Final Exam",
+        colorLabel: "Event color",
         subjectLabel: "Event Subject",
         saveBtn: "Save Event",
         categories: {
@@ -1120,7 +1128,7 @@
     const resolveText = (str) => {
       if (typeof str !== "string") return str;
       if (str.includes("{version}")) {
-        const v = window.App?.Constants?.APP_VERSION || "4.0.4";
+        const v = window.App?.Constants?.APP_VERSION || "4.0.8";
         return str.replace(/\{version\}/g, v);
       }
       return str;

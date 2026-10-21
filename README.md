@@ -69,6 +69,7 @@ Los eventos se crean desde una ventana modal.
 
 - Cuando el tipo de evento es **Examen**, la aplicación pide la asignatura relacionada. Esto se usa en la sección de riesgo académico, así la aplicación no tiene que adivinarlo a partir del texto del evento.
 - Si la asignatura aún no existe, se puede crear desde el mismo modal del evento.
+- Cada evento tiene un color editable desde el mismo formulario. Al editar un evento, se conserva su color personalizado; si todavía no tiene uno, se propone automáticamente el color predefinido de su categoría.
 
 ---
 
